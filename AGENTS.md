@@ -33,7 +33,7 @@ Required fields for every `SKILL.md`:
 
 | Field | Format | Example |
 |-------|--------|---------|
-| `name` | kebab-case | `commit`, `improve-skill` |
+| `name` | kebab-case | `commit`, `skill-workbench` |
 | `description` | Starts with "Use when" | `Use when the user wants to...` |
 | `argument-hint` | Bracketed placeholder | `[optional PR title]` |
 | `user-invocable` | `true` or `false` | `true` |

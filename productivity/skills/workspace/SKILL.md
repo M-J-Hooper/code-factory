@@ -125,7 +125,7 @@ After setup, these plugins are enabled:
 
 | Plugin | Source | Skills |
 |--------|--------|--------|
-| `productivity@code-factory` | Local | `/do`, `/doc`, `/execplan`, `/improve-skill`, `/workspace` |
+| `productivity@code-factory` | Local | `/do`, `/doc`, `/execplan`, `/skill-workbench`, `/workspace` |
 | `git@code-factory` | Local | `/commit`, `/atcommit`, `/pr`, `/branch`, `/worktree` |
 | `code@code-factory` | Local | `/review`, `/tour` |
 | `superpowers@claude-plugins-official` | GitHub | TDD, debugging, brainstorming |
@@ -220,7 +220,7 @@ Edit `settings.json` to add plugin sources:
       do/                  # /do skill
       doc/                 # /doc skill
       execplan/            # /execplan skill
-      improve-skill/       # /improve-skill skill
+      skill-workbench/     # /skill-workbench skill
       workspace/           # /workspace skill (this file)
   git/                     # Git workflow plugin
     skills/

@@ -1,6 +1,6 @@
 # Skill Quality Checklist
 
-Reference for evaluating and improving skills during `/improve-skill` sessions.
+Reference for evaluating and improving skills during `/skill-workbench` sessions.
 
 ## Quality Dimensions
 

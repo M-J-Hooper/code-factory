@@ -10,7 +10,7 @@ rtfpessoa's personal [Claude Code](https://docs.anthropic.com/en/docs/claude-cod
 | `/execplan` | productivity | Create, review, execute, or resume execution plans |
 | `/doc` | productivity | Create, update, improve, or audit Markdown docs |
 | `/workspace` | productivity | Set up Claude Code configuration and plugins |
-| `/improve-skill` | productivity | Audit and improve skills in this marketplace |
+| `/skill-workbench` | productivity | Create and improve skills in this marketplace |
 | `/commit` | git | Create a structured git commit |
 | `/atcommit` | git | Validate and organize atomic commits |
 | `/pr` | git | Create a GitHub pull request |
@@ -23,7 +23,7 @@ rtfpessoa's personal [Claude Code](https://docs.anthropic.com/en/docs/claude-cod
 
 ### productivity
 
-Productivity skills -- feature development lifecycle, documentation management, execution planning, workspace setup, and repo self-improvement.
+Productivity skills -- feature development lifecycle, documentation management, execution planning, workspace setup, and skill workbench.
 
 **Skills:**
 
@@ -31,7 +31,7 @@ Productivity skills -- feature development lifecycle, documentation management, 
 - `/doc` -- Manage Markdown documentation lifecycle: create, update, improve, maintain, and audit. Supports Confluence sync via ddoc. Includes templates for runbooks, guides, references, tutorials, and ADRs.
 - `/execplan` -- Create, execute, review, or resume an ExecPlan. Supports four modes: author (write a new plan), review (interactive walkthrough with feedback), execute (run a plan from the start), and resume (continue an in-progress plan).
 - `/workspace` -- Set up and manage Claude Code configuration. Bootstraps the code-factory plugin marketplace, symlinks configuration files, and manages MCP server settings.
-- `/improve-skill` -- Reflect on recent work and improve the skills, tools, and documentation in this plugin marketplace. Audits existing skills for clarity, conciseness, and completeness; identifies missing tools; and applies improvements directly.
+- `/skill-workbench` -- Create new skills or improve existing ones in this plugin marketplace. Supports two modes: CREATE (scaffold a new skill with frontmatter, structure, and OpenCode command) and IMPROVE (audit skills for clarity, conciseness, and completeness; apply improvements directly).
 
 **Agents:**
 

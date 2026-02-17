@@ -1,6 +1,6 @@
 # Report Template
 
-Use this template for the Step 5 report in `/improve-skill`. Omit sections with no entries.
+Use this template for the Step 5 report in `/skill-workbench`. Omit sections with no entries.
 
 ```markdown
 ## Improvements Made
