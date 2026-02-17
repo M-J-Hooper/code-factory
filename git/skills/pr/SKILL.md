@@ -245,20 +245,19 @@ Check if the branch has an upstream remote:
 - If no upstream exists, push the branch: `git push -u origin HEAD`
 - If upstream exists, check if local is ahead: `git status` should show up-to-date or ahead. If ahead, push with `git push`.
 
-Write the PR body to a temp file, then create the PR with `--body-file`:
+Create the PR using a HEREDOC to pass the body:
 
 ```bash
-# 1. Write the body using the Write tool
-Write(file_path="/tmp/pr-body.md", content="<constructed body>")
-
-# 2. Create the PR using the file
-gh pr create --base <base> --head <head> --title "<title>" --body-file /tmp/pr-body.md
-
-# 3. Clean up
-rm /tmp/pr-body.md
+gh pr create --base <base> --head <head> --title "<title>" --body "$(cat <<'EOF'
+<constructed body>
+EOF
+)"
 ```
 
-**CRITICAL:** Never use `gh pr create --body "$(cat <<'EOF'...)"` — the heredoc inside command substitution is unreliable and leaks literal text into the PR body. Always use the Write tool + `--body-file` pattern above.
+**Rules:**
+- Use single-quoted `'EOF'` to prevent variable expansion in the body.
+- The HEREDOC delimiter `EOF` must be on its own line with no leading spaces.
+- Do NOT use a temp file, the Write tool, or `--body-file` for PR bodies.
 
 After the PR is created, report the PR URL to the user.
 

@@ -88,20 +88,19 @@ Section order is always: Documentation → Motivation → Summary. Rules:
 
 ## Step 4: Commit
 
-Write the commit message to a temp file, then commit with `-F`:
+Commit using a HEREDOC to pass the message:
 
 ```bash
-# 1. Write the message using the Write tool
-Write(file_path="/tmp/commit-msg.md", content="<the constructed commit message>")
-
-# 2. Commit using the file
-git commit -F /tmp/commit-msg.md
-
-# 3. Clean up
-rm /tmp/commit-msg.md
+git commit -m "$(cat <<'EOF'
+<the constructed commit message>
+EOF
+)"
 ```
 
-**CRITICAL:** Never use `git commit -m "$(cat <<'EOF'...)"` — the heredoc inside command substitution is unreliable and leaks literal text into the commit message. Always use the Write tool + `git commit -F` pattern above.
+**Rules:**
+- Use single-quoted `'EOF'` to prevent variable expansion in the message.
+- The HEREDOC delimiter `EOF` must be on its own line with no leading spaces.
+- Do NOT use a temp file or the Write tool for commit messages.
 
 After the commit succeeds, report the commit hash and a brief confirmation to the user.
 
