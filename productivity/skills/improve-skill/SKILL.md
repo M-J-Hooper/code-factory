@@ -1,13 +1,11 @@
 ---
 name: improve-skill
 description: >
-  Use when the user wants to reflect on recent work and improve the skills, tools,
-  and documentation in this plugin marketplace. Accepts an optional focus area
-  argument to narrow scope to a specific plugin, skill, or category.
-  Triggers: "improve skills", "improve tools", "make skills better",
-  "reflect and improve", "improve the repo", "audit skills", "polish skills",
-  "skill quality".
-argument-hint: "[optional focus area: skills, docs, tools, or specific plugin name]"
+  Use when the user wants to audit, polish, or improve skills, agents, tools,
+  or documentation in this plugin marketplace. Triggers: "improve skills",
+  "audit skills", "polish skills", "skill quality", "improve the repo",
+  "make skills better", "reflect and improve".
+argument-hint: "[optional focus area: plugin name, skill name, 'docs', or 'tools']"
 user-invocable: true
 disable-model-invocation: true
 allowed-tools: Bash, Read, Write, Edit, Grep, Glob, Task
@@ -15,185 +13,147 @@ allowed-tools: Bash, Read, Write, Edit, Grep, Glob, Task
 
 # Improve Skills and Tools
 
-Announce: "I'm using the improve skill to reflect on recent work and improve the skills, tools, and documentation in this repo."
+Announce: "I'm using the improve skill to audit and improve skills, tools, and documentation in this repo."
 
-## Step 1: Gather Context
+## Step 1: Scope and Route
 
-Run in parallel:
+Confirm this is the code-factory repo:
 
-- `git rev-parse --show-toplevel` (confirm repo root)
-- `git log --oneline -10` (recent work for context)
+```bash
+git rev-parse --show-toplevel
+```
 
-Then discover repo assets (run Glob calls in parallel):
+**If not code-factory:** inform the user and stop.
 
-- `**/skills/*/SKILL.md` (all skills)
-- `**/.claude-plugin/plugin.json` (all plugin manifests)
-- `**/agents/*.md` (agent definitions)
+Determine scope from `$ARGUMENTS`:
 
-Read each plugin's `plugin.json` to note current versions (needed for version bumps later).
+```dot
+digraph route {
+  "Has arguments?" [shape=diamond];
+  "Matches plugin name?" [shape=diamond];
+  "Matches skill name?" [shape=diamond];
+  "Is 'docs' or 'tools'?" [shape=diamond];
+  "Audit single plugin" [shape=box];
+  "Audit single skill" [shape=box];
+  "Audit docs or tools only" [shape=box];
+  "Full audit or ask user" [shape=box];
 
-Read `AGENTS.md` for current repo conventions.
+  "Has arguments?" -> "Matches plugin name?" [label="yes"];
+  "Has arguments?" -> "Full audit or ask user" [label="no"];
+  "Matches plugin name?" -> "Audit single plugin" [label="yes"];
+  "Matches plugin name?" -> "Matches skill name?" [label="no"];
+  "Matches skill name?" -> "Audit single skill" [label="yes"];
+  "Matches skill name?" -> "Is 'docs' or 'tools'?" [label="no"];
+  "Is 'docs' or 'tools'?" -> "Audit docs or tools only" [label="yes"];
+  "Is 'docs' or 'tools'?" -> "Full audit or ask user" [label="no"];
+}
+```
 
-**If not in the code-factory repo:** inform the user this skill is designed for the code-factory plugin marketplace and stop.
+Discover repo assets (run in parallel):
 
-## Step 2: Reflect on Recent Experience
+- `Glob("**/skills/*/SKILL.md")` — all skills
+- `Glob("**/.claude-plugin/plugin.json")` — plugin manifests
+- `Glob("**/agents/*.md")` — agent definitions
+- `git log --oneline -20` — recent changes for context
 
-Review the session's work by examining concrete artifacts:
+Read each plugin's `plugin.json` to note current versions (needed for version bumps).
 
-1. Run `git log --oneline -20` and `git diff HEAD~5..HEAD --stat` to identify which files changed recently.
-2. For each changed skill, read it and evaluate against the four dimensions below.
-3. If `$ARGUMENTS` specifies a focus area, narrow to that area only.
-4. If there is no recent session context, ask the user what area to improve or offer a general audit of all skills.
+**If no arguments and no recent skill changes:** ask the user what area to focus on.
 
-### Evaluation Dimensions
+## Step 2: Evaluate
 
-| Dimension | Key Question | How to Check |
-|-----------|-------------|--------------|
-| **Friction** | Where did you hesitate or get confused? | Re-read skill instructions as if encountering them for the first time |
-| **Token waste** | What content is verbose or redundant? | Look for paragraphs that could be tables, repeated information across skills |
-| **Missing pieces** | What manual steps should be automated? | Check for error cases not covered, skills that should exist but don't |
-| **Confusion** | What instructions are ambiguous? | Look for vague verbs ("handle", "process", "deal with") without specific actions |
+For each skill in scope, read it and evaluate against these dimensions:
 
-For each finding, note: the file, the dimension, and a one-sentence description.
+| Dimension | What to look for |
+|-----------|-----------------|
+| **Friction** | Vague verbs ("handle", "process") without specific actions. Steps that assume unstated context. |
+| **Token waste** | Paragraphs that should be tables. Content Claude already knows. Filler words: simply, just, easily, basically, actually, really, very. |
+| **Missing pieces** | Error cases not covered. Edge cases unhandled. Missing cross-references. |
+| **Inconsistency** | Missing announce line, unnumbered steps, no error handling section. Conventions from `AGENTS.md` not followed. |
 
-## Step 3: Make Improvements
+Run a filler word scan on each file in scope:
 
-Apply changes directly. You have full authority to improve any file in this repo. Do not ask permission for improvements within existing files.
+```
+Grep(pattern="\\b(simply|just|easily|basically|actually|really|very|obviously|clearly|of course|in order to|please note)\\b", path="<file>", output_mode="content")
+```
 
-Prioritize improvements in this order:
+Also apply criteria from [references/skill-quality-checklist.md](references/skill-quality-checklist.md) — conciseness (25%), scannability (25%), completeness (25%), consistency (15%), self-containment (10%).
+
+Record each finding as: `file | dimension | one-sentence description`.
+
+## Step 3: Fix
+
+Apply changes directly. Prioritize:
 
 1. **Critical**: broken cross-references, missing error handling, incorrect instructions
 2. **Functional**: vague instructions, missing edge cases, inconsistent patterns
 3. **Polish**: filler word removal, table formatting, redundant content
 
-### Improving Skills
+### Skills
 
-**Location:** `{plugin}/skills/{name}/SKILL.md`
+For each skill change:
 
-Read `references/skill-quality-checklist.md` for quality criteria, filler words list, before/after examples, and Definition of Done checklist. Apply each criterion.
+1. Replace vague verbs with specific commands or actions.
+2. Convert paragraphs to tables where content is reference-like.
+3. Remove filler words found in Step 2.
+4. Verify announce line, numbered steps, error handling section.
+5. Verify description starts with "Use when".
+6. Check cross-references resolve: `make check-refs`.
 
-**Version bump required:** Any change to a skill or agent file requires a version bump in the owning plugin's `.claude-plugin/plugin.json` (patch for fixes, minor for new features).
-
-### Improving Documentation
+### Documentation
 
 **Files:** `AGENTS.md`, `README.md`, skill `SKILL.md` files
 
-- Keep instructions actionable and specific (commands, not descriptions)
-- Remove ambiguity that caused confusion during your session
-- Add missing conventions you discovered
+- Replace descriptions of actions with the actual commands.
+- Remove ambiguous instructions discovered in Step 2.
 
-### Improving Tools
+### Tools
 
 **Files:** `Makefile`, `init.sh`, config files
 
-- Minimal output on success, clear messages on failure
-- Sensible defaults, fail fast
-- Add missing validation targets if gaps are found
+- Minimal output on success, clear messages on failure.
+- Add missing validation targets if gaps found.
 
-### Creating New Skills or Plugins
+### New Skills
 
-Read `references/new-skill-template.md` for creation checklists and YAML templates.
+If a skill should exist but doesn't, read [references/new-skill-template.md](references/new-skill-template.md) for creation checklists and YAML templates. For significant new features, suggest `/execplan` instead.
 
-**For significant new features**, suggest running `/execplan` first instead of implementing inline.
+**Version bump required:** Any skill or agent change requires a patch bump in the owning plugin's `.claude-plugin/plugin.json`. New skills require a minor bump.
 
 ## Step 4: Validate
-
-Run after all changes:
 
 ```bash
 make all
 ```
 
-### Iteration Loop
-
 If `make all` fails:
 
-1. Read the error output to identify which check failed.
-2. Fix the specific issue (do not make unrelated changes).
+1. Read the error output — identify which check failed.
+2. Fix that specific issue.
 3. Re-run `make all`.
-4. Repeat until all checks pass. Maximum 3 iterations — if still failing after 3 attempts, report the remaining failures to the user.
+4. Maximum 3 iterations. If still failing, report remaining errors to the user.
 
-### Manual Quality Checks
+After `make all` passes, verify manually:
 
-After `make all` passes, verify these criteria (not covered by automated checks):
-
-| Check | How to Verify |
-|-------|---------------|
-| First-read clarity | Re-read each updated skill as if seeing it for the first time — is every step unambiguous? |
-| No filler words | Search updated files for: simply, just, easily, basically, actually, really, very |
-| Naming conventions | New files follow `{plugin}/skills/{name}/SKILL.md` pattern |
+| Check | Command or action |
+|-------|------------------|
+| No filler words | `Grep(pattern="\\b(simply\|just\|easily\|basically)\\b", path="<changed files>")` |
+| First-read clarity | Re-read each updated skill as a newcomer — every step unambiguous? |
 | Description convention | All descriptions start with "Use when" |
+| Naming conventions | New files follow `{plugin}/skills/{name}/SKILL.md` |
 
 ## Step 5: Report
 
-Present a summary of all changes. For non-trivial improvements, include a brief before/after snippet.
-
-<report-template>
-## Improvements Made
-
-### Skills Updated
-- **{plugin}:{skill-name}**: {what changed and why}
-  - Before: {brief excerpt}
-  - After: {brief excerpt}
-
-### Documentation Updated
-- **{file}**: {what changed and why}
-
-### Tools Improved
-- **{tool}**: {what changed and why}
-
-### New Skills Created
-- **{plugin}:{skill-name}**: {what it does}
-
-### Version Bumps
-- **{plugin}**: {old} -> {new}
-
-### Suggested Follow-ups
-- {anything that needs deeper work via /execplan}
-</report-template>
-
-Omit any section with no entries.
-
-## Example
-
-<example>
-
-### Invocation
-
-    /improve-skill git
-
-### What Happens
-
-1. Gathers all skills in the `git/` plugin and reads current versions.
-2. Reviews `git log` for recent changes to git skills.
-3. Finds: `/commit` Step 2 says "Analyze changes" without specifying *what* to analyze.
-4. Reads `references/skill-quality-checklist.md` — flags the vague instruction under "Friction" dimension.
-5. Rewrites Step 2 with an explicit list of analysis targets (title, documentation links, motivation, summary).
-6. Runs `make all` — passes.
-7. Reports the improvement with before/after.
-
-### Sample Report
-
-    ## Improvements Made
-
-    ### Skills Updated
-    - **git:commit**: Step 2 now lists specific analysis targets instead of vague "Analyze changes"
-      - Before: "Analyze the staged changes"
-      - After: "For each staged file, identify: title line, documentation links, motivation, summary"
-
-    ### Version Bumps
-    - **git**: 0.3.0 -> 0.3.1
-
-</example>
+Present a summary using the template in [references/report-template.md](references/report-template.md). For non-trivial improvements, include a brief before/after snippet. Omit sections with no entries.
 
 ## Error Handling
 
 | Error | Action |
 |-------|--------|
-| Not in code-factory repo | Inform the user this skill is designed for the code-factory plugin marketplace. Stop. |
-| No recent session context and no focus area | Ask the user what area to improve, or offer a general audit of all skills. |
-| `make all` failure after 3 fix attempts | Report remaining failures to the user with the specific error output. Do not loop indefinitely. |
-| Multiple plugins need version bumps | Bump each plugin independently. Run `make check-versions` to verify each bump. |
-| Broken cross-reference to non-existent skill | If the referenced skill should exist, create it (see `references/new-skill-template.md`). If not, fix the reference. |
-| Significant interface change | Describe the proposed change (skill name, arguments, behavior) and ask the user before applying. |
-| Reference file missing | Proceed using inline principles: concise, scannable, complete, consistent, self-contained. |
+| Not in code-factory repo | Inform user this skill targets the code-factory plugin marketplace. Stop. |
+| No recent changes and no focus area | Ask user what area to improve, or offer a general audit. |
+| `make all` fails after 3 attempts | Report remaining failures with specific error output. |
+| Multiple plugins need version bumps | Bump each independently. Run `make check-versions` to verify. |
+| Broken cross-reference | If the target skill should exist, create it (see [references/new-skill-template.md](references/new-skill-template.md)). Otherwise fix the reference. |
+| Significant interface change | Describe the proposed change and ask the user before applying. |
+| Reference file missing | Proceed with inline principles: concise, scannable, complete, consistent, self-contained. |

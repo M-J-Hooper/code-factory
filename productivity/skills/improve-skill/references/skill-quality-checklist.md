@@ -51,17 +51,31 @@ should also check for any potential issues.
 3. Run `make all` to confirm all checks pass.
 ```
 
+## Anthropic Best Practices
+
+Key criteria from [Anthropic's skill authoring guide](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices):
+
+| Criterion | Check |
+|-----------|-------|
+| Token cost | Does each paragraph justify its context window cost? Remove content Claude already knows. |
+| Degrees of freedom | Low-freedom for fragile ops (exact commands), high-freedom for context-dependent decisions. |
+| Progressive disclosure | SKILL.md under 500 lines. Heavy reference in separate files, one level deep. |
+| Description quality | Third person. Includes what it does AND when to use it. No workflow summary. |
+| Consistent terminology | One term per concept throughout (not "endpoint"/"URL"/"route" interchangeably). |
+
 ## Definition of Done
 
 A skill improvement is complete when:
 
 - [ ] All frontmatter fields present and valid (`name`, `description`, `argument-hint`, `user-invocable`)
-- [ ] Description starts with "Use when" and includes trigger phrases
+- [ ] Description starts with "Use when", includes triggers, written in third person
+- [ ] Description does NOT summarize the skill's workflow (triggering conditions only)
 - [ ] Announce line present as first content line after heading
 - [ ] Steps are numbered with specific actions (commands, not vague instructions)
 - [ ] Error handling covers all identified failure modes
 - [ ] No filler words remain in updated content
 - [ ] Readable on first pass by someone unfamiliar with the skill
 - [ ] Cross-references to other skills validated (`make check-refs`)
+- [ ] SKILL.md body under 500 lines; heavy reference in separate files
 - [ ] Version bump applied to owning plugin's `plugin.json`
 - [ ] `make all` passes
