@@ -7,6 +7,7 @@ rtfpessoa's personal [Claude Code](https://docs.anthropic.com/en/docs/claude-cod
 | Command | Plugin | Purpose |
 |---------|--------|---------|
 | `/do` | productivity | Orchestrate feature development with lifecycle tracking |
+| `/debug` | productivity | Systematic debugging with root cause investigation |
 | `/execplan` | productivity | Create, review, execute, or resume execution plans |
 | `/doc` | productivity | Create, update, improve, or audit Markdown docs |
 | `/workspace` | productivity | Set up Claude Code configuration and plugins |
@@ -23,11 +24,12 @@ rtfpessoa's personal [Claude Code](https://docs.anthropic.com/en/docs/claude-cod
 
 ### productivity
 
-Productivity skills -- feature development lifecycle, documentation management, execution planning, workspace setup, and skill workbench.
+Productivity skills -- feature development lifecycle, systematic debugging, documentation management, execution planning, workspace setup, and skill workbench.
 
 **Skills:**
 
 - `/do` -- Orchestrate feature development with full lifecycle management. Multi-phase workflow (RESEARCH -> PLAN -> EXECUTE -> VALIDATE -> DONE) with resumable state, specialized subagents, and atomic commits. Supports interactive and autonomous modes.
+- `/debug` -- Systematic debugging with enforced root cause investigation. Four-phase workflow (REPRODUCE -> INVESTIGATE -> FIX -> VERIFY) with persistent state, hypothesis tracking, and defense-in-depth validation. Leverages explorer and researcher agents for evidence gathering.
 - `/doc` -- Manage Markdown documentation lifecycle: create, update, improve, maintain, and audit. Supports Confluence sync via ddoc. Includes templates for runbooks, guides, references, tutorials, and ADRs.
 - `/execplan` -- Create, execute, review, or resume an ExecPlan. Supports four modes: author (write a new plan), review (interactive walkthrough with feedback), execute (run a plan from the start), and resume (continue an in-progress plan).
 - `/workspace` -- Set up and manage Claude Code configuration. Bootstraps the code-factory plugin marketplace, symlinks configuration files, and manages MCP server settings.
