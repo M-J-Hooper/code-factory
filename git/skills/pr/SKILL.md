@@ -245,14 +245,20 @@ Check if the branch has an upstream remote:
 - If no upstream exists, push the branch: `git push -u origin HEAD`
 - If upstream exists, check if local is ahead: `git status` should show up-to-date or ahead. If ahead, push with `git push`.
 
-Create the pull request using a heredoc to preserve markdown formatting:
+Write the PR body to a temp file, then create the PR with `--body-file`:
 
 ```bash
-gh pr create --base <base> --head <head> --title "<title>" --body "$(cat <<'EOF'
-<constructed body>
-EOF
-)"
+# 1. Write the body using the Write tool
+Write(file_path="/tmp/pr-body.md", content="<constructed body>")
+
+# 2. Create the PR using the file
+gh pr create --base <base> --head <head> --title "<title>" --body-file /tmp/pr-body.md
+
+# 3. Clean up
+rm /tmp/pr-body.md
 ```
+
+**CRITICAL:** Never use `gh pr create --body "$(cat <<'EOF'...)"` — the heredoc inside command substitution is unreliable and leaks literal text into the PR body. Always use the Write tool + `--body-file` pattern above.
 
 After the PR is created, report the PR URL to the user.
 
