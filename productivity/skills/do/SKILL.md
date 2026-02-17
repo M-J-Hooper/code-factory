@@ -250,11 +250,13 @@ GIT WORKFLOW:
 - Use /commit for atomic commits during EXECUTE (after every logical change)
 - Use /pr to create pull request in DONE phase
 
-SUBAGENT COORDINATION — FRESH SUBAGENT PER TASK WITH TWO-STAGE REVIEW:
+SUBAGENT COORDINATION — BATCH EXECUTION WITH FRESH SUBAGENT PER TASK AND TWO-STAGE REVIEW:
+- Do a PLAN CRITICAL REVIEW before implementing: re-read the plan, verify ordering, check environment, raise concerns before any code is written
 - Read the plan ONCE and extract ALL tasks with full text upfront
-- For each task, dispatch a FRESH implementer subagent with full task text + context inlined
+- Execute tasks in BATCHES of 3 (adjustable at feedback checkpoints)
+- For each task in the batch, dispatch a FRESH implementer subagent with full task text + context inlined
   - Never make subagents read plan files — provide full text directly in the prompt
-  - Include scene-setting context: where the task fits, what was done before, relevant patterns
+  - Include scene-setting context: milestone position, previously completed tasks summary, upcoming tasks, relevant discoveries, architectural context
   - Place longform context (research, plans, specs) at the TOP in XML-tagged blocks, task directive at the BOTTOM
 - After each implementer completes, run TWO sequential reviews:
   1. Spec compliance review — fresh reviewer verifies nothing missing, nothing extra, nothing misunderstood
@@ -265,9 +267,13 @@ SUBAGENT COORDINATION — FRESH SUBAGENT PER TASK WITH TWO-STAGE REVIEW:
      - Reports strengths before issues; flags plan deviations with justified/problematic assessment
      - If deviations warrant plan updates, orchestrator updates PLAN.md before proceeding
 - If either reviewer finds issues: implementer fixes → reviewer re-reviews → repeat until approved
+- After each BATCH completes: report progress (tasks, commits, test status, discoveries), then collect feedback (interactive) or log summary (autonomous)
+- STOP IMMEDIATELY on: missing dependencies, systemic test failures, unclear instructions, repeated verification failures, or discoveries that invalidate plan assumptions
+- RE-PLAN TRIGGER: if a discovery reveals the plan needs fundamental changes, stop the batch, log with evidence, re-read the plan, and adjust before proceeding
 - Never dispatch multiple implementers in parallel (causes conflicts)
 - Never skip either review stage
 - Never proceed to next task while review issues remain open
+- Never continue past a batch boundary without reporting
 - Instruct subagents to quote relevant context before acting — this grounds their responses in actual data
 
 INPUT ISOLATION:
@@ -354,14 +360,20 @@ REFINE -> RESEARCH -> PLAN_DRAFT -> PLAN_REVIEW -> EXECUTE -> VALIDATE -> DONE
                         +--- (changes requested) ------+-- (fix forward) --+
 ```
 
-### EXECUTE Task Loop (per task)
+### EXECUTE Batch Loop
 
 ```
-Dispatch implementer -> Self-review -> Spec compliance review -> Code quality review -> Next task
-      ^                                    |                           |
-      |                                    v                           v
-      +------ Fix spec gaps <----- ISSUES found              Fix quality issues
-      +------ Fix quality issues <-------------------------- ISSUES found
+Plan Critical Review -> Execute Batch (3 tasks) -> Batch Report -> Feedback -> Next Batch
+                              |                                        ^
+                              v                                        |
+                        Per-task loop:                           (loop batches)
+                        Dispatch implementer -> Spec review -> Code quality review -> Next task
+                              ^                     |                   |
+                              +--- Fix gaps <--- ISSUES           Fix issues
+                              +--- Fix quality <----------------- ISSUES
+
+STOP on: missing deps, test failures, unclear instructions, repeated failures, plan-invalidating discoveries
+RE-PLAN on: fundamental plan changes needed
 ```
 
 ### REFINE Phase
@@ -402,19 +414,32 @@ Dispatch implementer -> Self-review -> Spec compliance review -> Code quality re
 2. Call `/branch` to create feature branch
 3. Update state file with branch name
 
-**Fresh subagent per task with two-stage review:**
+**Plan critical review — before implementing anything:**
 
-The orchestrator reads the plan once, extracts all tasks with full text, then dispatches a fresh implementer subagent per task. Fresh subagents prevent context pollution between tasks.
+The orchestrator re-reads the entire plan with fresh eyes, verifies task ordering and dependencies, checks the worktree has what the plan expects. Raises concerns before any code is written.
 
-Per-task sequence:
-1. **Dispatch fresh implementer** with full task text + context inlined (never make subagents read plan files)
+**Batch execution with two-stage review:**
+
+The orchestrator reads the plan once, extracts all tasks with full text, then executes tasks in **batches of 3** (adjustable). After each batch: report progress, collect feedback (interactive) or log summary (autonomous), then continue.
+
+Per-task sequence within each batch:
+1. **Dispatch fresh implementer** with full task text + scene-setting context inlined (milestone position, prior task summary, upcoming tasks, relevant discoveries, architectural context)
 2. Implementer asks questions → answers provided → implements → self-reviews → reports
 3. **Spec compliance review** — fresh reviewer acknowledges strengths, then verifies implementation matches spec (nothing missing, nothing extra, nothing misunderstood)
 4. If issues → implementer fixes → re-review (loop until compliant)
 5. **Code quality review** — fresh reviewer receives plan context, reports strengths first, then assesses code quality, architecture, plan alignment, patterns, testing
 6. If critical issues → implementer fixes → re-review (loop until approved)
 7. If plan deviations found → orchestrator updates PLAN.md if warranted
-8. Mark task complete, update state, proceed to next task
+8. Mark task complete, update state, proceed to next task in batch
+
+After each batch:
+- Report: tasks completed, commits, test status, discoveries
+- **Interactive**: Ask to continue, adjust, review code, or stop
+- **Autonomous**: Log summary and continue (stop only on blockers)
+
+**Mid-batch stop conditions**: missing dependencies, systemic test failures, unclear instructions, repeated verification failures, or discoveries that invalidate the plan's assumptions.
+
+**Re-plan trigger**: If a discovery during execution reveals the plan needs fundamental changes, stop the batch, log the discovery with evidence, and re-read the plan before proceeding.
 
 **TDD-first execution for behavior-changing tasks:**
 When a task introduces or changes behavior, follow this exact sequence — no exceptions:
@@ -448,10 +473,11 @@ When a task introduces or changes behavior, follow this exact sequence — no ex
 
 ### DONE Phase
 - Write Outcomes & Retrospective
-- **Create PR via `/pr` skill** (pushes branch, creates PR with description)
-- Report PR URL to user
+- Run the full test suite one final time to confirm everything passes
+- **Interactive**: Present completion options: Create PR (recommended), Merge to base, Keep branch, or Discard work
+- **Autonomous**: Create PR automatically via `/pr` skill
+- Report outcome (PR URL, merge commit, or branch status) to user
 - Archive run state
-- **Both modes**: Always report final PR URL to user
 
 ## Error Handling
 

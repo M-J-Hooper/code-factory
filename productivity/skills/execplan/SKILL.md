@@ -419,19 +419,29 @@ Commit frequently. Resolve ambiguities autonomously and document decisions in th
 - Record discoveries in Surprises & Discoveries
 - Record decisions in Decision Log
 
-FRESH SUBAGENT PER TASK WITH TWO-STAGE REVIEW:
+PLAN CRITICAL REVIEW (before implementing):
+- Re-read the entire plan with fresh eyes before writing any code
+- Verify tasks are correctly ordered, dependencies are available, no obvious gaps
+- If concerns exist, log them in Decision Log and resolve before proceeding
+- If a concern is critical, stop and report
+
+BATCH EXECUTION WITH FRESH SUBAGENT PER TASK AND TWO-STAGE REVIEW:
 - Read the plan ONCE and extract ALL tasks with full text upfront
-- For each task in the plan, dispatch a FRESH implementer subagent:
+- Execute tasks in BATCHES of 3 (default). After each batch: update all living document sections, run tests, report progress, then proceed.
+- For each task in the batch, dispatch a FRESH implementer subagent:
   - Inline the full task text + relevant context in the prompt (never make subagents read plan files)
-  - Include scene-setting: where the task fits, what was done before, relevant patterns
+  - Include scene-setting: milestone position, previously completed tasks summary, upcoming tasks, relevant discoveries, architectural context
   - The implementer asks questions before starting, self-reviews before reporting
 - After each implementer completes, run TWO sequential reviews:
   1. Spec compliance review: fresh reviewer acknowledges strengths, then verifies nothing missing, nothing extra, nothing misunderstood. Includes severity assessment for orchestrator.
   2. Code quality review: fresh reviewer receives plan context (approach, architecture), reports strengths first, then assesses quality, architecture alignment, patterns (only after spec passes). Flags plan deviations as justified or problematic.
 - If a reviewer finds issues: dispatch the implementer to fix → re-review → repeat until approved
 - If code quality reviewer flags plan deviations: update plan and Decision Log if warranted
+- STOP IMMEDIATELY on: missing dependencies, systemic test failures, unclear instructions, repeated verification failures, or discoveries that invalidate plan assumptions
+- RE-PLAN TRIGGER: if a discovery reveals the plan needs fundamental changes, stop the batch, log with evidence, re-read the plan, and adjust before proceeding
 - Never dispatch multiple implementers in parallel (causes conflicts)
 - Never skip either review stage or proceed while issues remain open
+- Never continue past a batch boundary without updating all living document sections
 
 TDD ENFORCEMENT:
 - For tasks that introduce or change behavior, follow TDD-first in exact order:
@@ -450,7 +460,7 @@ COMMIT DISCIPLINE:
 )
 ```
 
-#### Step 3: Create Pull Request
+#### Step 3: Complete Development
 
 After the agent returns, read the updated plan and report:
 - Progress items completed vs remaining
@@ -458,13 +468,29 @@ After the agent returns, read the updated plan and report:
 - Whether the plan is now complete
 - The workspace path and branch name
 
-If the plan is complete (all Progress items are checked), create a pull request:
+If the plan is complete (all Progress items are checked), run the full test suite one final time, then present completion options:
 
 ```
-Skill(skill="pr", args="<concise PR title derived from the plan's Purpose>")
+AskUserQuestion(
+  header: "Plan Complete",
+  question: "All tasks complete and tests passing. How would you like to finish?",
+  options: [
+    "Create PR (Recommended)" -- Push branch and open a pull request for review,
+    "Merge to base branch" -- Merge directly into the base branch locally,
+    "Keep branch" -- Leave the branch as-is for later handling,
+    "Discard work" -- Delete the branch and worktree (requires typed confirmation)
+  ]
+)
 ```
 
-Report the PR URL to the user.
+| Choice | Action |
+|--------|--------|
+| **Create PR** | `Skill(skill="pr", args="<concise PR title>")`. Report PR URL. |
+| **Merge to base** | `git checkout <base>`, `git merge <branch>`, clean up worktree. |
+| **Keep branch** | Report branch name and worktree path. No cleanup. |
+| **Discard** | Require typed confirmation "discard". Then remove worktree and branch. |
+
+If the plan is NOT complete, report what remains and offer to resume later.
 
 ### Resume Mode
 
@@ -526,12 +552,20 @@ Next to do: <next incomplete step text>
 - Do not re-execute completed steps
 - Update Progress, Surprises, and Decision Log as you go
 
-FRESH SUBAGENT PER TASK WITH TWO-STAGE REVIEW:
-- For each remaining task, dispatch a FRESH implementer subagent with full task text inlined
+PLAN CRITICAL REVIEW (before resuming implementation):
+- Re-read the plan with fresh eyes, considering what was already built
+- Verify remaining tasks still make sense given completed work and any discoveries
+- If the plan needs updates, make them before proceeding
+
+BATCH EXECUTION WITH FRESH SUBAGENT PER TASK AND TWO-STAGE REVIEW:
+- Execute remaining tasks in BATCHES of 3 (default). After each batch: update living document sections, run tests, report, then proceed.
+- For each remaining task, dispatch a FRESH implementer subagent with full task text + scene-setting context inlined
 - After each implementer completes, run spec compliance review (strengths first, severity assessment) then code quality review (plan context, strengths first, plan alignment check)
 - Fix issues via review loops before proceeding to next task
 - If code quality reviewer flags plan deviations: update plan and Decision Log if warranted
+- STOP IMMEDIATELY on: missing dependencies, systemic test failures, unclear instructions, repeated verification failures, or discoveries that invalidate plan assumptions
 - Never skip reviews or proceed while issues remain open
+- Never continue past a batch boundary without updating all living document sections
 
 TDD ENFORCEMENT:
 - For tasks that introduce or change behavior, follow TDD-first in exact order:
@@ -550,15 +584,9 @@ COMMIT DISCIPLINE:
 )
 ```
 
-#### Step 3: Create Pull Request
+#### Step 3: Complete Development
 
-After the agent returns, report status as in Execute Mode. If the plan is now complete, create a pull request:
-
-```
-Skill(skill="pr", args="<concise PR title derived from the plan's Purpose>")
-```
-
-Report the PR URL to the user.
+After the agent returns, report status as in Execute Mode. If the plan is now complete, run the full test suite and present completion options (same as Execute Mode Step 3). If not complete, report what remains and offer to continue.
 
 ## Error Handling
 

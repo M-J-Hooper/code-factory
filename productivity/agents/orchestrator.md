@@ -554,18 +554,38 @@ From this point forward, ALL state updates go to the worktree's `.plans/` direct
 
 **CRITICAL:** Do NOT proceed to code changes until both `/worktree` AND `/branch` have been called and state is updated.
 
-**Context Preparation (do this ONCE before the task loop):**
+**Plan Critical Review (do this ONCE before the task loop):**
+
+Before implementing anything, re-read the entire PLAN.md with fresh eyes. Verify:
+
+1. **Sanity check**: Do the tasks still make sense given what you know now? Are there obvious gaps?
+2. **Ordering check**: Are dependencies correctly ordered? Would reordering reduce risk?
+3. **Environment check**: Does the worktree have what the plan expects? (files exist, dependencies installed, etc.)
+
+If you have concerns, raise them NOW — before any code is written:
+- **Interactive mode**: Present concerns to the user and ask whether to proceed, adjust, or re-plan.
+- **Autonomous mode**: Log concerns in Decisions Made. Proceed if no critical issues; stop if the plan has fundamental gaps.
+
+**Context Preparation (do this ONCE after plan review):**
 
 Read PLAN.md and extract ALL tasks with their full text, acceptance criteria, dependencies, and risk levels. Store this extracted context — you will inline it into each subagent dispatch. Never make subagents read plan files; provide full context directly in the prompt.
 
-**Actions (Task Loop — fresh subagent per task with two-stage review):**
+**Batch Execution Model:**
 
-For each task, dispatch a **fresh implementer subagent** with the full task context inlined. Fresh subagents prevent context pollution between tasks.
+Tasks execute in **batches** (default: 3 tasks per batch). After each batch, stop and report before proceeding.
 
 ```
-Per-task sequence:
+Per-batch sequence:
+1. EXECUTE batch (3 tasks) → 2. REPORT → 3. COLLECT FEEDBACK → 4. NEXT BATCH
+
+Per-task sequence within batch:
 1. DISPATCH implementer → 2. SPEC REVIEW → 3. CODE QUALITY REVIEW → 4. UPDATE STATE
 ```
+
+**Batch size adjustments:**
+- Default: 3 tasks per batch
+- For high-risk tasks: reduce to 1 task per batch
+- The user can request a different batch size at any feedback checkpoint
 
 **Step 1: Dispatch Fresh Implementer Subagent**
 
@@ -579,8 +599,12 @@ Task(
   </task>
 
   <context>
-  <scene-setting: where this task fits in the milestone, what was done before,
-   architectural context, relevant file paths and patterns from RESEARCH.md>
+  Milestone: <milestone name and scope>
+  Task position: Task N of M in this milestone
+  Previously completed: <summary of what prior tasks built — files created, functions added, patterns established>
+  Upcoming tasks: <brief list of next 2-3 tasks, so the implementer understands what comes next>
+  Relevant discoveries: <any entries from Surprises & Discoveries that affect this task>
+  Architectural context: <relevant file paths, patterns, and conventions from RESEARCH.md>
   </context>
 
   <acceptance_criteria>
@@ -714,7 +738,68 @@ After both reviews pass:
 - Mark task `[x]` with commit SHA in Progress
 - Record any review findings in Surprises and Discoveries
 - Update FEATURE.md state file (in worktree's `.plans/`)
-- Proceed to the next task
+- Check if the current batch is complete → if yes, proceed to **Batch Report**
+- Otherwise, proceed to the next task in the batch
+
+**Batch Report (after every N tasks):**
+
+After completing a batch, stop and report:
+
+```markdown
+## Batch Report: Tasks T-XXX through T-YYY
+
+### Completed
+- T-XXX: <description> (commits: <SHAs>)
+- T-YYY: <description> (commits: <SHAs>)
+
+### Verification Results
+- Tests: <passing/failing>
+- Lint: <passing/failing>
+
+### Discoveries
+- <any surprises or deviations found during this batch>
+
+### Next Batch
+- T-ZZZ: <description>
+- ...
+
+Ready for feedback.
+```
+
+**Interactive mode:** Present the batch report and ask:
+```
+AskUserQuestion(
+  header: "Batch Complete",
+  question: "Completed <N> tasks (<batch range>). <brief summary>. How should I proceed?",
+  options: [
+    "Continue" -- Execute the next batch of tasks,
+    "Adjust" -- Modify approach, re-order tasks, or change batch size,
+    "Review code" -- Show diffs from this batch before proceeding,
+    "Stop here" -- Pause work and save state for later
+  ]
+)
+```
+
+**Autonomous mode:** Log batch summary in Progress section and continue. Stop only if blockers or test failures.
+
+**Mid-Batch Stop Conditions — STOP IMMEDIATELY when:**
+
+| Condition | Action |
+|-----------|--------|
+| Missing dependency (file, package, API not available) | Stop. Log blocker. Report to user. |
+| Test failures that indicate a systemic issue | Stop. Do not proceed to next task. Report. |
+| Unclear or contradictory plan instructions | Stop. Do not guess. Ask for clarification. |
+| Repeated verification failures (same check fails 2+ times) | Stop. The approach may be wrong. |
+| Discovery that invalidates the plan's assumptions | Stop. The plan may need fundamental changes. |
+
+**Re-Plan Trigger — Return to plan review when:**
+
+If during execution you discover the plan needs fundamental changes (not minor fixes):
+1. Stop the current batch
+2. Log the discovery in Decisions Made with evidence
+3. Re-read the full PLAN.md to assess the impact
+4. **Interactive mode:** Present the issue and ask whether to continue, adjust the plan, or re-plan from scratch
+5. **Autonomous mode:** If the issue affects only downstream tasks, update PLAN.md and continue. If it affects the current approach fundamentally, stop and report.
 
 **Never:**
 - Dispatch multiple implementer subagents in parallel (causes conflicts)
@@ -722,6 +807,7 @@ After both reviews pass:
 - Proceed to the next task while review issues remain open
 - Start code quality review before spec compliance passes
 - Let implementer self-review replace the external reviews (both are needed)
+- Continue past a batch boundary without reporting (even in autonomous mode)
 
 **Task execution rules:**
 - Update Progress section in FEATURE.md after each task (in worktree's .plans/)
@@ -833,18 +919,38 @@ AskUserQuestion(
 **Entry criteria:** Validation passed
 
 **Actions:**
+
 1. Write Outcomes and Retrospective section in state file
-2. **Create pull request using `/pr` skill:**
-   ```
-   Skill(skill="pr", args="<concise feature title>")
-   ```
-   The `/pr` skill will:
-   - Push the branch to remote
-   - Create a PR with structured description
-   - Return the PR URL
-3. Report PR URL to user
-4. Update state with PR URL in Outcomes section
-5. Archive state (move to `runs/completed/`)
+2. Run the full test suite one final time to confirm everything passes
+3. Present structured completion options:
+
+**Interactive mode:**
+```
+AskUserQuestion(
+  header: "Implementation Complete",
+  question: "All tasks complete and validation passed. How would you like to finish?",
+  options: [
+    "Create PR (Recommended)" -- Push branch and open a pull request for review,
+    "Merge to base branch" -- Merge directly into the base branch locally,
+    "Keep branch" -- Leave the branch as-is for later handling,
+    "Discard work" -- Delete the branch and worktree (requires typed confirmation)
+  ]
+)
+```
+
+**Autonomous mode:** Create PR automatically.
+
+4. Execute the chosen option:
+
+| Choice | Action |
+|--------|--------|
+| **Create PR** | `Skill(skill="pr", args="<concise feature title>")`. Report PR URL to user. |
+| **Merge to base** | `git checkout <base>`, `git merge <branch>`, clean up worktree. |
+| **Keep branch** | Report branch name and worktree path. No cleanup. |
+| **Discard** | Require typed confirmation "discard". Then `git worktree remove`, `git branch -D`. |
+
+5. Update state with outcome (PR URL, merge commit, or discard note)
+6. Archive state (move to `runs/completed/`)
 
 **PR Title Guidelines:**
 - Keep under 70 characters

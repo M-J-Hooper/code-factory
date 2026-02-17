@@ -18,21 +18,52 @@ When authoring an executable specification (ExecPlan), follow PLANS.md _to the l
 
 **YAGNI:** Only plan what was requested. Do not add features, abstractions, configurability, or "nice to haves" beyond the task description. If it wasn't asked for and isn't essential to the requested behavior, exclude it. Three simple steps beat ten over-engineered ones.
 
-When implementing an executable specification (ExecPlan), use the **fresh subagent per task with two-stage review** pattern:
+When implementing an executable specification (ExecPlan), use the **batch execution with fresh subagent per task and two-stage review** pattern:
 
-1. Read the plan once and extract ALL tasks with full text upfront
-2. For each task, dispatch a **fresh implementer subagent** with the full task text and context inlined in the prompt (never make subagents read plan files — provide full text directly)
-3. If the implementer asks questions, answer with full context before letting it proceed
-4. After implementation, dispatch a **fresh spec compliance reviewer** to verify nothing missing, nothing extra, nothing misunderstood. The reviewer acknowledges strengths before listing issues and includes a severity assessment.
-5. If spec issues found → implementer fixes → re-review → repeat until compliant
-6. After spec passes, dispatch a **fresh code quality reviewer** with plan context (approach, architecture). The reviewer reports strengths first, then assesses quality, architecture alignment, and patterns. Flags plan deviations as justified or problematic.
-7. If critical quality issues → implementer fixes → re-review → repeat until approved
-8. If plan deviations found → update plan and Decision Log if warranted
-9. Mark task complete, update Progress, proceed to next task
+**Plan Critical Review (before implementing anything):**
 
-Do not prompt the user for "next steps"; proceed to the next milestone. Keep all sections up to date. Resolve ambiguities autonomously, and commit frequently.
+Re-read the entire plan with fresh eyes before writing any code. Verify:
+1. Tasks still make sense and are correctly ordered
+2. Dependencies are available (files exist, packages installed)
+3. No obvious gaps or contradictions
 
-**Never:** dispatch multiple implementers in parallel, skip either review stage, start code quality review before spec compliance passes, or proceed to the next task while review issues remain open.
+If concerns exist, log them in the Decision Log and resolve before proceeding. If a concern is critical, stop and report.
+
+**Batch Execution:**
+
+Tasks execute in **batches** (default: 3 tasks per batch). After each batch, update all living document sections and report progress before proceeding.
+
+Per-batch:
+1. Execute each task in the batch using the per-task sequence below
+2. After the batch completes, write a batch summary to the Progress section
+3. Run the test suite to confirm no regressions
+4. Proceed to the next batch
+
+Per-task:
+1. Dispatch a **fresh implementer subagent** with full task text, context, and scene-setting inlined (never make subagents read plan files)
+   - Include: milestone position, previously completed tasks summary, upcoming tasks, relevant discoveries, architectural context
+2. If the implementer asks questions, answer with full context before letting it proceed
+3. After implementation, dispatch a **fresh spec compliance reviewer** to verify nothing missing, nothing extra, nothing misunderstood. The reviewer acknowledges strengths before listing issues and includes a severity assessment.
+4. If spec issues found → implementer fixes → re-review → repeat until compliant
+5. After spec passes, dispatch a **fresh code quality reviewer** with plan context (approach, architecture). The reviewer reports strengths first, then assesses quality, architecture alignment, and patterns. Flags plan deviations as justified or problematic.
+6. If critical quality issues → implementer fixes → re-review → repeat until approved
+7. If plan deviations found → update plan and Decision Log if warranted
+8. Mark task complete, update Progress, proceed to next task in batch
+
+Keep all living document sections up to date. Resolve ambiguities autonomously, and commit frequently.
+
+**Mid-Batch Stop Conditions — STOP IMMEDIATELY when:**
+- Missing dependency that prevents the next task from starting
+- Test failures that indicate a systemic issue (not a single flaky test)
+- Plan instructions that are unclear or contradictory
+- Repeated verification failures (same check fails 2+ times)
+- Discovery that invalidates the plan's fundamental assumptions
+
+When stopped: log the blocker in Surprises & Discoveries, update Progress with what was completed, and report the issue.
+
+**Re-Plan Trigger:** If a discovery during execution reveals the plan needs fundamental changes (not minor fixes), stop the current batch, log the discovery in the Decision Log with evidence, re-read the full plan, update affected sections, and proceed with the revised plan.
+
+**Never:** dispatch multiple implementers in parallel, skip either review stage, start code quality review before spec compliance passes, proceed to the next task while review issues remain open, or continue past a batch boundary without updating all living document sections.
 
 When discussing an executable specification (ExecPlan), record decisions in a log in the spec for posterity; it should be unambiguously clear why any change to the specification was made. ExecPlans are living documents, and it should always be possible to restart from _only_ the ExecPlan and no other work.
 
