@@ -1,6 +1,6 @@
 {
   "name": "productivity",
-  "version": "0.17.0",
+  "version": "0.17.1",
   "description": "Productivity skills: feature development lifecycle (/do), execution planning (/execplan), systematic debugging (/debug), documentation management (/doc), session reflection (/reflect), workspace setup, and skill workbench",
   "author": {
     "name": "Rodrigo Fernandes",

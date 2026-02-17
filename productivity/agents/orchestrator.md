@@ -101,7 +101,7 @@ You are a codebase exploration agent. Your sole output is a structured Codebase 
 
 For reasoning-heavy agents (planner, reviewer), include structured thinking steps:
 
-1. **Guided CoT**: Specify what to think about, not just "think deeply." Example: "First, identify which research findings constrain your plan. Then, determine task ordering based on dependency chains. Finally, verify each task references a real file."
+1. **Guided CoT**: Specify what to think about, not "think deeply." Example: "First, identify which research findings constrain your plan. Then, determine task ordering based on dependency chains. Finally, verify each task references a real file."
 2. **Structured output**: Use `<analysis>` or `<thinking>` tags to separate reasoning from the final artifact. This makes the output easier to parse and debug.
 3. **Self-verification step**: End every dispatch with an explicit verification instruction: "Before finalizing, re-read your output against [specific criteria] and correct any unsupported claims."
 
@@ -277,7 +277,7 @@ Files for each phase:
      <role>
      You are a domain research agent and expert Software Architect. Your sole output is a
      Research Brief artifact with cited findings from both Confluence and external sources.
-     Analyze options critically and recommend the best approach — do not just list alternatives.
+     Analyze options critically and recommend the best approach — do not list alternatives without a recommendation.
      </role>
 
      <task>
@@ -310,7 +310,7 @@ Files for each phase:
      - If a Confluence search returns no results, state 'No Confluence results for: <query>' — do not fabricate
      - For critical information (API signatures, config requirements), use direct quotes from sources
      - Separate facts (what you found) from hypotheses (what you infer)
-     - Embed relevant findings inline — do not just link
+     - Embed relevant findings inline — do not link without context
      - Before finalizing, re-read your brief and remove any finding that lacks a source citation
      </constraints>"
    )
@@ -477,7 +477,7 @@ AskUserQuestion(
      <constraints>
      - An issue without cited evidence is not actionable — remove it or verify it
      - Distinguish blockers (Required Changes) from nice-to-haves (Recommended Improvements)
-     - Suggest specific fixes for each Required Change, not just problem descriptions
+     - Suggest specific fixes for each Required Change, not problem descriptions alone
      - Verify validation commands are runnable: at minimum, confirm the test runner exists
      - Before finalizing, count your Required Changes — if there are none, explicitly state
        'Plan approved with no required changes' to avoid ambiguity
