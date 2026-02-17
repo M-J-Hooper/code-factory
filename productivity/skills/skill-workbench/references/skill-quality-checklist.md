@@ -6,11 +6,12 @@ Reference for evaluating and improving skills during `/skill-workbench` sessions
 
 | Dimension | Weight | Criteria |
 |-----------|--------|----------|
-| Conciseness | 25% | One sentence per concept. Tables over paragraphs. No filler words. |
-| Scannability | 25% | Clear headings. Bullet points. Working examples. Quick-start workflow early. |
-| Completeness | 25% | All edge cases addressed. Error handling section present. Copy-paste ready code blocks. |
+| Conciseness | 20% | One sentence per concept. Tables over paragraphs. No filler words. |
+| Scannability | 20% | Clear headings. Bullet points. Working examples. Quick-start workflow early. |
+| Completeness | 20% | All edge cases addressed. Error handling section present. Copy-paste ready code blocks. |
 | Consistency | 15% | Announce line present. Numbered Steps. Error Handling section. Follows AGENTS.md conventions. |
 | Self-containment | 10% | Works without external context. No references to AGENTS.md content. Duplication preferred over external dependencies. |
+| Discoverability | 15% | Description starts with "Use when". Trigger phrases included. No workflow summary. Keywords for common search terms. See [claude-search-optimization.md](claude-search-optimization.md). |
 
 ## Filler Words to Remove
 
@@ -24,6 +25,17 @@ Remove these words — they add no information:
 2. Copy-paste ready code blocks with expected output
 3. Tables for reference, not paragraphs
 4. Specific commands, not vague instructions ("Run `make all`" not "Validate your changes")
+5. Reference files one level deep from SKILL.md (see [progressive-disclosure.md](progressive-disclosure.md))
+
+## Vague Verbs to Replace
+
+| Vague | Specific Alternative |
+|-------|---------------------|
+| handle | `catch error and log`, `route to handler`, `parse and validate` |
+| process | `run script`, `transform JSON`, `filter results` |
+| manage | `create/update/delete`, `track in state file`, `version with semver` |
+| ensure | `verify with assertion`, `validate output matches`, `run check command` |
+| utilize | `use`, `call`, `run` |
 
 ## Before/After Example
 
@@ -51,17 +63,32 @@ should also check for any potential issues.
 3. Run `make all` to confirm all checks pass.
 ```
 
-## Anthropic Best Practices
+## Best Practices Reference
 
-Key criteria from [Anthropic's skill authoring guide](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices):
+Key criteria from [best-practices.md](best-practices.md):
 
 | Criterion | Check |
 |-----------|-------|
 | Token cost | Does each paragraph justify its context window cost? Remove content Claude already knows. |
-| Degrees of freedom | Low-freedom for fragile ops (exact commands), high-freedom for context-dependent decisions. |
+| Degrees of freedom | Low-freedom for fragile ops (exact commands), high-freedom for context-dependent decisions. See [progressive-disclosure.md](progressive-disclosure.md). |
 | Progressive disclosure | SKILL.md under 500 lines. Heavy reference in separate files, one level deep. |
-| Description quality | Third person. Includes what it does AND when to use it. No workflow summary. |
+| Description quality | Third person. Starts with "Use when". Includes trigger phrases. No workflow summary. See [claude-search-optimization.md](claude-search-optimization.md). |
 | Consistent terminology | One term per concept throughout (not "endpoint"/"URL"/"route" interchangeably). |
+| Cross-model validity | Validated on Haiku, Sonnet, and Opus if possible. |
+
+## Discipline Skill Criteria
+
+For skills that enforce rules (TDD, verification, etc.), also check:
+
+| Criterion | Check |
+|-----------|-------|
+| Bright-line rules | Absolute language ("NEVER", "YOU MUST") for critical requirements |
+| Rationalization table | Captures known excuses with explicit counters |
+| Red flag list | Self-check triggers that signal rationalization in progress |
+| Loophole closure | Specific workarounds are explicitly forbidden |
+| Tested with pressure | RED-GREEN-REFACTOR cycle completed (see [testing-with-subagents.md](testing-with-subagents.md)) |
+
+See [persuasion-principles.md](persuasion-principles.md) for the full framework.
 
 ## Definition of Done
 
@@ -77,5 +104,6 @@ A skill improvement is complete when:
 - [ ] Readable on first pass by someone unfamiliar with the skill
 - [ ] Cross-references to other skills validated (`make check-refs`)
 - [ ] SKILL.md body under 500 lines; heavy reference in separate files
+- [ ] References kept one level deep from SKILL.md
 - [ ] Version bump applied to owning plugin's `plugin.json`
 - [ ] `make all` passes
