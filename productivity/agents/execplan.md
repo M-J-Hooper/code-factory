@@ -13,7 +13,7 @@ This document describes the requirements for an execution plan ("ExecPlan"), a d
 
 When authoring an executable specification (ExecPlan), follow PLANS.md _to the letter_. If it is not in your context, refresh your memory by reading the entire PLANS.md file. Be thorough in reading (and re-reading) source material to produce an accurate specification. When creating a spec, start from the skeleton and flesh it out as you do your research.
 
-When implementing an executable specification (ExecPlan), do not prompt the user for "next steps"; simply proceed to the next milestone. Keep all sections up to date, add or split entries in the list at every stopping point to affirmatively state the progress made and next steps. Resolve ambiguities autonomously, and commit frequently.
+When implementing an executable specification (ExecPlan), do not prompt the user for "next steps"; proceed to the next milestone. Keep all sections up to date, add or split entries in the list at every stopping point to affirmatively state the progress made and next steps. Resolve ambiguities autonomously, and commit frequently.
 
 When discussing an executable specification (ExecPlan), record decisions in a log in the spec for posterity; it should be unambiguously clear why any change to the specification was made. ExecPlans are living documents, and it should always be possible to restart from _only_ the ExecPlan and no other work.
 
@@ -35,16 +35,27 @@ When researching a design with challenging requirements or significant unknowns,
 
 ## Task Granularity
 
-**Break work into bite-sized steps.** Each step in a plan should be one action that a novice agent can execute without guessing. Coarse steps ("implement the feature") and vague steps ("add validation") are plan failures.
+**Break work into bite-sized steps.** Each step in a plan MUST be one action that a novice agent can execute without guessing. Coarse steps ("implement the feature") and vague steps ("add validation") are plan failures.
 
-**TDD-first structure for new behavior:**
+**TDD-first structure — mandatory for tasks that introduce or change behavior:**
 
-When a task introduces or changes behavior, structure it as:
-1. Write the failing test — include complete test code in the plan
-2. Run the test — include exact command and expected failure output
+NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST. When a task introduces or changes behavior, structure it as:
+1. Write the failing test — include complete test code in the plan (not "add a test for X")
+2. Run the test — include exact command and expected failure output. The test MUST fail because the feature is missing, not because of syntax errors
 3. Write minimal implementation — include complete code or precise edit instructions (file path, function, what to add/change)
-4. Run the test — include exact command and expected passing output
+4. Run the test — include exact command and expected passing output. All existing tests MUST still pass
 5. Commit — one logical change
+
+The executing agent MUST follow these steps in exact order. Skipping "verify failure" or writing implementation before the test is a workflow violation.
+
+**Common rationalizations for skipping TDD (all invalid):**
+
+| Excuse | Reality |
+|--------|---------|
+| "Too simple to test" | Simple code breaks. A test takes seconds to write. |
+| "I'll test after" | Tests-after prove "what does this do?" not "what should this do?" |
+| "Need to explore first" | Exploration is fine — but delete exploration code, then start with TDD. |
+| "This is different because..." | If the rule has exceptions, the rule doesn't exist. |
 
 **Include complete code, not descriptions:**
 - Tests: Include the full test function, not "add a test for X"
@@ -52,8 +63,8 @@ When a task introduces or changes behavior, structure it as:
 - Commands: Include the exact command to run AND what the output should look like
 - Config: Include the exact config change, not "update the config"
 
-**When TDD structure doesn't apply:**
-- Config-only changes, documentation, refactoring that doesn't change behavior — use direct step structure (edit → verify → commit)
+**When TDD does not apply:**
+- Config-only changes, documentation, refactoring that preserves existing behavior (with existing test coverage) — use direct step structure (edit → verify → commit)
 
 ## Tool Preferences
 

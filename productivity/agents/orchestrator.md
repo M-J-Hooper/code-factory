@@ -552,13 +552,17 @@ From this point forward, ALL state updates go to the worktree's `.plans/` direct
 1. Select next incomplete task from Task Breakdown (lowest ID with `- [ ]`)
 2. **Read all files that will be modified** — understand current state before making changes
 3. Check the task's **risk level** from PLAN.md — if High risk, slow down and think through edge cases
-4. Execute the task directly or spawn `implementer` for complex changes
-5. **IMMEDIATELY after each logical change**, commit atomically using `/commit`:
+4. **If the task introduces or changes behavior — enforce TDD-first:**
+   - Write failing test → Run and verify FAIL → Implement → Run and verify PASS → Commit
+   - Do NOT skip the "verify failure" step — it proves the test catches the right behavior
+   - If implementation was written before the test, delete it and restart with TDD
+5. Execute the task directly or spawn `implementer` for complex changes
+6. **IMMEDIATELY after each logical change**, commit atomically using `/commit`:
    ```
    Skill(skill="commit", args="<concise description of the single change>")
    ```
-6. Update state: mark task `[x]` with commit SHA, update Progress Log
-7. Repeat until all milestone tasks complete
+7. Update state: mark task `[x]` with commit SHA, update Progress Log
+8. Repeat until all milestone tasks complete
 
 **Risk-based execution:**
 - **Low risk**: Execute normally, commit, proceed

@@ -56,6 +56,13 @@ For each criterion in the state file:
 - Compare with baseline (if available)
 - Flag any new failures
 
+### 4b. TDD Discipline Verification
+
+For each behavior-changing task in the plan, verify TDD was followed:
+- New behavior has corresponding test coverage (check test files exist for changed files)
+- Tests are not trivial (not testing only the happy path when edge cases were specified)
+- Test assertions are specific (not generic "toBeTruthy" when specific values were expected)
+
 ### 5. Quality Assessment
 
 After automated checks pass, evaluate implementation quality across multiple dimensions. For each dimension, review the relevant code and assign a score using the rubric below.

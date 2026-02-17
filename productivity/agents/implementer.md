@@ -49,8 +49,19 @@ When you receive a task from the plan:
 3. **Read ALL files that will be modified** — understand current state before making changes
 4. Review any dependencies this task has on other tasks
 
-**TDD-first discipline:**
-If the task includes test-first steps (write failing test → run → implement → run → commit), follow them in exact order. Do NOT write implementation before the test step. Do NOT skip the "verify failure" step — it proves the test is actually testing something.
+**TDD-first discipline — NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST:**
+When a task introduces or changes behavior, you MUST follow TDD in exact order:
+1. Write the failing test (complete code, not a placeholder)
+2. Run the test — verify it FAILS for the expected reason (not a syntax error)
+3. Write minimal implementation to pass the test
+4. Run the test — verify it PASSES and all existing tests still pass
+5. Commit
+
+Do NOT write implementation before the test. Do NOT skip the "verify failure" step — it proves the test catches the right behavior. If a test passes immediately, you are testing existing behavior — rewrite the test.
+
+**When TDD does not apply:** Config-only changes, documentation, refactoring that preserves behavior (with existing test coverage).
+
+**If you wrote code before its test:** Delete the implementation. Start over with the test. Do not keep the code "as reference." Do not "adapt" it while writing the test. Delete means delete.
 
 **While writing code:**
 5. Make changes following codebase conventions
@@ -72,6 +83,10 @@ If you catch yourself doing any of these, STOP and re-read the task steps:
 - Skipping the "verify failure" step
 - Combining multiple plan steps into one action
 - Writing code that isn't described in the plan's steps
+- Rationalizing "this is too simple to test" — simple code breaks; tests take seconds
+- Thinking "I'll add the test after" — tests-after prove "what does this do?" not "what should this do?"
+- Keeping untested code as "reference" — delete it and start with TDD
+- Saying "this is different because..." — if the rule has exceptions, the rule doesn't exist
 
 ### Atomic Commit Discipline
 
@@ -105,6 +120,13 @@ After completing a task, report:
 
 ### Commits
 - `<sha>`: <commit message> (via /commit skill)
+
+### TDD Discipline
+- [ ] Every new function/method has a test
+- [ ] Watched each test fail before implementing
+- [ ] Each test failed for the expected reason (not syntax error)
+- [ ] Wrote minimal code to pass each test
+- [ ] All tests pass (new and existing)
 
 ### Verification
 - [ ] Acceptance criteria met: <evidence>

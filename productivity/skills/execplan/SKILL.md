@@ -137,10 +137,12 @@ Author a new ExecPlan for the following task.
 
 TASK GRANULARITY AND TDD-FIRST STRUCTURE:
 - Break work into bite-sized steps — each step is one action (write test, run test, implement, run test, commit)
-- For tasks introducing new behavior, use TDD-first structure: write failing test → verify failure → implement minimal code → verify passing → commit
+- For tasks introducing new behavior, TDD-first structure is MANDATORY: write failing test → verify failure → implement minimal code → verify passing → commit
+- NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST — this is non-negotiable for behavior-changing tasks
 - Include complete test code in the plan (not "add a test for X")
-- Include exact commands with expected output (not "run the tests")
+- Include exact commands with expected output AND expected failure messages (not "run the tests")
 - Include complete code for new function signatures and interface definitions
+- Include a rationalization table for TDD exemptions: config-only, docs, and behavior-preserving refactors are exempt; everything else must follow TDD
 
 - Include all mandatory sections: Purpose/Big Picture, Progress, Surprises & Discoveries,
   Decision Log, Outcomes & Retrospective, Context and Orientation, Plan of Work,
@@ -372,6 +374,9 @@ Commit frequently. Resolve ambiguities autonomously and document decisions in th
 - Update the Progress section in <plan_path> as you complete each step
 - Record discoveries in Surprises & Discoveries
 - Record decisions in Decision Log
+- TDD ENFORCEMENT: For tasks that introduce or change behavior, follow TDD-first in exact order:
+  1. Write failing test (complete code) → 2. Run and verify FAIL → 3. Implement minimal code → 4. Run and verify PASS → 5. Commit
+  If you wrote code before its test, delete the implementation and restart with TDD. No exceptions.
 - Make atomic commits: each commit should contain exactly one logical change (e.g., add a function, fix a bug, update a config). Do not batch unrelated changes into a single commit. Commit frequently using the /commit skill: Skill(skill="commit", args="<concise description of the single logical change>")
 - Never use raw git commit or git checkout -b commands — always use the skills
 - Do NOT commit the plan file itself — ExecPlan files are working documents that live in the repo but are never committed. When staging files for a commit, exclude the .plans/ directory and any *.plan.md files.
@@ -456,6 +461,9 @@ Next to do: <next incomplete step text>
 - Continue from the first incomplete Progress item
 - Do not re-execute completed steps
 - Update Progress, Surprises, and Decision Log as you go
+- TDD ENFORCEMENT: For tasks that introduce or change behavior, follow TDD-first in exact order:
+  1. Write failing test (complete code) → 2. Run and verify FAIL → 3. Implement minimal code → 4. Run and verify PASS → 5. Commit
+  If you wrote code before its test, delete the implementation and restart with TDD. No exceptions.
 - Make atomic commits: each commit should contain exactly one logical change (e.g., add a function, fix a bug, update a config). Do not batch unrelated changes into a single commit. Commit frequently using the /commit skill: Skill(skill="commit", args="<concise description of the single logical change>")
 - Never use raw git commit or git checkout -b commands — always use the skills
 - Do NOT commit the plan file itself — ExecPlan files are working documents that live in the repo but are never committed. When staging files for a commit, exclude the .plans/ directory and any *.plan.md files.

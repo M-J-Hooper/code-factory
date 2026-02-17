@@ -28,6 +28,7 @@ This skill orchestrates feature development through a **multi-phase state machin
 - **Refine before research.** No research until the feature description is detailed enough to act on.
 - **Plan before code.** No implementation until research and planning phases complete.
 - **Workspace isolation first.** Create worktree and branch before any code changes (EXECUTE phase).
+- **Tests before implementation.** When a task introduces or changes behavior, write a failing test FIRST. Watch it fail. Then implement. No exceptions. Code written before its test must be deleted and restarted with TDD.
 - **Atomic commits only.** Commit after every logical change, not batched.
 - **Hard stop on blockers.** When encountering ambiguity or missing information, stop and report rather than guessing.
 - **State is sacred.** Always update state files after significant actions. Never commit state files.
@@ -218,6 +219,12 @@ STATE MANAGEMENT:
 - Once in a worktree, ALL state updates go to the worktree's .plans/ (never back to source repo)
 - Never commit .plans/ files (they are gitignored)
 
+TDD ENFORCEMENT:
+- Tasks that introduce or change behavior MUST follow TDD-first: write failing test → verify failure → implement → verify pass → commit
+- The implementer MUST watch the test fail before writing implementation — skipping this step is a workflow violation
+- Code written before its test must be deleted and restarted with TDD
+- Config-only changes, docs, and behavior-preserving refactors are exempt from TDD-first
+
 GIT WORKFLOW:
 - BEFORE EXECUTE phase: call /worktree first, then /branch (mandatory, no exceptions)
 - Use /commit for atomic commits during EXECUTE (after every logical change)
@@ -347,6 +354,22 @@ REFINE -> RESEARCH -> PLAN_DRAFT -> PLAN_REVIEW -> EXECUTE -> VALIDATE -> DONE
 1. Call `/worktree` to create isolated workspace
 2. Call `/branch` to create feature branch
 3. Update state file with branch name
+
+**TDD-first execution for behavior-changing tasks:**
+When a task introduces or changes behavior, follow this exact sequence — no exceptions:
+1. Write the failing test (complete test code, not a placeholder)
+2. Run the test — verify it FAILS for the expected reason (not a syntax error)
+3. Write minimal implementation to make the test pass
+4. Run the test — verify it PASSES and all other tests still pass
+5. Commit atomically via `/commit`
+
+**Red flags — STOP and restart the task with TDD if you catch yourself:**
+- Writing implementation code before the test
+- Skipping the "verify failure" step
+- Writing a test that passes immediately (you're testing existing behavior, not new behavior)
+- Rationalizing "this is too simple to test" or "I'll add the test after"
+
+**When TDD does not apply:** Config-only changes, documentation updates, refactoring that preserves existing behavior (with existing test coverage). Use direct step structure: edit → verify → commit.
 
 **Then execute tasks:**
 - Execute tasks with **atomic commits via `/commit` after EVERY logical change**
@@ -591,22 +614,22 @@ Change types:
 
 ### Milestone M-001
 
-Each task should be broken into bite-sized steps (one action per step). Tasks introducing new behavior should follow TDD-first structure: write failing test → verify failure → implement → verify passing → commit.
+Each task MUST be broken into bite-sized steps (one action per step). Tasks introducing new behavior MUST follow TDD-first structure. NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST.
 
 - [ ] T-001 (M-001) Task description
   - Files: `path/to/file.ts` (New/Modify), `tests/path/to/file.test.ts` (New/Modify)
   - Risk: Low | Medium | High
-  - Steps:
-    1. Write failing test (include complete test code)
-    2. Run test → `<exact command>` → expected: FAIL with `<error>`
-    3. Implement (include complete code or precise file:line edit instructions)
-    4. Run test → `<exact command>` → expected: PASS
+  - Steps (TDD-first — mandatory for behavior changes):
+    1. Write failing test (include complete test code — not "add a test for X")
+    2. Run test → `<exact command>` → expected: FAIL with `<specific error message>`
+    3. Implement minimal code to pass (include complete code or precise file:line edit instructions)
+    4. Run test → `<exact command>` → expected: PASS (and all existing tests still pass)
     5. Commit → `<commit message>`
-  - Acceptance: What "done" looks like (observable behavior)
+  - Acceptance: What "done" looks like (observable behavior, not internal state)
 - [ ] T-002 (M-001) Task description
   - Depends on: T-001
   - Risk: Medium
-  - Steps: (TDD-first when new behavior; direct steps for config/refactor)
+  - Steps: (TDD-first when behavior changes; direct edit → verify → commit for config/refactor)
   - Acceptance: What "done" looks like
 
 ### Milestone M-002
