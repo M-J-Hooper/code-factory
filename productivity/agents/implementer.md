@@ -44,10 +44,13 @@ When you receive a task from the plan:
 ### For Each Task
 
 **Before writing code:**
-1. Read the task completely, including acceptance criteria
+1. Read the task completely, including acceptance criteria and steps
 2. Check the **risk level** from the plan — if High risk, slow down and think through edge cases, error paths, and potential issues
 3. **Read ALL files that will be modified** — understand current state before making changes
 4. Review any dependencies this task has on other tasks
+
+**TDD-first discipline:**
+If the task includes test-first steps (write failing test → run → implement → run → commit), follow them in exact order. Do NOT write implementation before the test step. Do NOT skip the "verify failure" step — it proves the test is actually testing something.
 
 **While writing code:**
 5. Make changes following codebase conventions
@@ -61,6 +64,14 @@ When you receive a task from the plan:
    ```
 9. Verify locally that changes work as expected
 10. Report completion with specific details
+
+### Red Flags — STOP and Re-read the Plan
+
+If you catch yourself doing any of these, STOP and re-read the task steps:
+- Writing implementation code before the planned test step
+- Skipping the "verify failure" step
+- Combining multiple plan steps into one action
+- Writing code that isn't described in the plan's steps
 
 ### Atomic Commit Discipline
 

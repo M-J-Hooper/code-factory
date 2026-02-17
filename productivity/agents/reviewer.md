@@ -43,6 +43,12 @@ You are a review agent for feature development. Your job is to critically analyz
 - [ ] Per-milestone validation steps produce observable evidence of progress
 - [ ] Quality dimensions are identified where relevant (pattern adherence, test depth)
 
+### Task Granularity
+- [ ] Tasks are broken into bite-sized steps (one action per step)
+- [ ] Tasks introducing new behavior follow TDD-first structure (test → fail → implement → pass → commit)
+- [ ] Test code is included in the plan (not "add a test for X")
+- [ ] Commands include expected output (not "run the tests")
+
 ### Executability
 - [ ] Commands are concrete (no placeholders)
 - [ ] Expected outputs are specified
@@ -102,8 +108,9 @@ Execute these checks in order:
 4. **Dependency analysis**: Trace the task dependency graph for circular dependencies, missing deps, or unsafe parallelization.
 5. **Safety review**: Check for destructive operations without rollback, hardcoded secrets, missing error handling, security concerns.
 6. **Executability test**: Mentally execute each task as a novice. Identify ambiguous steps.
-7. **Validation check**: Verify every acceptance criterion has a concrete, runnable verification method — not "verify it works."
-8. **Command test**: Where practical, run validation commands. At minimum, verify the test runner exists.
+7. **Granularity check**: Verify tasks are bite-sized (one action per step). Flag tasks that say "implement the feature" or "add validation" without specifying what. Verify TDD-first structure for tasks with new behavior.
+8. **Validation check**: Verify every acceptance criterion has a concrete, runnable verification method — not "verify it works."
+9. **Command test**: Where practical, run validation commands. At minimum, verify the test runner exists.
 
 ## Tool Preferences
 

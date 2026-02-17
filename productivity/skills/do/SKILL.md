@@ -548,6 +548,10 @@ interaction_mode: interactive  # or "autonomous"
 ```markdown
 # Plan: <Feature Name>
 
+**Goal:** One sentence describing what this builds
+**Architecture:** 2-3 sentences about the approach
+**Tech Stack:** Key technologies, libraries, and frameworks involved
+
 ## Research Reference
 - **Source**: path to RESEARCH.md
 - **Problem**: 1-2 sentence summary
@@ -586,14 +590,23 @@ Change types:
 ## Task Breakdown
 
 ### Milestone M-001
+
+Each task should be broken into bite-sized steps (one action per step). Tasks introducing new behavior should follow TDD-first structure: write failing test → verify failure → implement → verify passing → commit.
+
 - [ ] T-001 (M-001) Task description
-  - Files: `path/to/file.ts`
+  - Files: `path/to/file.ts` (New/Modify), `tests/path/to/file.test.ts` (New/Modify)
   - Risk: Low | Medium | High
-  - Logic flow: Pseudo-code or step-by-step description
-  - Acceptance: What "done" looks like
+  - Steps:
+    1. Write failing test (include complete test code)
+    2. Run test → `<exact command>` → expected: FAIL with `<error>`
+    3. Implement (include complete code or precise file:line edit instructions)
+    4. Run test → `<exact command>` → expected: PASS
+    5. Commit → `<commit message>`
+  - Acceptance: What "done" looks like (observable behavior)
 - [ ] T-002 (M-001) Task description
   - Depends on: T-001
   - Risk: Medium
+  - Steps: (TDD-first when new behavior; direct steps for config/refactor)
   - Acceptance: What "done" looks like
 
 ### Milestone M-002

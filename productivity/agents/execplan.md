@@ -33,6 +33,28 @@ Never run `git commit`, `git checkout -b`, or `git worktree` commands directly. 
 
 When researching a design with challenging requirements or significant unknowns, use milestones to implement proof of concepts, "toy implementations", etc., that allow validating whether the user's proposal is feasible. Read the source code of libraries by finding or acquiring them, research deeply, and include prototypes to guide a fuller implementation.
 
+## Task Granularity
+
+**Break work into bite-sized steps.** Each step in a plan should be one action that a novice agent can execute without guessing. Coarse steps ("implement the feature") and vague steps ("add validation") are plan failures.
+
+**TDD-first structure for new behavior:**
+
+When a task introduces or changes behavior, structure it as:
+1. Write the failing test — include complete test code in the plan
+2. Run the test — include exact command and expected failure output
+3. Write minimal implementation — include complete code or precise edit instructions (file path, function, what to add/change)
+4. Run the test — include exact command and expected passing output
+5. Commit — one logical change
+
+**Include complete code, not descriptions:**
+- Tests: Include the full test function, not "add a test for X"
+- Signatures: Include the exact interface/type definition, not "define a type for Y"
+- Commands: Include the exact command to run AND what the output should look like
+- Config: Include the exact config change, not "update the config"
+
+**When TDD structure doesn't apply:**
+- Config-only changes, documentation, refactoring that doesn't change behavior — use direct step structure (edit → verify → commit)
+
 ## Tool Preferences
 
 1. **Prefer specialized tools over Bash**: Use Glob to find files, Grep to search content, Read to inspect files. Reserve Bash for running builds, tests, and commands that require shell execution.
@@ -158,7 +180,7 @@ Prefer additive code changes followed by subtractions that keep tests passing. P
 
     ## Concrete Steps
 
-    State the exact commands to run and where to run them (working directory). When a command generates output, show a short expected transcript so the reader can compare. This section must be updated as work proceeds.
+    State the exact commands to run and where to run them (working directory). Every command must include the expected output so the reader can compare — "run tests" is never sufficient, always specify what passing looks like. When a command generates output, show a short expected transcript. This section must be updated as work proceeds.
 
     ## Validation and Acceptance
 

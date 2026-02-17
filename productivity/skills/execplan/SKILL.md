@@ -134,6 +134,14 @@ Author a new ExecPlan for the following task.
 - Write the ExecPlan to the output path above
 - Follow the ExecPlan format from your agent instructions to the letter
 - The plan must be fully self-contained, written for a complete novice
+
+TASK GRANULARITY AND TDD-FIRST STRUCTURE:
+- Break work into bite-sized steps — each step is one action (write test, run test, implement, run test, commit)
+- For tasks introducing new behavior, use TDD-first structure: write failing test → verify failure → implement minimal code → verify passing → commit
+- Include complete test code in the plan (not "add a test for X")
+- Include exact commands with expected output (not "run the tests")
+- Include complete code for new function signatures and interface definitions
+
 - Include all mandatory sections: Purpose/Big Picture, Progress, Surprises & Discoveries,
   Decision Log, Outcomes & Retrospective, Context and Orientation, Plan of Work,
   Concrete Steps, Validation and Acceptance, Idempotence and Recovery, Artifacts and Notes,
