@@ -1,6 +1,6 @@
 ---
-name: do-refiner
-description: "Feature description refinement agent. Takes vague feature requests and iteratively clarifies them with the user into detailed, actionable specifications. First agent called after user provides a feature description."
+name: refiner
+description: "Refinement agent. Takes vague requests and iteratively clarifies them with the user into detailed, actionable specifications with problem statement, scope, behavior, and acceptance criteria."
 model: "sonnet"
 allowed_tools: ["Read", "Grep", "Glob", "AskUserQuestion"]
 ---

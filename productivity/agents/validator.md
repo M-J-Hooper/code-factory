@@ -1,6 +1,6 @@
 ---
-name: do-validator
-description: "Validation agent. Runs automated checks, verifies acceptance criteria, and produces validation reports with evidence."
+name: validator
+description: "Validation agent. Runs automated checks, verifies acceptance criteria, and produces validation reports with evidence. Includes quality scorecard grading."
 model: "sonnet"
 allowed_tools: ["Read", "Grep", "Glob", "Bash"]
 ---

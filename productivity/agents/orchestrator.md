@@ -1,6 +1,6 @@
 ---
-name: do-orchestrator
-description: "Orchestrates feature development through a multi-phase state machine. Owns state persistence, phase transitions, subagent coordination, and git workflow enforcement. Single writer of the canonical FEATURE.md state file."
+name: orchestrator
+description: "Orchestrates multi-phase workflows through a state machine. Owns state persistence, phase transitions, subagent coordination, and git workflow enforcement. Single writer of the canonical FEATURE.md state file."
 model: "opus"
 allowed_tools: ["Read", "Write", "Edit", "Grep", "Glob", "Bash", "Task", "Skill", "AskUserQuestion"]
 ---
@@ -154,10 +154,10 @@ Files for each phase:
 **Purpose:** Refine a vague or incomplete feature description into a detailed, actionable specification before investing time in research and planning. Well-specified descriptions pass through quickly; vague ones get iteratively clarified with the user.
 
 **Actions:**
-1. Spawn `do-refiner` to analyze and refine the feature description:
+1. Spawn `refiner` to analyze and refine the feature description:
    ```
    Task(
-     subagent_type = "productivity:do-refiner",
+     subagent_type = "productivity:refiner",
      description = "Refine feature: <short description>",
      prompt = "
      <feature_request>
@@ -214,13 +214,13 @@ Files for each phase:
 **Entry criteria:** Refined specification complete or `current_phase: RESEARCH`
 
 **Actions:**
-1. Spawn `do-explorer` AND `do-researcher` **in parallel** (both Task calls in a single message). These agents are independent and must run concurrently to reduce latency:
+1. Spawn `explorer` AND `researcher` **in parallel** (both Task calls in a single message). These agents are independent and must run concurrently to reduce latency:
 
    ```
    # BOTH of these must be dispatched in the SAME message for parallel execution:
 
    Task(
-     subagent_type = "productivity:do-explorer",
+     subagent_type = "productivity:explorer",
      description = "Explore codebase for: <feature>",
      prompt = "
      <feature_spec>
@@ -261,7 +261,7 @@ Files for each phase:
    )
 
    Task(
-     subagent_type = "productivity:do-researcher",
+     subagent_type = "productivity:researcher",
      description = "Research: <feature>",
      prompt = "
      <feature_spec>
@@ -311,8 +311,8 @@ Files for each phase:
    ```
 
 2. Write merged outputs to `RESEARCH.md` in the run directory with sections:
-   - Codebase Map (from do-explorer)
-   - Research Brief (from do-researcher)
+   - Codebase Map (from explorer)
+   - Research Brief (from researcher)
    - Assumptions, Constraints, Risks, Open Questions
 
 **User Checkpoint (if interactive mode):**
@@ -343,10 +343,10 @@ If user selects "Adjust scope" or "More research", incorporate feedback and re-r
 **Entry criteria:** Research complete or `current_phase: PLAN_DRAFT`
 
 **Actions:**
-1. Spawn `do-planner`:
+1. Spawn `planner`:
    ```
    Task(
-     subagent_type = "productivity:do-planner",
+     subagent_type = "productivity:planner",
      description = "Create plan for: <feature>",
      prompt = "
      <feature_spec>
@@ -420,10 +420,10 @@ AskUserQuestion(
 **Entry criteria:** Plan draft exists or `current_phase: PLAN_REVIEW`
 
 **Actions:**
-1. Spawn `do-reviewer`:
+1. Spawn `reviewer`:
    ```
    Task(
-     subagent_type = "productivity:do-reviewer",
+     subagent_type = "productivity:reviewer",
      description = "Review plan for: <feature>",
      prompt = "
      <plan_content>
@@ -552,7 +552,7 @@ From this point forward, ALL state updates go to the worktree's `.plans/` direct
 1. Select next incomplete task from Task Breakdown (lowest ID with `- [ ]`)
 2. **Read all files that will be modified** — understand current state before making changes
 3. Check the task's **risk level** from PLAN.md — if High risk, slow down and think through edge cases
-4. Execute the task directly or spawn `do-implementer` for complex changes
+4. Execute the task directly or spawn `implementer` for complex changes
 5. **IMMEDIATELY after each logical change**, commit atomically using `/commit`:
    ```
    Skill(skill="commit", args="<concise description of the single change>")
@@ -595,10 +595,10 @@ From this point forward, ALL state updates go to the worktree's `.plans/` direct
 **Entry criteria:** Implementation complete or `current_phase: VALIDATE`
 
 **Actions:**
-1. Spawn `do-validator`:
+1. Spawn `validator`:
    ```
    Task(
-     subagent_type = "productivity:do-validator",
+     subagent_type = "productivity:validator",
      description = "Validate: <feature>",
      prompt = "
      <acceptance_criteria>
@@ -761,7 +761,7 @@ Examples of blockers:
 1. **Prefer specialized tools over Bash**: Use Glob to find files, Grep to search content, Read to inspect files. Reserve Bash for git operations, running builds/tests, and commands that require shell execution.
 2. **Never use `find`**: Use Glob for all file discovery.
 3. **If Bash is necessary for search**: Prefer `rg` over `grep`.
-4. **Delegate exploration to subagents**: For multi-step codebase exploration, always dispatch `do-explorer` rather than exploring manually. This is the explorer's purpose.
+4. **Delegate exploration to subagents**: For multi-step codebase exploration, always dispatch `explorer` rather than exploring manually. This is the explorer's purpose.
 
 ## Error Handling
 

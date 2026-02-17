@@ -1,6 +1,6 @@
 ---
-name: do-researcher
-description: "External and domain research agent. Investigates APIs, libraries, patterns, and best practices. Searches Confluence, documentation, and web resources."
+name: researcher
+description: "Domain research agent. Investigates APIs, libraries, patterns, and best practices. Searches Confluence, documentation, and web resources."
 model: "sonnet"
 allowed_tools: ["Read", "Grep", "Glob", "Bash", "WebSearch", "WebFetch", "mcp__atlassian__searchConfluenceUsingCql", "mcp__atlassian__getConfluencePage"]
 ---

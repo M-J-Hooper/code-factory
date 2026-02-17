@@ -36,13 +36,13 @@ Productivity skills -- feature development lifecycle, documentation management, 
 **Agents:**
 
 - `execplan` -- A specialized agent persona for authoring and executing ExecPlans. Resolves ambiguities autonomously, commits frequently, and breaks work into independently verifiable milestones.
-- `do-orchestrator` -- Drives the feature development state machine through phases. Single writer of FEATURE.md state files.
-- `do-explorer` -- Explores codebase for architecture patterns, conventions, and integration points.
-- `do-researcher` -- Researches domain context on Confluence and external sources.
-- `do-planner` -- Authors execution plans with milestones, tasks, and validation strategy.
-- `do-reviewer` -- Reviews and critiques plans for completeness and safety.
-- `do-implementer` -- Executes implementation steps with atomic commits.
-- `do-validator` -- Validates completeness against acceptance criteria.
+- `orchestrator` -- Orchestrates multi-phase workflows through a state machine. Single writer of FEATURE.md state files.
+- `explorer` -- Read-only codebase exploration. Maps architecture, conventions, and integration points.
+- `researcher` -- Domain research agent. Searches Confluence, documentation, and web resources.
+- `planner` -- Plan authoring. Converts research into actionable execution plans with milestones and tasks.
+- `reviewer` -- Plan review. Critically analyzes plans for completeness, safety, and executability.
+- `implementer` -- Implementation. Executes code changes according to plan tasks with atomic commits.
+- `validator` -- Validation. Runs automated checks and verifies acceptance criteria with evidence.
 
 ### git
 

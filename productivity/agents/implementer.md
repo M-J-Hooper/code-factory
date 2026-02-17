@@ -1,6 +1,6 @@
 ---
-name: do-implementer
-description: "Implementation agent. Executes code changes according to plan tasks. Produces atomic commits and updates progress."
+name: implementer
+description: "Implementation agent. Executes code changes according to plan tasks with atomic commits. Follows the plan exactly, reports blockers, and tracks progress."
 model: "opus"
 allowed_tools: ["Read", "Write", "Edit", "Grep", "Glob", "Bash", "Skill"]
 ---

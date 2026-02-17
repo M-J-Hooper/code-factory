@@ -181,7 +181,7 @@ Dispatch to orchestrator:
 
 ```
 Task(
-  subagent_type = "productivity:do-orchestrator",
+  subagent_type = "productivity:orchestrator",
   description = "Start feature: <short description>",
   prompt = "
 <feature_request>
@@ -260,7 +260,7 @@ Dispatch to orchestrator with resume context:
 
 ```
 Task(
-  subagent_type = "productivity:do-orchestrator",
+  subagent_type = "productivity:orchestrator",
   description = "Resume feature: <run-id>",
   prompt = "
 <state_content>
@@ -287,7 +287,7 @@ If user asks for status without wanting to resume:
 
 ```
 Task(
-  subagent_type = "productivity:do-orchestrator",
+  subagent_type = "productivity:orchestrator",
   description = "Status check: <run-id>",
   prompt = "
 <state_path>
@@ -313,30 +313,30 @@ REFINE -> RESEARCH -> PLAN_DRAFT -> PLAN_REVIEW -> EXECUTE -> VALIDATE -> DONE
 ```
 
 ### REFINE Phase
-- Spawn `do-refiner` to analyze and clarify the feature description with the user
+- Spawn `refiner` to analyze and clarify the feature description with the user
 - Output: Refined specification with problem statement, scope, behavior, acceptance criteria
 - Well-specified descriptions pass through quickly; vague ones get iterative refinement
 - **Interactive**: Asks clarifying questions, confirms refined spec with user
 - **Autonomous**: Synthesizes from context, logs assumptions in Decisions Made
 
 ### RESEARCH Phase
-- Spawn `do-explorer` and `do-researcher` **in parallel** (both in a single message) for latency reduction
-- `do-explorer`: **local codebase** mapping (modules, patterns, conventions)
-- `do-researcher`: **Confluence + external** research (design docs, RFCs, APIs)
+- Spawn `explorer` and `researcher` **in parallel** (both in a single message) for latency reduction
+- `explorer`: **local codebase** mapping (modules, patterns, conventions)
+- `researcher`: **Confluence + external** research (design docs, RFCs, APIs)
 - Output: Context, Assumptions, Constraints, Risks, Open Questions
 - **Both sources are mandatory** - do not skip Confluence search
 - **Interactive**: Present research summary, ask user to confirm assumptions and scope
 - **Autonomous**: Proceed with best interpretation, log assumptions in Decisions Made
 
 ### PLAN_DRAFT Phase
-- Spawn `do-planner` to create plan (references both codebase findings AND Confluence context)
+- Spawn `planner` to create plan (references both codebase findings AND Confluence context)
 - Output: Milestones, Task Breakdown, Validation Strategy
 - Plan must embed relevant context inline (not just links)
 - **Interactive**: Present plan, ask user to approve or request changes
 - **Autonomous**: Proceed to review, let reviewer catch issues
 
 ### PLAN_REVIEW Phase
-- Spawn `do-reviewer` for critique
+- Spawn `reviewer` for critique
 - Output: Review report, required changes
 - May loop back to PLAN_DRAFT
 - **Interactive**: Present review findings, ask user for final approval before execution
@@ -354,7 +354,7 @@ REFINE -> RESEARCH -> PLAN_DRAFT -> PLAN_REVIEW -> EXECUTE -> VALIDATE -> DONE
 - **Commit frequency:** after each function, fix, test, or refactor — not batched
 
 ### VALIDATE Phase
-- Spawn `do-validator` to run automated checks AND quality assessment
+- Spawn `validator` to run automated checks AND quality assessment
 - Output: Validation report with test results, acceptance evidence, and quality scorecard (1-5 per dimension)
 - Quality gate: all dimensions must score >= 3/5 to pass
 - May loop back to EXECUTE for test failures or quality gate failures

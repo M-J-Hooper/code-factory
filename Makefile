@@ -1,4 +1,4 @@
-.PHONY: all install lint check check-frontmatter check-agents check-refs check-agent-refs check-descriptions check-structure check-versions check-opencode-sync help
+.PHONY: all install lint check check-frontmatter check-agents check-refs check-agent-refs check-descriptions check-structure check-versions check-opencode-sync sync-opencode help
 
 all: check lint ## Run all checks (frontmatter, agents, refs, structure, plugins, lint)
 
@@ -191,6 +191,9 @@ check-versions: ## Warn if plugin content changed since last commit without a ve
 		fi; \
 	done
 	@echo "Done."
+
+sync-opencode: ## Sync skills and agents to OpenCode config directory
+	@./sync-opencode.sh
 
 check-opencode-sync: ## Validate OpenCode sync is up-to-date
 	@if [ ! -d "$$HOME/.config/opencode/skills" ]; then \

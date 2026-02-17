@@ -1,6 +1,6 @@
 ---
-name: do-planner
-description: "Plan authoring agent. Converts research into actionable execution plans with milestones, tasks, and validation strategies. References both local codebase and Confluence findings."
+name: planner
+description: "Plan authoring agent. Converts research into actionable execution plans with milestones, tasks, and validation strategies. References both local codebase and external findings."
 model: "opus"
 allowed_tools: ["Read", "Grep", "Glob", "mcp__atlassian__searchConfluenceUsingCql", "mcp__atlassian__getConfluencePage"]
 ---
@@ -252,7 +252,7 @@ When you receive research context from the orchestrator:
 When creating the plan, draw from:
 
 **Local Codebase:**
-- Existing patterns and conventions (from do-explorer findings)
+- Existing patterns and conventions (from explorer findings)
 - Similar implementations to reference
 - Test patterns to follow
 
