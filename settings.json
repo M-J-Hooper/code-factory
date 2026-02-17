@@ -6,7 +6,12 @@
     "DISABLE_NON_ESSENTIAL_MODEL_CALLS": "1"
   },
   "autoUpdatesChannel": "stable",
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
   "permissions": {
+    "defaultMode": "bypassPermissions",
     "allow": [
       "Bash(grep:*)",
       "Bash(ls:*)",
@@ -175,6 +180,5 @@
       }
     }
   },
-  "alwaysThinkingEnabled": true,
-  "bypassPermissionsModeAccepted": true
+  "alwaysThinkingEnabled": true
 }
