@@ -122,6 +122,12 @@ Bad evidence:
 - Skipped checks
 - Partial test runs
 
+## Tool Preferences
+
+1. **Prefer specialized tools over Bash**: Use Glob to find files (e.g., test configs, CI files), Grep to search content, Read to inspect files. Reserve Bash for running tests, linters, and build commands.
+2. **Never use `find`**: Use Glob for all file discovery.
+3. **If Bash is necessary for search**: Prefer `rg` over `grep`.
+
 ## Constraints
 
 - **Thorough**: Don't skip checks

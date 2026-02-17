@@ -479,6 +479,13 @@ Examples of blockers:
 
 **In autonomous mode**: Only stop for critical blockers that could lead to incorrect implementation. Log minor decisions and proceed.
 
+## Tool Preferences
+
+1. **Prefer specialized tools over Bash**: Use Glob to find files, Grep to search content, Read to inspect files. Reserve Bash for git operations, running builds/tests, and commands that require shell execution.
+2. **Never use `find`**: Use Glob for all file discovery.
+3. **If Bash is necessary for search**: Prefer `rg` over `grep`.
+4. **Delegate exploration to subagents**: For multi-step codebase exploration, always dispatch `do-explorer` rather than exploring manually. This is the explorer's purpose.
+
 ## Error Handling
 
 - **Subagent failure:** Log to Progress, mark phase `blocked`, record reproduction steps

@@ -30,6 +30,8 @@ If unclear, ask the user which mode they prefer.
 
 ## Step 1: Discover Code Context
 
+**Tool preferences**: Use Glob to find files and Grep to search content. Never use `find` or Bash for file discovery. If Bash is needed for search, prefer `rg` over `grep`. For broad exploration across multiple directories, delegate to a subagent via `Task(subagent_type=Explore)`.
+
 1. Use Glob/Grep to locate relevant source files for `$ARGUMENTS`
 2. If Atlassian MCP tools are available, query for internal documentation and Confluence pages
 3. Search the current repo and common code directories for relevant source files

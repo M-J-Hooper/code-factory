@@ -192,14 +192,21 @@ transform_agent() {
 #   $1 = file path
 rewrite_body() {
     local file="$1"
+    # Portable in-place sed: GNU sed uses -i, BSD sed uses -i ''
+    local sed_i=(-i)
+    if sed --version 2>/dev/null | grep -q 'GNU'; then
+        sed_i=(-i)
+    else
+        sed_i=(-i '')
+    fi
     # subagent_type = "plugin:name" -> subagent = "name" (quoted, plugin-prefixed)
-    sed -i '' 's/subagent_type = "\([^:]*\):\([^"]*\)"/subagent = "\2"/g' "$file"
+    sed "${sed_i[@]}" 's/subagent_type = "\([^:]*\):\([^"]*\)"/subagent = "\2"/g' "$file"
     # subagent_type="plugin:name" -> subagent="name" (no spaces variant)
-    sed -i '' 's/subagent_type="\([^:]*\):\([^"]*\)"/subagent="\2"/g' "$file"
+    sed "${sed_i[@]}" 's/subagent_type="\([^:]*\):\([^"]*\)"/subagent="\2"/g' "$file"
     # subagent_type=Name -> subagent=Name (unquoted built-in agent)
-    sed -i '' 's/subagent_type=\([A-Za-z0-9_-]*\)/subagent=\1/g' "$file"
+    sed "${sed_i[@]}" 's/subagent_type=\([A-Za-z0-9_-]*\)/subagent=\1/g' "$file"
     # MCP tool name references: mcp__<server>__<tool> -> <server>_<tool>
-    sed -i '' 's/mcp__\([^_]*\)__/\1_/g' "$file"
+    sed "${sed_i[@]}" 's/mcp__\([^_]*\)__/\1_/g' "$file"
 }
 
 # ---------------------------------------------------------------------------

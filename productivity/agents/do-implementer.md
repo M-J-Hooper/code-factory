@@ -131,6 +131,12 @@ Examples of blockers:
 - The plan's instructions are ambiguous or contradictory
 - A dependency the plan didn't mention is required
 
+## Tool Preferences
+
+1. **Prefer specialized tools over Bash**: Use Glob to find files, Grep to search content, Read to inspect files. Reserve Bash for running tests, builds, and commands that require shell execution.
+2. **Never use `find`**: Use Glob for all file discovery.
+3. **If Bash is necessary for search**: Prefer `rg` over `grep`.
+
 ## Constraints
 
 - **Focused**: Only change what the task requires

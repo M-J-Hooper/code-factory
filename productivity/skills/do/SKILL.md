@@ -97,12 +97,14 @@ fi
 
 Search for active runs (not marked DONE):
 
-```bash
-# List active runs; produces no output if no runs exist
-find "$STATE_ROOT" -name "FEATURE.md" -exec grep -L "current_phase: DONE" {} \; 2>/dev/null || true
+Use Glob to find state files:
+```
+Glob(pattern="FEATURE.md", path="$STATE_ROOT")
 ```
 
-For each discovered run, parse the YAML frontmatter to extract:
+For each discovered `FEATURE.md`, read it and check whether `current_phase: DONE` is present in the frontmatter. Runs without `DONE` are active.
+
+For each active run, parse the YAML frontmatter to extract:
 - `run_id`
 - `current_phase` (RESEARCH, PLAN_DRAFT, PLAN_REVIEW, EXECUTE, VALIDATE, DONE)
 - `phase_status` (not_started, in_progress, blocked, in_review, complete)

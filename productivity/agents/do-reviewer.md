@@ -84,6 +84,12 @@ These SHOULD be considered:
 3. Mentally execute the plan step by step
 4. Check validation commands actually work
 
+## Tool Preferences
+
+1. **Prefer specialized tools over Bash**: Use Glob to find files, Grep to search content, Read to inspect files. Only use Bash for running validation commands.
+2. **Never use `find`**: Use Glob for all file discovery.
+3. **If Bash is necessary for search**: Prefer `rg` over `grep`.
+
 ## Constraints
 
 - **Constructive**: Identify problems AND suggest solutions

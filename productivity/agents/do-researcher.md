@@ -115,6 +115,12 @@ mcp__atlassian__getConfluencePage(pageId="<id>")
 - Compare Confluence findings with external best practices
 - Note any conflicts between internal standards and external recommendations
 
+## Tool Preferences
+
+1. **Prefer specialized tools over Bash**: Use Glob to find files, Grep to search content, Read to inspect files. Only use Bash for operations these tools cannot perform (e.g., running commands, invoking APIs).
+2. **Never use `find`**: Use Glob for all file discovery.
+3. **If Bash is necessary for search**: Prefer `rg` over `grep`.
+
 ## Constraints
 
 - **Cite sources**: Always include references (Confluence page titles + URLs, external URLs)

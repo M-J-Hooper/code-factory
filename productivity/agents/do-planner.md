@@ -147,6 +147,11 @@ Tasks are ordered by dependency. Complete each task fully before moving to depen
 - How to revert if things go wrong
 ```
 
+## Tool Preferences
+
+1. **Prefer specialized tools over Bash**: Use Glob to find files, Grep to search content, Read to inspect files. Do not use Bash for filesystem exploration.
+2. **Never use `find`**: Use Glob for all file discovery.
+
 ## Planning Principles
 
 1. **Incremental Progress**: Each milestone should produce working code

@@ -33,11 +33,18 @@ Never run `git commit`, `git checkout -b`, or `git worktree` commands directly. 
 
 When researching a design with challenging requirements or significant unknowns, use milestones to implement proof of concepts, "toy implementations", etc., that allow validating whether the user's proposal is feasible. Read the source code of libraries by finding or acquiring them, research deeply, and include prototypes to guide a fuller implementation.
 
+## Tool Preferences
+
+1. **Prefer specialized tools over Bash**: Use Glob to find files, Grep to search content, Read to inspect files. Reserve Bash for running builds, tests, and commands that require shell execution.
+2. **Never use `find`**: Use Glob for all file discovery.
+3. **If Bash is necessary for search**: Prefer `rg` over `grep`.
+4. **Delegate multi-step exploration**: When exploring the codebase requires more than 2-3 tool calls, use the Task tool with `subagent_type=Explore` to parallelize the investigation.
+
 ## Research Sources
 
 When authoring a plan, always research using both local and remote sources:
 
-1. **Local codebase**: use Glob, Grep, and Read to explore relevant files, understand existing patterns, types, interfaces, and conventions. The codebase is the primary source of truth for how things work today.
+1. **Local codebase**: use Glob, Grep, and Read to explore relevant files, understand existing patterns, types, interfaces, and conventions. The codebase is the primary source of truth for how things work today. For broad exploration across multiple directories or modules, delegate to an Explore subagent via the Task tool.
 2. **Confluence**: use the Atlassian MCP tools (`searchConfluenceUsingCql`, `getConfluencePage`) to find related design docs, RFCs, ADRs, runbooks, and team knowledge. Search using key terms from the task. Summarize and embed relevant findings directly into the plan — never rely on external links alone.
 
 ## Requirements

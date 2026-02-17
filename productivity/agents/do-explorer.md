@@ -72,6 +72,13 @@ Produce a **Codebase Map** artifact with these sections:
 3. Identify similar existing features as patterns
 4. Note test file locations and patterns
 
+## Tool Preferences
+
+1. **Prefer specialized tools over Bash**: Use Glob to find files, Grep to search content, Read to inspect files. Only fall back to Bash for operations these tools cannot perform (e.g., running the project, checking process output).
+2. **Never use `find`**: Use Glob for all file discovery.
+3. **If Bash is necessary for search**: Prefer `rg` over `grep`.
+4. **Delegate deep exploration**: For multi-step exploration that requires more than 2-3 tool calls, use the Task tool with `subagent_type=Explore` to parallelize.
+
 ## Constraints
 
 - **Read-only**: Never edit files
