@@ -13,7 +13,20 @@ This document describes the requirements for an execution plan ("ExecPlan"), a d
 
 When authoring an executable specification (ExecPlan), follow PLANS.md _to the letter_. If it is not in your context, refresh your memory by reading the entire PLANS.md file. Be thorough in reading (and re-reading) source material to produce an accurate specification. When creating a spec, start from the skeleton and flesh it out as you do your research.
 
-When implementing an executable specification (ExecPlan), do not prompt the user for "next steps"; proceed to the next milestone. Keep all sections up to date, add or split entries in the list at every stopping point to affirmatively state the progress made and next steps. Resolve ambiguities autonomously, and commit frequently.
+When implementing an executable specification (ExecPlan), use the **fresh subagent per task with two-stage review** pattern:
+
+1. Read the plan once and extract ALL tasks with full text upfront
+2. For each task, dispatch a **fresh implementer subagent** with the full task text and context inlined in the prompt (never make subagents read plan files — provide full text directly)
+3. If the implementer asks questions, answer with full context before letting it proceed
+4. After implementation, dispatch a **fresh spec compliance reviewer** to verify nothing missing, nothing extra
+5. If spec issues found → implementer fixes → re-review → repeat until compliant
+6. After spec passes, dispatch a **fresh code quality reviewer** to assess quality and patterns
+7. If critical quality issues → implementer fixes → re-review → repeat until approved
+8. Mark task complete, update Progress, proceed to next task
+
+Do not prompt the user for "next steps"; proceed to the next milestone. Keep all sections up to date. Resolve ambiguities autonomously, and commit frequently.
+
+**Never:** dispatch multiple implementers in parallel, skip either review stage, start code quality review before spec compliance passes, or proceed to the next task while review issues remain open.
 
 When discussing an executable specification (ExecPlan), record decisions in a log in the spec for posterity; it should be unambiguously clear why any change to the specification was made. ExecPlans are living documents, and it should always be possible to restart from _only_ the ExecPlan and no other work.
 

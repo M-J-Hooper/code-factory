@@ -374,12 +374,31 @@ Commit frequently. Resolve ambiguities autonomously and document decisions in th
 - Update the Progress section in <plan_path> as you complete each step
 - Record discoveries in Surprises & Discoveries
 - Record decisions in Decision Log
-- TDD ENFORCEMENT: For tasks that introduce or change behavior, follow TDD-first in exact order:
+
+FRESH SUBAGENT PER TASK WITH TWO-STAGE REVIEW:
+- Read the plan ONCE and extract ALL tasks with full text upfront
+- For each task in the plan, dispatch a FRESH implementer subagent:
+  - Inline the full task text + relevant context in the prompt (never make subagents read plan files)
+  - Include scene-setting: where the task fits, what was done before, relevant patterns
+  - The implementer asks questions before starting, self-reviews before reporting
+- After each implementer completes, run TWO sequential reviews:
+  1. Spec compliance review: dispatch a fresh reviewer to verify nothing missing, nothing extra
+  2. Code quality review: dispatch a fresh reviewer to assess quality and patterns (only after spec passes)
+- If a reviewer finds issues: dispatch the implementer to fix → re-review → repeat until approved
+- Never dispatch multiple implementers in parallel (causes conflicts)
+- Never skip either review stage or proceed while issues remain open
+
+TDD ENFORCEMENT:
+- For tasks that introduce or change behavior, follow TDD-first in exact order:
   1. Write failing test (complete code) → 2. Run and verify FAIL → 3. Implement minimal code → 4. Run and verify PASS → 5. Commit
   If you wrote code before its test, delete the implementation and restart with TDD. No exceptions.
-- Make atomic commits: each commit should contain exactly one logical change (e.g., add a function, fix a bug, update a config). Do not batch unrelated changes into a single commit. Commit frequently using the /commit skill: Skill(skill="commit", args="<concise description of the single logical change>")
+
+COMMIT DISCIPLINE:
+- Make atomic commits: each commit should contain exactly one logical change
+- Commit frequently using the /commit skill: Skill(skill="commit", args="<concise description>")
 - Never use raw git commit or git checkout -b commands — always use the skills
-- Do NOT commit the plan file itself — ExecPlan files are working documents that live in the repo but are never committed. When staging files for a commit, exclude the .plans/ directory and any *.plan.md files.
+- Do NOT commit the plan file itself — exclude .plans/ and *.plan.md when staging
+
 - At completion, write the Outcomes & Retrospective section
 </instructions>
 "
@@ -461,12 +480,24 @@ Next to do: <next incomplete step text>
 - Continue from the first incomplete Progress item
 - Do not re-execute completed steps
 - Update Progress, Surprises, and Decision Log as you go
-- TDD ENFORCEMENT: For tasks that introduce or change behavior, follow TDD-first in exact order:
+
+FRESH SUBAGENT PER TASK WITH TWO-STAGE REVIEW:
+- For each remaining task, dispatch a FRESH implementer subagent with full task text inlined
+- After each implementer completes, run spec compliance review then code quality review
+- Fix issues via review loops before proceeding to next task
+- Never skip reviews or proceed while issues remain open
+
+TDD ENFORCEMENT:
+- For tasks that introduce or change behavior, follow TDD-first in exact order:
   1. Write failing test (complete code) → 2. Run and verify FAIL → 3. Implement minimal code → 4. Run and verify PASS → 5. Commit
   If you wrote code before its test, delete the implementation and restart with TDD. No exceptions.
-- Make atomic commits: each commit should contain exactly one logical change (e.g., add a function, fix a bug, update a config). Do not batch unrelated changes into a single commit. Commit frequently using the /commit skill: Skill(skill="commit", args="<concise description of the single logical change>")
+
+COMMIT DISCIPLINE:
+- Make atomic commits: each commit should contain exactly one logical change
+- Commit frequently using the /commit skill: Skill(skill="commit", args="<concise description>")
 - Never use raw git commit or git checkout -b commands — always use the skills
-- Do NOT commit the plan file itself — ExecPlan files are working documents that live in the repo but are never committed. When staging files for a commit, exclude the .plans/ directory and any *.plan.md files.
+- Do NOT commit the plan file itself — exclude .plans/ and *.plan.md when staging
+
 - At completion, write the Outcomes & Retrospective section
 </instructions>
 "

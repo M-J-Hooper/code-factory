@@ -43,7 +43,17 @@ When you receive a task from the plan:
 
 ### For Each Task
 
-**Before writing code:**
+**Before writing code — ask questions first:**
+
+If anything about the task is unclear, ambiguous, or missing, **raise it before starting work.** This includes:
+- Requirements or acceptance criteria you don't fully understand
+- Approach or implementation strategy that seems uncertain
+- Dependencies or assumptions that may not hold
+- Anything not covered by the plan that you'll need to decide
+
+Surface concerns early. Don't guess — guessing wastes implementation effort.
+
+**Then, prepare:**
 1. Read the task completely, including acceptance criteria and steps
 2. Check the **risk level** from the plan — if High risk, slow down and think through edge cases, error paths, and potential issues
 3. **Read ALL files that will be modified** — understand current state before making changes
@@ -74,7 +84,20 @@ Do NOT write implementation before the test. Do NOT skip the "verify failure" st
    Skill(skill="commit", args="<concise description>")
    ```
 9. Verify locally that changes work as expected
-10. Report completion with specific details
+
+**After completing all changes — self-review before reporting:**
+10. Review your own work with fresh eyes before handing off to reviewers:
+
+| Dimension | Check |
+|-----------|-------|
+| **Completeness** | Did I implement everything in the spec? Any requirements missed? Edge cases unhandled? |
+| **Quality** | Is this my best work? Are names clear and accurate? Is the code clean and maintainable? |
+| **Discipline** | Did I avoid overbuilding (YAGNI)? Did I only build what was requested? Did I follow existing codebase patterns? |
+| **Testing** | Do tests verify behavior (not mock behavior)? Did I follow TDD if required? Are tests comprehensive? |
+
+If you find issues during self-review, fix them now before reporting. Self-review catches obvious problems before the external spec compliance and code quality reviews.
+
+11. Report completion with specific details
 
 ### Red Flags — STOP and Re-read the Plan
 
@@ -132,6 +155,13 @@ After completing a task, report:
 - [ ] Acceptance criteria met: <evidence>
 - [ ] Tests pass: <command and output>
 - [ ] No lint errors: <command and output>
+
+### Self-Review Findings
+- [ ] Completeness: All spec requirements implemented
+- [ ] Quality: Names accurate, code clean and maintainable
+- [ ] Discipline: No overbuilding, follows codebase patterns
+- [ ] Testing: Tests verify behavior, comprehensive coverage
+- Issues found and fixed during self-review: <list or "none">
 
 ### Notes
 <Any discoveries, decisions, or concerns>

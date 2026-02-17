@@ -548,40 +548,156 @@ From this point forward, ALL state updates go to the worktree's `.plans/` direct
 
 **CRITICAL:** Do NOT proceed to code changes until both `/worktree` AND `/branch` have been called and state is updated.
 
-**Actions (Task Loop):**
-1. Select next incomplete task from Task Breakdown (lowest ID with `- [ ]`)
-2. **Read all files that will be modified** — understand current state before making changes
-3. Check the task's **risk level** from PLAN.md — if High risk, slow down and think through edge cases
-4. **If the task introduces or changes behavior — enforce TDD-first:**
-   - Write failing test → Run and verify FAIL → Implement → Run and verify PASS → Commit
-   - Do NOT skip the "verify failure" step — it proves the test catches the right behavior
-   - If implementation was written before the test, delete it and restart with TDD
-5. Execute the task directly or spawn `implementer` for complex changes
-6. **IMMEDIATELY after each logical change**, commit atomically using `/commit`:
-   ```
-   Skill(skill="commit", args="<concise description of the single change>")
-   ```
-7. Update state: mark task `[x]` with commit SHA, update Progress Log
-8. Repeat until all milestone tasks complete
+**Context Preparation (do this ONCE before the task loop):**
 
-**Risk-based execution:**
-- **Low risk**: Execute normally, commit, proceed
-- **Medium risk**: Review code paths before committing, test if practical
-- **High risk**: Think through ALL edge cases, error conditions, and cleanup paths before writing code
+Read PLAN.md and extract ALL tasks with their full text, acceptance criteria, dependencies, and risk levels. Store this extracted context — you will inline it into each subagent dispatch. Never make subagents read plan files; provide full context directly in the prompt.
 
-**Atomic Commit Rules (CRITICAL):**
-- **Commit after EVERY logical change** — do not batch multiple changes
-- One function/fix/feature per commit
-- Commit before moving to the next task
-- Commit before any risky operation (refactor, dependency update)
-- If a task involves multiple files for one logical change, commit them together
-- If a task involves multiple logical changes, make multiple commits
+**Actions (Task Loop — fresh subagent per task with two-stage review):**
 
-**Examples of atomic commits:**
-- `feat(auth): add login endpoint handler`
-- `test(auth): add unit tests for login`
-- `fix(auth): handle expired token edge case`
-- `refactor(auth): extract token validation to helper`
+For each task, dispatch a **fresh implementer subagent** with the full task context inlined. Fresh subagents prevent context pollution between tasks.
+
+```
+Per-task sequence:
+1. DISPATCH implementer → 2. SPEC REVIEW → 3. CODE QUALITY REVIEW → 4. UPDATE STATE
+```
+
+**Step 1: Dispatch Fresh Implementer Subagent**
+
+```
+Task(
+  subagent_type = "productivity:implementer",
+  description = "Implement T-XXX: <task name>",
+  prompt = "
+  <task>
+  <full text of the task from PLAN.md — paste it, don't reference a file>
+  </task>
+
+  <context>
+  <scene-setting: where this task fits in the milestone, what was done before,
+   architectural context, relevant file paths and patterns from RESEARCH.md>
+  </context>
+
+  <acceptance_criteria>
+  <the task's specific acceptance criteria from the plan>
+  </acceptance_criteria>
+
+  <role>
+  You are an implementation agent. Implement exactly what the task specifies,
+  following TDD-first for behavior changes. Ask questions before starting if
+  anything is unclear. Self-review your work before reporting.
+  </role>
+
+  <constraints>
+  - Work from: <worktree_path>
+  - Commit atomically via /commit after every logical change
+  - Follow TDD-first for behavior changes: write failing test → verify FAIL → implement → verify PASS → commit
+  - Do not add features or refactor beyond what the task specifies
+  - Self-review before reporting: check completeness, quality, discipline, testing
+  - If anything is unclear, ask before implementing — do not guess
+  </constraints>"
+)
+```
+
+If the implementer asks questions, answer clearly with full context, then let it proceed.
+
+**Step 2: Spec Compliance Review**
+
+After the implementer reports completion, dispatch a **fresh spec reviewer subagent** to verify the implementation matches requirements:
+
+```
+Task(
+  subagent_type = "productivity:reviewer",
+  description = "Spec review T-XXX: <task name>",
+  prompt = "
+  <task_spec>
+  <full text of the task requirements from PLAN.md>
+  </task_spec>
+
+  <implementer_report>
+  <the implementer's completion report — changes made, commits, self-review>
+  </implementer_report>
+
+  <role>
+  You are a spec compliance reviewer. Verify the implementation matches the
+  task specification — nothing missing, nothing extra.
+  </role>
+
+  <task>
+  Read the actual code (not the report) and verify:
+  1. Missing requirements — anything specified but not implemented?
+  2. Extra work — anything built that wasn't requested?
+  3. Misunderstandings — requirements interpreted incorrectly?
+  Do NOT trust the implementer's report. Read the code independently.
+  </task>
+
+  <constraints>
+  - Work from: <worktree_path>
+  - Every finding must cite a file:line reference
+  - Report: COMPLIANT (all requirements met) or ISSUES (list specific gaps with file:line)
+  - Do not suggest improvements — only verify spec compliance
+  </constraints>"
+)
+```
+
+**If spec reviewer finds issues:** Resume the implementer subagent to fix the specific gaps. Then re-run the spec review. Repeat until compliant.
+
+**Step 3: Code Quality Review**
+
+Only after spec compliance passes, dispatch a **fresh code quality reviewer**:
+
+```
+Task(
+  subagent_type = "productivity:reviewer",
+  description = "Code quality review T-XXX: <task name>",
+  prompt = "
+  <task_spec>
+  <full text of the task>
+  </task_spec>
+
+  <implementer_report>
+  <the implementer's completion report>
+  </implementer_report>
+
+  <role>
+  You are a code quality reviewer. Assess whether the implementation is
+  well-built: clean, tested, maintainable, following codebase conventions.
+  </role>
+
+  <task>
+  Review the committed code for this task. Assess:
+  1. Code quality — readability, naming, structure, DRY
+  2. Pattern adherence — follows codebase conventions and existing patterns
+  3. Test quality — tests verify behavior, not mock behavior; comprehensive
+  4. Edge case handling — error paths, boundary conditions addressed
+
+  For each issue, classify as Critical (must fix) or Minor (nice to have).
+  </task>
+
+  <constraints>
+  - Work from: <worktree_path>
+  - Every finding must cite a file:line reference
+  - Report: APPROVED or ISSUES with specific findings and severity
+  - Do not review spec compliance — that was already verified
+  </constraints>"
+)
+```
+
+**If code quality reviewer finds Critical issues:** Resume the implementer subagent to fix them. Then re-run quality review. Repeat until approved. Minor issues are logged but don't block.
+
+**Step 4: Update State**
+
+After both reviews pass:
+- Mark task `[x]` with commit SHA in Progress
+- Record any review findings in Surprises and Discoveries
+- Update FEATURE.md state file (in worktree's `.plans/`)
+- Proceed to the next task
+
+**Never:**
+- Dispatch multiple implementer subagents in parallel (causes conflicts)
+- Skip either review stage (spec compliance OR code quality)
+- Proceed to the next task while review issues remain open
+- Start code quality review before spec compliance passes
+- Let implementer self-review replace the external reviews (both are needed)
 
 **Task execution rules:**
 - Update Progress section in FEATURE.md after each task (in worktree's .plans/)

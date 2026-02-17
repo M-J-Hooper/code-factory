@@ -230,9 +230,19 @@ GIT WORKFLOW:
 - Use /commit for atomic commits during EXECUTE (after every logical change)
 - Use /pr to create pull request in DONE phase
 
-SUBAGENT COORDINATION:
-- Coordinate subagents for each phase
-- When dispatching to subagents, place longform context (research, plans, specs) at the TOP of the prompt in XML-tagged blocks, and the task directive at the BOTTOM
+SUBAGENT COORDINATION — FRESH SUBAGENT PER TASK WITH TWO-STAGE REVIEW:
+- Read the plan ONCE and extract ALL tasks with full text upfront
+- For each task, dispatch a FRESH implementer subagent with full task text + context inlined
+  - Never make subagents read plan files — provide full text directly in the prompt
+  - Include scene-setting context: where the task fits, what was done before, relevant patterns
+  - Place longform context (research, plans, specs) at the TOP in XML-tagged blocks, task directive at the BOTTOM
+- After each implementer completes, run TWO sequential reviews:
+  1. Spec compliance review — fresh reviewer verifies nothing missing, nothing extra
+  2. Code quality review — fresh reviewer assesses quality, patterns, testing (only after spec passes)
+- If either reviewer finds issues: implementer fixes → reviewer re-reviews → repeat until approved
+- Never dispatch multiple implementers in parallel (causes conflicts)
+- Never skip either review stage
+- Never proceed to next task while review issues remain open
 - Instruct subagents to quote relevant context before acting — this grounds their responses in actual data
 
 INPUT ISOLATION:
@@ -319,6 +329,16 @@ REFINE -> RESEARCH -> PLAN_DRAFT -> PLAN_REVIEW -> EXECUTE -> VALIDATE -> DONE
                         +--- (changes requested) ------+-- (fix forward) --+
 ```
 
+### EXECUTE Task Loop (per task)
+
+```
+Dispatch implementer -> Self-review -> Spec compliance review -> Code quality review -> Next task
+      ^                                    |                           |
+      |                                    v                           v
+      +------ Fix spec gaps <----- ISSUES found              Fix quality issues
+      +------ Fix quality issues <-------------------------- ISSUES found
+```
+
 ### REFINE Phase
 - Spawn `refiner` to analyze and clarify the feature description with the user
 - Output: Refined specification with problem statement, scope, behavior, acceptance criteria
@@ -355,6 +375,19 @@ REFINE -> RESEARCH -> PLAN_DRAFT -> PLAN_REVIEW -> EXECUTE -> VALIDATE -> DONE
 2. Call `/branch` to create feature branch
 3. Update state file with branch name
 
+**Fresh subagent per task with two-stage review:**
+
+The orchestrator reads the plan once, extracts all tasks with full text, then dispatches a fresh implementer subagent per task. Fresh subagents prevent context pollution between tasks.
+
+Per-task sequence:
+1. **Dispatch fresh implementer** with full task text + context inlined (never make subagents read plan files)
+2. Implementer asks questions → answers provided → implements → self-reviews → reports
+3. **Spec compliance review** — fresh reviewer verifies implementation matches spec (nothing missing, nothing extra)
+4. If issues → implementer fixes → re-review (loop until compliant)
+5. **Code quality review** — fresh reviewer assesses code quality, patterns, testing
+6. If critical issues → implementer fixes → re-review (loop until approved)
+7. Mark task complete, update state, proceed to next task
+
 **TDD-first execution for behavior-changing tasks:**
 When a task introduces or changes behavior, follow this exact sequence — no exceptions:
 1. Write the failing test (complete test code, not a placeholder)
@@ -371,10 +404,11 @@ When a task introduces or changes behavior, follow this exact sequence — no ex
 
 **When TDD does not apply:** Config-only changes, documentation updates, refactoring that preserves existing behavior (with existing test coverage). Use direct step structure: edit → verify → commit.
 
-**Then execute tasks:**
-- Execute tasks with **atomic commits via `/commit` after EVERY logical change**
-- Update Progress section continuously
-- **Commit frequency:** after each function, fix, test, or refactor — not batched
+**Never:**
+- Dispatch multiple implementer subagents in parallel (causes conflicts)
+- Skip either review stage (spec compliance OR code quality)
+- Start code quality review before spec compliance passes
+- Proceed to the next task while review issues remain open
 
 ### VALIDATE Phase
 - Spawn `validator` to run automated checks AND quality assessment
