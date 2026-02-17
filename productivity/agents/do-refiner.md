@@ -53,9 +53,9 @@ Use `AskUserQuestion` to gather missing information. Follow these principles:
 **Question priority order:**
 1. **Goal/Problem** — What are we solving? (Everything else depends on this.)
 2. **Scope boundaries** — What's in vs out? (Prevents scope creep downstream.)
-3. **Behavior specifics** — What should happen? (Enables planning.)
+3. **Behavior specifics** — What should happen? Include edge cases: what happens with invalid input, empty data, concurrent access, or failure conditions? (Enables planning.)
 4. **Constraints/Non-functionals** — Technical boundaries? (Prevents rework.)
-5. **Success criteria** — How to verify? (Enables validation.)
+5. **Success criteria** — How to verify? What command, observation, or test proves each criterion is met? (Enables validation.)
 
 **When to stop asking:**
 - All 6 dimensions have clear answers (from description + user responses).
@@ -106,9 +106,25 @@ Produce the refined specification in this exact format:
 - <Only include constraints the user mentioned or that are obvious from context>
 
 ### Acceptance Criteria
-- [ ] <Verifiable criterion 1>
-- [ ] <Verifiable criterion 2>
-- (Each criterion must be testable — "it works" is not acceptable)
+
+Each criterion must be **specific and verifiable** — "it works" is not acceptable. Include the verification method so the validator knows exactly how to check it.
+
+**Functional Criteria** (binary pass/fail):
+
+| # | Criterion | Verification Method |
+|---|-----------|-------------------|
+| F1 | <What must be true> | <Command to run, output to observe, or test to execute> |
+| F2 | <What must be true> | <Command to run, output to observe, or test to execute> |
+
+**Edge Case Criteria** (binary pass/fail):
+
+| # | Criterion | Verification Method |
+|---|-----------|-------------------|
+| E1 | <Edge case that must be handled> | <How to trigger and verify> |
+
+**Quality Criteria** (graded — these inform the validator's quality assessment):
+- <Non-functional expectations: performance, code style, test coverage depth>
+- (Only include if the user specified quality expectations)
 
 ### Open Questions
 - <Any remaining uncertainties flagged for RESEARCH phase>

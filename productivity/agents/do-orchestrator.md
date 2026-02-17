@@ -131,8 +131,11 @@ Files for each phase:
 **Entry criteria:** Refined specification complete or `current_phase: RESEARCH`
 
 **Actions:**
-1. Spawn `do-explorer` for codebase analysis:
+1. Spawn `do-explorer` AND `do-researcher` **in parallel** (both Task calls in a single message). These agents are independent and must run concurrently to reduce latency:
+
    ```
+   # BOTH of these must be dispatched in the SAME message for parallel execution:
+
    Task(
      subagent_type = "productivity:do-explorer",
      description = "Explore codebase for: <feature>",
@@ -144,10 +147,7 @@ Files for each phase:
 
      Output a structured Codebase Map artifact."
    )
-   ```
 
-2. Spawn `do-researcher` for Confluence + external research (can run in parallel):
-   ```
    Task(
      subagent_type = "productivity:do-researcher",
      description = "Research: <feature>",
@@ -169,7 +169,7 @@ Files for each phase:
    )
    ```
 
-3. Write merged outputs to `RESEARCH.md` in the run directory with sections:
+2. Write merged outputs to `RESEARCH.md` in the run directory with sections:
    - Codebase Map (from do-explorer)
    - Research Brief (from do-researcher)
    - Assumptions, Constraints, Risks, Open Questions
@@ -409,10 +409,11 @@ From this point forward, ALL state updates go to the worktree's `.plans/` direct
      Run:
      - Automated test suite
      - Lint and type checks
-     - Each acceptance criterion with evidence
+     - Each acceptance criterion with evidence (using the verification method specified in the criterion)
      - Regression checks
+     - Quality assessment across all dimensions (code quality, pattern adherence, edge case coverage, test completeness)
 
-     Output: Validation report with pass/fail and evidence."
+     Output: Validation report with pass/fail, evidence, and quality scorecard. All quality dimensions must score 3/5 or above to pass."
    )
    ```
 
@@ -421,11 +422,12 @@ From this point forward, ALL state updates go to the worktree's `.plans/` direct
    - Acceptance criteria verification with evidence
    - Pass/fail status
 
-3. If validation fails:
+3. If validation fails (tests fail, acceptance criteria unmet, OR quality gate fails):
    - Create fix tasks in PLAN.md Task Breakdown
+   - For quality gate failures: create targeted tasks addressing the specific dimensions that scored below 3
    - Transition back to EXECUTE
 
-4. If validation passes:
+4. If validation passes (all checks pass AND quality gate passes):
    - Mark all criteria as verified in VALIDATION.md
 
 **User Checkpoint (if interactive mode):**

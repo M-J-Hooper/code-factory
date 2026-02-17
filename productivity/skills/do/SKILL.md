@@ -303,8 +303,9 @@ REFINE -> RESEARCH -> PLAN_DRAFT -> PLAN_REVIEW -> EXECUTE -> VALIDATE -> DONE
 - **Autonomous**: Synthesizes from context, logs assumptions in Decisions Made
 
 ### RESEARCH Phase
-- Spawn `do-explorer` for **local codebase** mapping (modules, patterns, conventions)
-- Spawn `do-researcher` for **Confluence + external** research (design docs, RFCs, APIs)
+- Spawn `do-explorer` and `do-researcher` **in parallel** (both in a single message) for latency reduction
+- `do-explorer`: **local codebase** mapping (modules, patterns, conventions)
+- `do-researcher`: **Confluence + external** research (design docs, RFCs, APIs)
 - Output: Context, Assumptions, Constraints, Risks, Open Questions
 - **Both sources are mandatory** - do not skip Confluence search
 - **Interactive**: Present research summary, ask user to confirm assumptions and scope
@@ -336,11 +337,12 @@ REFINE -> RESEARCH -> PLAN_DRAFT -> PLAN_REVIEW -> EXECUTE -> VALIDATE -> DONE
 - **Commit frequency:** after each function, fix, test, or refactor — not batched
 
 ### VALIDATE Phase
-- Spawn `do-validator` to run checks
-- Output: Validation report, pass/fail decision
-- May loop back to EXECUTE for fixes
-- **Interactive**: Present validation results, ask user before creating PR
-- **Autonomous**: Auto-proceed to DONE if validation passes
+- Spawn `do-validator` to run automated checks AND quality assessment
+- Output: Validation report with test results, acceptance evidence, and quality scorecard (1-5 per dimension)
+- Quality gate: all dimensions must score >= 3/5 to pass
+- May loop back to EXECUTE for test failures or quality gate failures
+- **Interactive**: Present validation results and quality scorecard, ask user before creating PR
+- **Autonomous**: Auto-proceed to DONE if validation and quality gate pass
 
 ### DONE Phase
 - Write Outcomes & Retrospective
@@ -393,7 +395,17 @@ interaction_mode: interactive  # or "autonomous"
 
 ## Acceptance Criteria
 
-<What success looks like - verifiable outcomes>
+**Functional Criteria** (binary pass/fail):
+
+| # | Criterion | Verification Method |
+|---|-----------|-------------------|
+| F1 | <What must be true> | <Command, test, or observation to verify> |
+
+**Edge Case Criteria** (binary pass/fail):
+
+| # | Criterion | Verification Method |
+|---|-----------|-------------------|
+| E1 | <Edge case handled> | <How to trigger and verify> |
 
 ## Progress
 

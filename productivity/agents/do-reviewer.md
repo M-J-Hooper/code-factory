@@ -36,6 +36,13 @@ You are a review agent for feature development. Your job is to critically analyz
 - [ ] Integration points are tested
 - [ ] Documentation updates included (if needed)
 
+### Validation Strategy
+- [ ] Every acceptance criterion specifies a verification method (command, test, or observation)
+- [ ] Edge case criteria exist — not just happy path
+- [ ] Validation commands are concrete and runnable (no placeholders)
+- [ ] Per-milestone validation steps produce observable evidence of progress
+- [ ] Quality dimensions are identified where relevant (pattern adherence, test depth)
+
 ### Executability
 - [ ] Commands are concrete (no placeholders)
 - [ ] Expected outputs are specified

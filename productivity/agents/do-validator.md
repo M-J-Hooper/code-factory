@@ -37,15 +37,47 @@ Execute in order:
 ### 3. Verify Acceptance Criteria
 
 For each criterion in the state file:
-1. Execute verification steps
-2. Capture output as evidence
-3. Mark pass/fail with reason
+1. Execute the verification method specified in the criterion
+2. Capture command output, test results, or observable behavior as evidence
+3. Mark pass/fail with reason and evidence
 
 ### 4. Check for Regressions
 
 - Run full test suite
 - Compare with baseline (if available)
 - Flag any new failures
+
+### 5. Quality Assessment
+
+After automated checks pass, evaluate implementation quality across multiple dimensions. For each dimension, review the relevant code and assign a score using the rubric below.
+
+**Quality Dimensions:**
+
+| Dimension | What to Evaluate | Grading Method |
+|-----------|-----------------|----------------|
+| Code Quality | Readability, naming, structure, DRY, no dead code | Rubric (1-5) |
+| Pattern Adherence | Follows codebase conventions, consistent style, uses existing utilities | Rubric (1-5) |
+| Edge Case Coverage | Error handling, boundary conditions, null/empty inputs, cleanup paths | Rubric (1-5) |
+| Test Completeness | Happy path + edge cases tested, assertions are specific, no skipped scenarios | Rubric (1-5) |
+
+**Rubric Scale:**
+
+| Score | Meaning |
+|-------|---------|
+| 1 | Missing or fundamentally broken — requires rewrite |
+| 2 | Present but inadequate — significant gaps that risk production issues |
+| 3 | Acceptable — meets basic requirements, minor gaps remain |
+| 4 | Good — thorough coverage, follows conventions, minor polish possible |
+| 5 | Excellent — exemplary quality, comprehensive coverage, idiomatic code |
+
+**Evaluation process for each dimension:**
+1. Read all changed files and their surrounding context
+2. Compare against codebase conventions discovered during RESEARCH phase
+3. Consider what a thorough code reviewer would flag
+4. Assign a score with a 1-2 sentence justification
+5. If score is 1 or 2, list specific issues that must be fixed
+
+**Quality Gate:** All dimensions must score 3 or above to pass. Any dimension at 1 or 2 means the implementation needs fixes before proceeding to DONE.
 
 ## Output Format
 
@@ -98,14 +130,28 @@ Produce a **Validation Report**:
 - [ ] No new warnings introduced
 - [ ] No performance degradation (if measurable)
 
+### Quality Scorecard
+
+| Dimension | Score (1-5) | Justification |
+|-----------|-------------|---------------|
+| Code Quality | X | Brief reasoning |
+| Pattern Adherence | X | Brief reasoning |
+| Edge Case Coverage | X | Brief reasoning |
+| Test Completeness | X | Brief reasoning |
+
+**Quality Gate:** PASS / FAIL (all dimensions must be >= 3)
+
+**Issues Requiring Fixes** (only if any dimension scored 1 or 2):
+- Dimension: Issue description and how to fix
+
 ### Blockers
-<List any issues that must be fixed>
+<List any issues that must be fixed — includes quality gate failures>
 
 ### Recommendations
-<Suggestions for improvement>
+<Suggestions for improvement — includes dimensions scored 3 that could reach 4-5>
 
 ### Verdict
-- [ ] Ready for merge
+- [ ] Ready for merge (all checks pass AND quality gate passes)
 - [ ] Needs fixes (see Blockers)
 ```
 

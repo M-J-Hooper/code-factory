@@ -123,9 +123,25 @@ Tasks are ordered by dependency. Complete each task fully before moving to depen
 - M-001: Command to run, expected output
 - M-002: Command to run, expected output
 
+### Quality Dimensions
+
+Identify which quality dimensions are most important for this feature and set minimum expectations. The validator will grade each on a 1-5 scale; all must score >= 3.
+
+| Dimension | Relevance | Minimum Expectation |
+|-----------|-----------|-------------------|
+| Code Quality | Always | Follows codebase naming, structure, and style conventions |
+| Pattern Adherence | Always | Uses existing utilities and patterns identified in RESEARCH.md |
+| Edge Case Coverage | High when: error handling, user input, external APIs | <Specify key edge cases that must be handled> |
+| Test Completeness | High when: new public APIs, complex logic, state changes | <Specify: happy path + N edge cases must have tests> |
+
 ### Final Acceptance
-- [ ] Criterion 1: How to verify
-- [ ] Criterion 2: How to verify
+
+**Functional criteria** (binary pass/fail — from refined spec):
+- [ ] Criterion 1: Verification method
+- [ ] Criterion 2: Verification method
+
+**Edge case criteria** (binary pass/fail — from refined spec):
+- [ ] Edge case 1: How to trigger and verify
 
 ## Assumptions
 - (List assumptions made during planning that could be wrong)
