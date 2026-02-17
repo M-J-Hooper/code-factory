@@ -55,7 +55,8 @@ Analyze the diff and construct the review using the format below. Each section m
 
 ### Output Format
 
-```markdown
+<output-format>
+
 ## PR Review: <title>
 
 **PR:** <url>
@@ -145,13 +146,16 @@ Omit any severity section with no entries.
 **<Approve / Request Changes / Comment>**
 
 <1-2 sentence rationale>
-```
+
+</output-format>
 
 ---
 
 ## Analysis Categories
 
 When reviewing, evaluate against:
+
+<analysis-categories>
 
 | Category | Look For |
 |----------|----------|
@@ -160,6 +164,8 @@ When reviewing, evaluate against:
 | **Design** | Over-engineering, missing abstractions, pattern inconsistency, poor separation of concerns |
 | **Testing** | Missing coverage, untested edge cases, weak assertions, brittle tests |
 | **Style** | Unclear naming, dead code, misleading comments, formatting inconsistency |
+
+</analysis-categories>
 
 ## Rules
 

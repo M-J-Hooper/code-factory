@@ -126,7 +126,7 @@ Wait for user confirmation, then execute each commit in order, verifying build b
 
 Each commit message uses this template. **Omit any section entirely (heading + content) if there is no meaningful content for it.**
 
-```
+<commit-message-template>
 <title line>
 
 ## 📎 Documentation
@@ -141,7 +141,7 @@ Each commit message uses this template. **Omit any section entirely (heading + c
 ## 📋 Summary
 
 - {what changed and how}
-```
+</commit-message-template>
 
 Section order is always: Documentation → Motivation → Summary. Rules:
 

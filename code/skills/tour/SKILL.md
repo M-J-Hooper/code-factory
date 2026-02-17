@@ -112,7 +112,7 @@ Produce a complete tour as a single markdown document. No pausing — research e
 
 Write the tour to a file (default: `/tmp/tour-{topic}.md`) or print inline if short.
 
-```markdown
+<output-format name="written-tour">
 # Code Tour: {Topic}
 
 {1-2 sentence overview of what this component/service does}
@@ -125,9 +125,8 @@ Write the tour to a file (default: `/tmp/tour-{topic}.md`) or print inline if sh
 
 {Explanation of what this code does and why it matters}
 
-\`\`\`go
-// relevant code excerpt
-\`\`\`
+    go
+    // relevant code excerpt
 
 ---
 
@@ -137,18 +136,15 @@ Write the tour to a file (default: `/tmp/tour-{topic}.md`) or print inline if sh
 
 {Explanation}
 
-\`\`\`go
-// relevant code excerpt
-\`\`\`
+    go
+    // relevant code excerpt
 
 ---
 
 ## Data Flow
 
-\`\`\`
-component A → component B → component C
-\`\`\`
-```
+    component A → component B → component C
+</output-format>
 
 #### Guidelines
 
@@ -197,7 +193,7 @@ Link format: `https://github.com/{owner}/{repo}/pull/{number}/files#diff-{sha256
 
 Use collapsible `<details>` sections for each "stop" on the tour:
 
-```markdown
+<output-format name="pr-comment-tour">
 ## Code Tour
 
 A guided walkthrough of the changes in this PR. Each stop covers one logical area — expand to read.
@@ -211,9 +207,8 @@ A guided walkthrough of the changes in this PR. Each stop covers one logical are
 
 Explanation with inline code snippets:
 
-\`\`\`go
-// relevant code excerpt
-\`\`\`
+    go
+    // relevant code excerpt
 
 </details>
 
@@ -226,10 +221,8 @@ Explanation with inline code snippets:
 
 ### Data flow summary
 
-\`\`\`
-component A → component B → component C
-\`\`\`
-```
+    component A → component B → component C
+</output-format>
 
 #### Guidelines
 

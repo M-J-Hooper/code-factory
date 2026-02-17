@@ -128,7 +128,7 @@ After `make all` passes, verify these criteria (not covered by automated checks)
 
 Present a summary of all changes. For non-trivial improvements, include a brief before/after snippet.
 
-```
+<report-template>
 ## Improvements Made
 
 ### Skills Updated
@@ -150,17 +150,17 @@ Present a summary of all changes. For non-trivial improvements, include a brief 
 
 ### Suggested Follow-ups
 - {anything that needs deeper work via /execplan}
-```
+</report-template>
 
 Omit any section with no entries.
 
 ## Example
 
+<example>
+
 ### Invocation
 
-```
-/improve-skill git
-```
+    /improve-skill git
 
 ### What Happens
 
@@ -174,17 +174,17 @@ Omit any section with no entries.
 
 ### Sample Report
 
-```
-## Improvements Made
+    ## Improvements Made
 
-### Skills Updated
-- **git:commit**: Step 2 now lists specific analysis targets instead of vague "Analyze changes"
-  - Before: "Analyze the staged changes"
-  - After: "For each staged file, identify: title line, documentation links, motivation, summary"
+    ### Skills Updated
+    - **git:commit**: Step 2 now lists specific analysis targets instead of vague "Analyze changes"
+      - Before: "Analyze the staged changes"
+      - After: "For each staged file, identify: title line, documentation links, motivation, summary"
 
-### Version Bumps
-- **git**: 0.3.0 -> 0.3.1
-```
+    ### Version Bumps
+    - **git**: 0.3.0 -> 0.3.1
+
+</example>
 
 ## Error Handling
 

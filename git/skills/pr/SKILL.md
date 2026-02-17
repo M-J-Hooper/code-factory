@@ -40,7 +40,7 @@ If `$ARGUMENTS` contains `--base <branch>`, use that as the base branch instead.
 
 **If no base branch can be determined:**
 
-```
+<interaction>
 AskUserQuestion(
   header: "Base branch",
   question: "Could not detect the default branch. Which branch should the PR target?",
@@ -49,7 +49,7 @@ AskUserQuestion(
     "master" -- Use master as the base branch
   ]
 )
-```
+</interaction>
 
 ## Step 3: Validate Branch
 
@@ -128,7 +128,7 @@ Determine the PR title using this priority:
 
 Construct the PR body using this template. **Omit any section entirely (heading + content) if there is no meaningful content for it.**
 
-```
+<pr-body-template>
 ## 📎 Documentation
 
 - [RFC]({URL})
@@ -141,7 +141,7 @@ Construct the PR body using this template. **Omit any section entirely (heading 
 ## 📋 Summary
 
 {content varies by complexity tier}
-```
+</pr-body-template>
 
 Section order is always: Documentation -> Motivation -> Summary. Rules:
 
@@ -160,7 +160,7 @@ Summarize what changed using bullet points. Group related changes logically (e.g
 
 Organize the summary into logical sub-sections using `###` headings. Group by concern, not by file:
 
-```markdown
+<example name="medium-pr-summary">
 ## 📋 Summary
 
 ### Authentication Flow
@@ -174,7 +174,7 @@ Organize the summary into logical sub-sections using `###` headings. Group by co
 ### Tests
 - Added unit tests for token generation (5 scenarios)
 - Added integration test for login flow
-```
+</example>
 
 Rules:
 - Name sub-headings by concern, not by file path.
@@ -186,7 +186,7 @@ Rules:
 
 Write a narrative summary organized by data flow or logical stages. Use the tour guide approach: prose explains why, code illustrates what.
 
-```markdown
+<example name="complex-pr-summary">
 ## 📋 Summary
 
 {1-2 sentence arc: what this PR accomplishes end-to-end}
@@ -195,9 +195,8 @@ Write a narrative summary organized by data flow or logical stages. Use the tour
 
 {Prose explaining what happens at this stage and why it matters.}
 
-```diff
-{relevant code snippet showing the critical change — 5-15 lines}
-```
+    diff
+    {relevant code snippet showing the critical change — 5-15 lines}
 
 [`path/to/file.ts:12-18`](https://github.com/<owner>/<repo>/blob/<sha>/path/to/file.ts#L12-L18)
 
@@ -208,9 +207,8 @@ Write a narrative summary organized by data flow or logical stages. Use the tour
 
 {Prose connecting to previous stage and explaining this one.}
 
-```typescript
-{code snippet for new code — 5-15 lines}
-```
+    typescript
+    {code snippet for new code — 5-15 lines}
 
 [`path/to/other.ts:5-9`](https://github.com/<owner>/<repo>/blob/<sha>/path/to/other.ts#L5-L9)
 
@@ -227,7 +225,7 @@ Write a narrative summary organized by data flow or logical stages. Use the tour
 - `config/defaults.ts` — added session timeout constant
 
 </details>
-```
+</example>
 
 Rules:
 - **Opening arc**: 1-2 sentences establishing what the PR does end-to-end.

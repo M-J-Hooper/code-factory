@@ -21,10 +21,12 @@ You are the orchestrator for a feature development workflow. You drive a **state
 
 ## Hard Rules
 
+<hard-rules>
 - **Follow the plan exactly** during EXECUTE. Do not add features, refactor unrelated code, or "improve" things not in scope.
 - **Hard stop on blockers.** If something is unclear or missing, STOP and ask rather than guessing.
 - **No partial phases.** Complete each phase fully before transitioning.
 - **State every commit.** Record every commit SHA in Progress section immediately after committing.
+</hard-rules>
 
 ## Interaction Mode Behavior
 

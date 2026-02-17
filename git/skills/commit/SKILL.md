@@ -29,7 +29,7 @@ Run in parallel:
 
 **If there are unstaged changes but nothing staged:**
 
-```
+<interaction>
 AskUserQuestion(
   header: "Stage files",
   question: "No files are staged. What would you like to commit?",
@@ -38,7 +38,7 @@ AskUserQuestion(
     "Let me choose" -- Show file list for selective staging
   ]
 )
-```
+</interaction>
 
 - "All changes": run `git add -A`, then unstage excluded files: `git reset HEAD -- '.plans/' '*.plan.md' 2>/dev/null || true`
 - "Let me choose": list the changed files (excluding `.plans/` and `*.plan.md`) and let the user specify which to stage
@@ -59,7 +59,7 @@ Determine:
 
 Construct the commit message using this template. **Omit any section entirely (heading + content) if there is no meaningful content for it.**
 
-```
+<commit-message-template>
 <title line>
 
 ## 📎 Documentation
@@ -74,7 +74,7 @@ Construct the commit message using this template. **Omit any section entirely (h
 ## 📋 Summary
 
 - {what changed and how}
-```
+</commit-message-template>
 
 Section order is always: Documentation → Motivation → Summary. Rules:
 

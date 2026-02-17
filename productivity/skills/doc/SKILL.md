@@ -472,6 +472,8 @@ Report the status tree as returned by ddoc.
 
 All documents created or improved by this skill follow these conventions:
 
+<style-guide>
+
 ### Headings
 
 - Use ATX-style headings (`#`, `##`, etc.)
@@ -534,12 +536,15 @@ ddoc:
 | One idea per paragraph | Break complex explanations into steps |
 | Present tense | "This command creates..." not "This command will create..." |
 
+</style-guide>
+
 ---
 
 ## Definition of Done Checklist
 
 A document is considered complete when:
 
+<checklist>
 - [ ] Title clearly describes the document purpose
 - [ ] All required sections for the format are present
 - [ ] No empty sections (remove or fill)
@@ -550,6 +555,7 @@ A document is considered complete when:
 - [ ] Follows the style guide above
 - [ ] Has been reviewed by intended audience (or marked as draft)
 - [ ] ddoc frontmatter added if intended for Confluence
+</checklist>
 
 ---
 
