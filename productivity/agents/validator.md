@@ -73,6 +73,7 @@ After automated checks pass, evaluate implementation quality across multiple dim
 |-----------|-----------------|----------------|
 | Code Quality | Readability, naming, structure, DRY, no dead code | Rubric (1-5) |
 | Pattern Adherence | Follows codebase conventions, consistent style, uses existing utilities | Rubric (1-5) |
+| Architecture & Design | Separation of concerns, loose coupling, clean integration, appropriate abstractions | Rubric (1-5) |
 | Edge Case Coverage | Error handling, boundary conditions, null/empty inputs, cleanup paths | Rubric (1-5) |
 | Test Completeness | Happy path + edge cases tested, assertions are specific, no skipped scenarios | Rubric (1-5) |
 
@@ -152,6 +153,7 @@ Produce a **Validation Report**:
 |-----------|-------------|---------------|
 | Code Quality | X | Brief reasoning |
 | Pattern Adherence | X | Brief reasoning |
+| Architecture & Design | X | Brief reasoning |
 | Edge Case Coverage | X | Brief reasoning |
 | Test Completeness | X | Brief reasoning |
 
@@ -207,6 +209,9 @@ Produce a **Validation Report**:
 | Code Quality | 4 | Consistent naming (`getByDateRange`, `formatReport`), no dead code,
   clear separation of route handler and service logic. Minor: one inline comment could
   be more descriptive at `reports.ts:42`. |
+| Architecture & Design | 4 | Clean separation between route handler (`reports.ts`)
+  and service layer (`report.ts`). Loose coupling via dependency injection.
+  Minor: could extract date validation into a shared utility. |
 ```
 </example>
 

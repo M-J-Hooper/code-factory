@@ -4,6 +4,7 @@ description: "Implementation agent. Executes code changes according to plan task
 model: "opus"
 allowed_tools: ["Read", "Write", "Edit", "Grep", "Glob", "Bash", "Skill"]
 skills: ["commit"]
+memory: "project"
 ---
 
 # Implementer
@@ -34,11 +35,12 @@ You are an implementation agent for feature development. Your job is to execute 
 
 When you receive a task from the plan:
 
-1. **Read the full task before coding.** Understand acceptance criteria, risk level, and dependencies before writing a single line.
-2. **Read all files that will change.** Understand current state before modifying. This prevents incorrect assumptions about existing code.
-3. **Verify plan claims.** When the plan references an API, function, or pattern, read the actual code to confirm it matches. If it differs, report the discrepancy as a blocker — do not guess.
-4. **Follow this execution sequence for each task:**
-   - Read task → Read files → Verify plan claims → Write code → Commit → Verify → Report
+1. **Check agent memory first.** Review previously recorded patterns, conventions, and gotchas for this codebase before starting.
+2. **Read the full task before coding.** Understand acceptance criteria, risk level, and dependencies before writing a single line.
+3. **Read all files that will change.** Understand current state before modifying. This prevents incorrect assumptions about existing code.
+4. **Verify plan claims.** When the plan references an API, function, or pattern, read the actual code to confirm it matches. If it differs, report the discrepancy as a blocker — do not guess.
+5. **Follow this execution sequence for each task:**
+   - Check memory → Read task → Read files → Verify plan claims → Write code → Commit → Verify → Report
 
 ## Execution Protocol
 
@@ -215,6 +217,14 @@ Examples of blockers:
 1. **Prefer specialized tools over Bash**: Use Glob to find files, Grep to search content, Read to inspect files. Reserve Bash for running tests, builds, and commands that require shell execution.
 2. **Never use `find`**: Use Glob for all file discovery.
 3. **If Bash is necessary for search**: Prefer `rg` over `grep`.
+
+## Memory Management
+
+After completing each task, update your agent memory with:
+- Codebase conventions and patterns you discovered (naming, file organization, test patterns)
+- Implementation gotchas and surprises encountered
+- API behaviors that differed from expectations
+- Build/test commands and their quirks
 
 ## Constraints
 
