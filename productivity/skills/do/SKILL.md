@@ -25,6 +25,7 @@ This skill orchestrates feature development through a **multi-phase state machin
 
 ## Hard Rules
 
+- **Refine before research.** No research until the feature description is detailed enough to act on.
 - **Plan before code.** No implementation until research and planning phases complete.
 - **Workspace isolation first.** Create worktree and branch before any code changes (EXECUTE phase).
 - **Atomic commits only.** Commit after every logical change, not batched.
@@ -75,6 +76,7 @@ Before starting, determine intent from the user's query:
 4. **If iterating**: User is providing feedback on existing work. Address the feedback directly within the current phase.
 
 **Feedback handling during phases:**
+- **REFINE phase feedback**: Adjust specification, clarify requirements
 - **RESEARCH phase feedback**: Adjust scope, investigate additional areas
 - **PLAN_DRAFT feedback**: Modify milestones, tasks, or approach
 - **EXECUTE feedback**: Modify code as requested, commit the change
@@ -106,7 +108,7 @@ For each discovered `FEATURE.md`, read it and check whether `current_phase: DONE
 
 For each active run, parse the YAML frontmatter to extract:
 - `run_id`
-- `current_phase` (RESEARCH, PLAN_DRAFT, PLAN_REVIEW, EXECUTE, VALIDATE, DONE)
+- `current_phase` (REFINE, RESEARCH, PLAN_DRAFT, PLAN_REVIEW, EXECUTE, VALIDATE, DONE)
 - `phase_status` (not_started, in_progress, blocked, in_review, complete)
 - `branch`
 - `last_checkpoint`
@@ -121,7 +123,7 @@ Remove the flag from arguments before further processing.
 
 ## Step 4: Mode Selection
 
-**IMPORTANT: Never skip phases.** When arguments are a feature description, you MUST start the full workflow (RESEARCH -> PLAN -> EXECUTE). Do not implement directly, regardless of perceived simplicity.
+**IMPORTANT: Never skip phases.** When arguments are a feature description, you MUST start the full workflow (REFINE -> RESEARCH -> PLAN -> EXECUTE). Do not implement directly, regardless of perceived simplicity.
 
 **Classification rules — apply in this order:**
 
@@ -164,7 +166,7 @@ run_id: <run-id>
 repo_root: <REPO_ROOT>
 branch: null
 base_ref: null
-current_phase: RESEARCH
+current_phase: REFINE
 phase_status: not_started
 milestone_current: null
 last_checkpoint: <ISO timestamp>
@@ -199,7 +201,7 @@ Start a new feature development workflow.
 </interaction_mode>
 
 <instructions>
-- Begin with RESEARCH phase
+- Begin with REFINE phase to clarify and detail the feature description
 - You are the single writer of the state files - update them after every significant action
 - Write phase artifacts to the current working directory's .plans/do/<run-id>/:
   - RESEARCH.md: codebase map and research brief after RESEARCH phase
@@ -213,7 +215,7 @@ Start a new feature development workflow.
 - BEFORE EXECUTE phase: call /worktree first, then /branch (mandatory, no exceptions)
 - Use /commit for atomic commits during EXECUTE (after every logical change)
 - Use /pr to create pull request in DONE phase
-- Route through: RESEARCH -> PLAN_DRAFT -> PLAN_REVIEW -> EXECUTE -> VALIDATE -> DONE
+- Route through: REFINE -> RESEARCH -> PLAN_DRAFT -> PLAN_REVIEW -> EXECUTE -> VALIDATE -> DONE
 
 INTERACTION MODE RULES:
 - If interactive: Present findings and ask for user approval at each phase transition
@@ -287,11 +289,18 @@ Report status of a feature development run without making changes.
 ## Phase Flow
 
 ```
-RESEARCH -> PLAN_DRAFT -> PLAN_REVIEW -> EXECUTE -> VALIDATE -> DONE
-              ^                |             ^          |
-              |                v             |          v
-              +--- (changes requested) ------+-- (fix forward) --+
+REFINE -> RESEARCH -> PLAN_DRAFT -> PLAN_REVIEW -> EXECUTE -> VALIDATE -> DONE
+                        ^                |             ^          |
+                        |                v             |          v
+                        +--- (changes requested) ------+-- (fix forward) --+
 ```
+
+### REFINE Phase
+- Spawn `do-refiner` to analyze and clarify the feature description with the user
+- Output: Refined specification with problem statement, scope, behavior, acceptance criteria
+- Well-specified descriptions pass through quickly; vague ones get iterative refinement
+- **Interactive**: Asks clarifying questions, confirms refined spec with user
+- **Autonomous**: Synthesizes from context, logs assumptions in Decisions Made
 
 ### RESEARCH Phase
 - Spawn `do-explorer` for **local codebase** mapping (modules, patterns, conventions)
@@ -388,6 +397,7 @@ interaction_mode: interactive  # or "autonomous"
 
 ## Progress
 
+- [x] (2025-02-12 09:45Z) REFINE phase complete
 - [x] (2025-02-12 10:00Z) RESEARCH phase complete
 - [x] (2025-02-12 10:30Z) PLAN_DRAFT phase complete
 - [x] (2025-02-12 11:00Z) PLAN_REVIEW phase complete - approved

@@ -12,7 +12,7 @@ You are the orchestrator for a feature development workflow. You drive a **state
 ## Core Responsibilities
 
 1. **State Management**: You are the ONLY writer of the FEATURE.md state file
-2. **Phase Transitions**: Route work through RESEARCH → PLAN_DRAFT → PLAN_REVIEW → EXECUTE → VALIDATE → DONE
+2. **Phase Transitions**: Route work through REFINE → RESEARCH → PLAN_DRAFT → PLAN_REVIEW → EXECUTE → VALIDATE → DONE
 3. **Subagent Coordination**: Dispatch specialized agents for each phase
 4. **Git Workflow**: Enforce branch creation before execution, atomic commits throughout
 5. **Resume Logic**: Handle interruptions gracefully using state file
@@ -85,9 +85,50 @@ Files for each phase:
 
 ## Phase Execution
 
+### REFINE Phase
+
+**Entry criteria:** New run or `current_phase: REFINE`
+
+**Purpose:** Refine a vague or incomplete feature description into a detailed, actionable specification before investing time in research and planning. Well-specified descriptions pass through quickly; vague ones get iteratively clarified with the user.
+
+**Actions:**
+1. Spawn `do-refiner` to analyze and refine the feature description:
+   ```
+   Task(
+     subagent_type = "productivity:do-refiner",
+     description = "Refine feature: <short description>",
+     prompt = "Analyze and refine this feature description into a detailed, actionable specification.
+
+     <feature_request>
+     <the user's feature description>
+     </feature_request>
+
+     <repo_root>
+     <REPO_ROOT>
+     </repo_root>
+
+     Use read-only tools to scan the codebase for context that informs your questions.
+     Iteratively clarify with the user until the specification is detailed enough for research and planning.
+     Output a Refined Feature Specification artifact."
+   )
+   ```
+
+2. Write the refined specification into the FEATURE.md state file:
+   - Replace the initial feature description with the refined version
+   - Populate the Acceptance Criteria section from the refiner's output
+   - Record any open questions flagged for RESEARCH phase
+
+**Autonomous mode:** The refiner classifies the description's completeness. If well-specified (4+ dimensions clear), it synthesizes directly without asking questions. If vague, it uses codebase context to make reasonable assumptions, logs them in Decisions Made, and proceeds.
+
+**Exit criteria:**
+- Refined specification exists with: problem statement, desired outcome, scope, behavior spec, and acceptance criteria
+- User has confirmed the specification (interactive) or refiner classified it as sufficiently detailed (autonomous)
+
+**Transition:** Update `current_phase: RESEARCH`, `phase_status: not_started`
+
 ### RESEARCH Phase
 
-**Entry criteria:** New run or `current_phase: RESEARCH`
+**Entry criteria:** Refined specification complete or `current_phase: RESEARCH`
 
 **Actions:**
 1. Spawn `do-explorer` for codebase analysis:
