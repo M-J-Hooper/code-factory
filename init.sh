@@ -52,3 +52,23 @@ for i in "${!SRCS[@]}"; do
     ln -s "$src" "$dest"
     echo "LINK  $dest -> $src"
 done
+
+# Sync skills and agents to OpenCode global paths
+echo ""
+echo "Syncing skills and agents to OpenCode..."
+"$SCRIPT_DIR/sync-opencode.sh"
+
+# Install pre-commit hook
+HOOK_SRC="$SCRIPT_DIR/.githooks/pre-commit"
+HOOK_DEST="$SCRIPT_DIR/.git/hooks/pre-commit"
+if [[ -f "$HOOK_SRC" ]]; then
+    if [[ -L "$HOOK_DEST" ]]; then
+        rm "$HOOK_DEST"
+    elif [[ -e "$HOOK_DEST" ]]; then
+        echo "WARN  $HOOK_DEST already exists as a regular file, skipping"
+    fi
+    if [[ ! -e "$HOOK_DEST" ]]; then
+        ln -s "$HOOK_SRC" "$HOOK_DEST"
+        echo "LINK  $HOOK_DEST -> $HOOK_SRC"
+    fi
+fi

@@ -3,7 +3,7 @@
 
   "theme": "system",
   "autoupdate": true,
-  "enabled_providers": ["anthropic", "google", "openai"],
+  "enabled_providers": ["anthropic", "google", "openai", "nvidia", "lmstudio"],
   "disabled_providers": ["opencode", "gitlab", "gemini"],
   "share": "disabled",
 
@@ -46,7 +46,6 @@
         },
       },
     },
-
     "anthropic": {
       "options": {
         "setCacheKey": true,
@@ -72,7 +71,6 @@
         },
       },
     },
-
     "google": {
       "options": {
         "setCacheKey": true,
@@ -90,6 +88,170 @@
         },
       },
     },
+    "nvidia": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "NVIDIA NIM",
+      "options": {
+        "baseURL": "https://integrate.api.nvidia.com/v1",
+        "apiKey": "{env:NVIDIA_API_KEY}",
+      },
+      "models": {
+        "minimaxai/minimax-m2.1": {
+          "name": "MiniMax M2.1 (Agentic/Coding)",
+          "limit": {
+            "context": 131072,
+            "output": 16384,
+          },
+        },
+        "qwen/qwen3-coder-480b-a35b-instruct": {
+          "name": "Qwen3 Coder 480B",
+          "limit": {
+            "context": 131072,
+            "output": 16384,
+          },
+        },
+        "z-ai/glm5": {
+          "name": "GLM-5 745B (Z-AI/Zhipu)",
+          "limit": {
+            "context": 131072,
+            "output": 16384,
+          },
+        },
+        "moonshotai/kimi-k2.5": {
+          "name": "Kimi K2.5 (Multimodal VLM, 1T params)",
+          "limit": {
+            "context": 131072,
+            "output": 16384,
+          },
+        },
+        "nvidia/nemotron-3-nano-30b-a3b": {
+          "name": "Nemotron 3 Nano 30B (1M ctx)",
+          "limit": {
+            "context": 1048576,
+            "output": 16384,
+          },
+        },
+        // === Top-tier coding & reasoning ===
+        "deepseek-ai/deepseek-v3.2": {
+          "name": "DeepSeek V3.2",
+          "limit": {
+            "context": 131072,
+            "output": 16384,
+          },
+        },
+        "deepseek-ai/deepseek-r1": {
+          "name": "DeepSeek R1 (Reasoning)",
+          "limit": {
+            "context": 131072,
+            "output": 16384,
+          },
+        },
+        "qwen/qwen3-235b-a22b": {
+          "name": "Qwen3 235B",
+          "limit": {
+            "context": 131072,
+            "output": 16384,
+          },
+        },
+        "moonshotai/kimi-k2-instruct": {
+          "name": "Kimi K2",
+          "limit": {
+            "context": 131072,
+            "output": 16384,
+          },
+        },
+        // === Meta Llama ===
+        "meta/llama-3.1-405b-instruct": {
+          "name": "Llama 3.1 405B",
+          "limit": {
+            "context": 131072,
+            "output": 16384,
+          },
+        },
+        "meta/llama-3.3-70b-instruct": {
+          "name": "Llama 3.3 70B",
+          "limit": {
+            "context": 131072,
+            "output": 16384,
+          },
+        },
+        // === NVIDIA Nemotron ===
+        "nvidia/llama-3.1-nemotron-ultra-253b-v1": {
+          "name": "Nemotron Ultra 253B",
+          "limit": {
+            "context": 131072,
+            "output": 16384,
+          },
+        },
+        "nvidia/llama-3.3-nemotron-super-49b-v1.5": {
+          "name": "Nemotron Super 49B v1.5",
+          "limit": {
+            "context": 131072,
+            "output": 16384,
+          },
+        },
+        // === Lightweight / small_model candidates ===
+        "qwen/qwen2.5-coder-32b-instruct": {
+          "name": "Qwen2.5 Coder 32B",
+          "limit": {
+            "context": 131072,
+            "output": 16384,
+          },
+        },
+        "mistralai/mistral-small-24b-instruct": {
+          "name": "Mistral Small 24B",
+          "limit": {
+            "context": 32768,
+            "output": 8192,
+          },
+        },
+        "deepseek-ai/deepseek-r1-distill-qwen-32b": {
+          "name": "DeepSeek R1 Distill 32B",
+          "limit": {
+            "context": 131072,
+            "output": 16384,
+          },
+        },
+      },
+    },
+    "lmstudio": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "LM Studio (Local)",
+      "options": {
+        "baseURL": "http://100.126.30.17:8123/v1",
+        "apiKey": "{env:LMSTUDIO_API_KEY}",
+      },
+      "models": {
+        "lmstudio/openai/gpt-oss-20b": {
+          "name": "gpt-oss",
+        },
+        "lmstudio/qwen/qwen3-30b-a3b-2507": {
+          "name": "qwen3",
+        },
+        "lmstudio/qwen/qwen3-coder-30b": {
+          "name": "qwen3-coder",
+          "options": {
+            "n_ctx": 4096,
+            "n_keep": 2048,
+            "batch_size": 1024,
+          },
+        },
+        "lmstudio-community/GLM-4.7-Flash-GGUF": {
+          "name": "glm-4.7-flash",
+        },
+        "unsloth/Qwen3-Coder-Next-GGUF": {
+          "name": "qwen3-coder-next",
+          "options": {
+            "n_ctx": 10795,
+            "n_keep": 10795,
+            "batch_size": 1024,
+            "max_context_tokens": 8192,
+            "max_output_tokens": 800,
+            "temperature": 0.2,
+          },
+        },
+      },
+    },
   },
 
   // --- Models ---
@@ -99,17 +261,17 @@
   // "model": "anthropic/claude-sonnet-4-5",
 
   // Used for lightweight tasks (e.g., titles).
-  "small_model": "anthropic/claude-sonnet-4-5",
+  // "small_model": "anthropic/claude-sonnet-4-5",
   // "small_model": "google/gemini-3-pro-preview",
 
-  "mode": {
-    "plan": {
-      "model": "anthropic/claude-opus-4-6",
-    },
-    "build": {
-      "model": "anthropic/claude-opus-4-6",
-    },
-  },
+  // "mode": {
+  //   "plan": {
+  //     "model": "anthropic/claude-opus-4-6",
+  //   },
+  //   "build": {
+  //     "model": "anthropic/claude-opus-4-6",
+  //   },
+  // },
 
   // --- Agents (easy A/B/C testing) ---
   // Switch agents quickly (Tab / Shift+Tab by default).

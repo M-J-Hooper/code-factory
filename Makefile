@@ -1,4 +1,4 @@
-.PHONY: all install lint check check-frontmatter check-agents check-refs check-agent-refs check-descriptions check-structure check-versions help
+.PHONY: all install lint check check-frontmatter check-agents check-refs check-agent-refs check-descriptions check-structure check-versions check-opencode-sync help
 
 all: check lint ## Run all checks (frontmatter, agents, refs, structure, plugins, lint)
 
@@ -192,7 +192,14 @@ check-versions: ## Warn if plugin content changed since last commit without a ve
 	done
 	@echo "Done."
 
-check: check-frontmatter check-agents check-refs check-agent-refs check-descriptions check-structure check-versions ## Run all validation checks (frontmatter, agents, refs, structure, plugins)
+check-opencode-sync: ## Validate OpenCode sync is up-to-date
+	@if [ ! -d "$$HOME/.config/opencode/skills" ]; then \
+		echo "  SKIP  OpenCode sync (not installed, run 'make install')"; \
+	else \
+		./sync-opencode.sh --check; \
+	fi
+
+check: check-frontmatter check-agents check-refs check-agent-refs check-descriptions check-structure check-versions check-opencode-sync ## Run all validation checks (frontmatter, agents, refs, structure, plugins)
 	@echo "Checking plugin references..."
 	@ok=true; \
 	for source in $$(python3 -c "import json; data=json.load(open('.claude-plugin/marketplace.json')); print('\n'.join(p['source'] for p in data['plugins']))"); do \
