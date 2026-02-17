@@ -382,9 +382,10 @@ FRESH SUBAGENT PER TASK WITH TWO-STAGE REVIEW:
   - Include scene-setting: where the task fits, what was done before, relevant patterns
   - The implementer asks questions before starting, self-reviews before reporting
 - After each implementer completes, run TWO sequential reviews:
-  1. Spec compliance review: dispatch a fresh reviewer to verify nothing missing, nothing extra
-  2. Code quality review: dispatch a fresh reviewer to assess quality and patterns (only after spec passes)
+  1. Spec compliance review: fresh reviewer acknowledges strengths, then verifies nothing missing, nothing extra, nothing misunderstood. Includes severity assessment for orchestrator.
+  2. Code quality review: fresh reviewer receives plan context (approach, architecture), reports strengths first, then assesses quality, architecture alignment, patterns (only after spec passes). Flags plan deviations as justified or problematic.
 - If a reviewer finds issues: dispatch the implementer to fix → re-review → repeat until approved
+- If code quality reviewer flags plan deviations: update plan and Decision Log if warranted
 - Never dispatch multiple implementers in parallel (causes conflicts)
 - Never skip either review stage or proceed while issues remain open
 
@@ -483,8 +484,9 @@ Next to do: <next incomplete step text>
 
 FRESH SUBAGENT PER TASK WITH TWO-STAGE REVIEW:
 - For each remaining task, dispatch a FRESH implementer subagent with full task text inlined
-- After each implementer completes, run spec compliance review then code quality review
+- After each implementer completes, run spec compliance review (strengths first, severity assessment) then code quality review (plan context, strengths first, plan alignment check)
 - Fix issues via review loops before proceeding to next task
+- If code quality reviewer flags plan deviations: update plan and Decision Log if warranted
 - Never skip reviews or proceed while issues remain open
 
 TDD ENFORCEMENT:

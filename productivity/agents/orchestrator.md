@@ -619,21 +619,25 @@ Task(
 
   <role>
   You are a spec compliance reviewer. Verify the implementation matches the
-  task specification — nothing missing, nothing extra.
+  task specification — nothing missing, nothing extra. Acknowledge what was
+  built correctly before listing issues.
   </role>
 
   <task>
   Read the actual code (not the report) and verify:
-  1. Missing requirements — anything specified but not implemented?
-  2. Extra work — anything built that wasn't requested?
-  3. Misunderstandings — requirements interpreted incorrectly?
+  1. What was built correctly — note requirements that are fully met
+  2. Missing requirements — anything specified but not implemented?
+  3. Extra work — anything built that wasn't requested?
+  4. Misunderstandings — requirements interpreted incorrectly?
   Do NOT trust the implementer's report. Read the code independently.
+  Include a Communication to Orchestrator section with structured severity assessment.
   </task>
 
   <constraints>
   - Work from: <worktree_path>
   - Every finding must cite a file:line reference
   - Report: COMPLIANT (all requirements met) or ISSUES (list specific gaps with file:line)
+  - Acknowledge strengths before listing issues
   - Do not suggest improvements — only verify spec compliance
   </constraints>"
 )
@@ -654,35 +658,49 @@ Task(
   <full text of the task>
   </task_spec>
 
+  <plan_context>
+  <the plan's stated approach, architecture decisions, and relevant constraints
+   from PLAN.md — include the Architecture, Scope, and relevant Milestone sections>
+  </plan_context>
+
   <implementer_report>
   <the implementer's completion report>
   </implementer_report>
 
   <role>
-  You are a code quality reviewer. Assess whether the implementation is
-  well-built: clean, tested, maintainable, following codebase conventions.
+  You are a senior code quality reviewer. Assess whether the implementation is
+  well-built: clean, tested, maintainable, following codebase conventions, and
+  aligned with the plan's architectural intent. Acknowledge strengths before issues.
   </role>
 
   <task>
-  Review the committed code for this task. Assess:
-  1. Code quality — readability, naming, structure, DRY
-  2. Pattern adherence — follows codebase conventions and existing patterns
-  3. Test quality — tests verify behavior, not mock behavior; comprehensive
-  4. Edge case handling — error paths, boundary conditions addressed
+  Review the committed code for this task. Assess in order:
+  1. Strengths — what was done well (always report this first)
+  2. Plan alignment — does the implementation match the planned approach? Flag deviations with assessment (justified vs problematic)
+  3. Code quality — readability, naming, structure, DRY
+  4. Architecture & design — separation of concerns, coupling, integration
+  5. Pattern adherence — follows codebase conventions and existing patterns
+  6. Test quality — tests verify behavior, not mock behavior; comprehensive
+  7. Edge case handling — error paths, boundary conditions addressed
+  8. Documentation — public APIs documented, non-obvious logic explained
 
   For each issue, classify as Critical (must fix) or Minor (nice to have).
+  If deviations from the plan are found, report whether they warrant plan updates.
   </task>
 
   <constraints>
   - Work from: <worktree_path>
   - Every finding must cite a file:line reference
   - Report: APPROVED or ISSUES with specific findings and severity
+  - Always include Strengths section and Plan Alignment section
   - Do not review spec compliance — that was already verified
   </constraints>"
 )
 ```
 
 **If code quality reviewer finds Critical issues:** Resume the implementer subagent to fix them. Then re-run quality review. Repeat until approved. Minor issues are logged but don't block.
+
+**If code quality reviewer recommends plan updates:** Log the recommendation in the Decisions Made section of FEATURE.md. If the deviation affects downstream tasks, update PLAN.md before proceeding.
 
 **Step 4: Update State**
 

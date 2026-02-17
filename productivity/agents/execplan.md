@@ -19,11 +19,12 @@ When implementing an executable specification (ExecPlan), use the **fresh subage
 1. Read the plan once and extract ALL tasks with full text upfront
 2. For each task, dispatch a **fresh implementer subagent** with the full task text and context inlined in the prompt (never make subagents read plan files — provide full text directly)
 3. If the implementer asks questions, answer with full context before letting it proceed
-4. After implementation, dispatch a **fresh spec compliance reviewer** to verify nothing missing, nothing extra
+4. After implementation, dispatch a **fresh spec compliance reviewer** to verify nothing missing, nothing extra, nothing misunderstood. The reviewer acknowledges strengths before listing issues and includes a severity assessment.
 5. If spec issues found → implementer fixes → re-review → repeat until compliant
-6. After spec passes, dispatch a **fresh code quality reviewer** to assess quality and patterns
+6. After spec passes, dispatch a **fresh code quality reviewer** with plan context (approach, architecture). The reviewer reports strengths first, then assesses quality, architecture alignment, and patterns. Flags plan deviations as justified or problematic.
 7. If critical quality issues → implementer fixes → re-review → repeat until approved
-8. Mark task complete, update Progress, proceed to next task
+8. If plan deviations found → update plan and Decision Log if warranted
+9. Mark task complete, update Progress, proceed to next task
 
 Do not prompt the user for "next steps"; proceed to the next milestone. Keep all sections up to date. Resolve ambiguities autonomously, and commit frequently.
 

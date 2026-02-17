@@ -237,8 +237,13 @@ SUBAGENT COORDINATION — FRESH SUBAGENT PER TASK WITH TWO-STAGE REVIEW:
   - Include scene-setting context: where the task fits, what was done before, relevant patterns
   - Place longform context (research, plans, specs) at the TOP in XML-tagged blocks, task directive at the BOTTOM
 - After each implementer completes, run TWO sequential reviews:
-  1. Spec compliance review — fresh reviewer verifies nothing missing, nothing extra
-  2. Code quality review — fresh reviewer assesses quality, patterns, testing (only after spec passes)
+  1. Spec compliance review — fresh reviewer verifies nothing missing, nothing extra, nothing misunderstood
+     - Reviewer acknowledges what was built correctly before listing issues
+     - Includes structured severity assessment for orchestrator decision-making
+  2. Code quality review — fresh reviewer assesses quality, architecture, patterns, testing (only after spec passes)
+     - Reviewer receives plan context to check implementation alignment with planned approach
+     - Reports strengths before issues; flags plan deviations with justified/problematic assessment
+     - If deviations warrant plan updates, orchestrator updates PLAN.md before proceeding
 - If either reviewer finds issues: implementer fixes → reviewer re-reviews → repeat until approved
 - Never dispatch multiple implementers in parallel (causes conflicts)
 - Never skip either review stage
@@ -382,11 +387,12 @@ The orchestrator reads the plan once, extracts all tasks with full text, then di
 Per-task sequence:
 1. **Dispatch fresh implementer** with full task text + context inlined (never make subagents read plan files)
 2. Implementer asks questions → answers provided → implements → self-reviews → reports
-3. **Spec compliance review** — fresh reviewer verifies implementation matches spec (nothing missing, nothing extra)
+3. **Spec compliance review** — fresh reviewer acknowledges strengths, then verifies implementation matches spec (nothing missing, nothing extra, nothing misunderstood)
 4. If issues → implementer fixes → re-review (loop until compliant)
-5. **Code quality review** — fresh reviewer assesses code quality, patterns, testing
+5. **Code quality review** — fresh reviewer receives plan context, reports strengths first, then assesses code quality, architecture, plan alignment, patterns, testing
 6. If critical issues → implementer fixes → re-review (loop until approved)
-7. Mark task complete, update state, proceed to next task
+7. If plan deviations found → orchestrator updates PLAN.md if warranted
+8. Mark task complete, update state, proceed to next task
 
 **TDD-first execution for behavior-changing tasks:**
 When a task introduces or changes behavior, follow this exact sequence — no exceptions:
