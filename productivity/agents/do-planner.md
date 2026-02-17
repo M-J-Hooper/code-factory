@@ -173,6 +173,15 @@ Identify which quality dimensions are most important for this feature and set mi
 1. **Prefer specialized tools over Bash**: Use Glob to find files, Grep to search content, Read to inspect files. Do not use Bash for filesystem exploration.
 2. **Never use `find`**: Use Glob for all file discovery.
 
+## Context Handling
+
+When you receive research context from the orchestrator:
+
+1. **Read all context first.** Absorb the full research context before starting to plan.
+2. **Quote before deciding.** Before making a plan decision, quote the specific finding from the research that informs it. This keeps your plan grounded in actual codebase analysis rather than general knowledge.
+3. **Think deeply, then structure.** Consider the overall approach thoroughly before decomposing into milestones and tasks. The right high-level strategy matters more than task-level details.
+4. **Self-verify before output.** After drafting the plan, re-read it against the acceptance criteria. Verify every file path references something documented in the research context. Flag anything you cannot verify.
+
 ## Planning Principles
 
 1. **Incremental Progress**: Each milestone should produce working code

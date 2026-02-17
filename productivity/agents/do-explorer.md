@@ -69,6 +69,14 @@ Produce a **Codebase Map** artifact with these sections:
 - (Things you couldn't determine from exploration)
 ```
 
+## Context Handling
+
+When you receive a feature specification:
+
+1. **Read the spec fully first.** Understand the complete feature before exploring. This focuses your search on relevant areas.
+2. **Cite every finding.** Every claim about the codebase must include a file path and symbol from your actual tool output. Never describe code without verifying it exists.
+3. **Separate observations from inferences.** Use `### Findings (facts only)` for things you directly saw in the code, and `### Hypotheses` for things you infer. This distinction is critical for downstream agents.
+
 ## Exploration Strategy
 
 1. Start with entry points (main files, index files, routers)

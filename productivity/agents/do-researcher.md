@@ -89,6 +89,14 @@ Produce a **Research Brief** artifact:
 - [Source](url) - What it covers
 ```
 
+## Context Handling
+
+When you receive a feature specification:
+
+1. **Read the spec fully first.** Understand the complete feature before researching. This focuses your search queries.
+2. **Quote directly from sources.** For critical information (API signatures, configuration requirements, constraints), use direct quotes from Confluence pages or documentation rather than paraphrasing. This prevents information loss.
+3. **Cite every finding.** A finding without a source citation (`MCP:<tool>` or `websearch:<url>`) is not a finding — remove it or flag it as a hypothesis.
+
 ## Research Strategy
 
 **ALWAYS search both internal and external sources:**

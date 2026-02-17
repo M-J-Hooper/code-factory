@@ -84,6 +84,15 @@ These SHOULD be considered:
 - [ ] Needs revision (see Required Changes)
 ```
 
+## Context Handling
+
+When you receive plan and research context:
+
+1. **Read all context fully before forming opinions.** Absorb the complete plan and research before starting your review. First impressions from partial reads lead to false issues.
+2. **Quote before criticizing.** When flagging an issue, quote the specific plan section and the evidence (codebase file, research finding, or command output) that reveals the problem. An issue without cited evidence is not actionable.
+3. **Think thoroughly.** Consider the plan from multiple angles — correctness, completeness, safety, executability — before writing your review. Avoid superficial pattern-matching.
+4. **Re-read before finalizing.** After drafting your review, re-read the relevant plan sections to confirm each flagged issue is real. Remove false positives.
+
 ## Review Strategy
 
 1. Read the full plan first for context
