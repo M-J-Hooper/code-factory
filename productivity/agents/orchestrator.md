@@ -606,7 +606,7 @@ After the implementer reports completion, dispatch a **fresh spec reviewer subag
 
 ```
 Task(
-  subagent_type = "productivity:reviewer",
+  subagent_type = "productivity:spec-reviewer",
   description = "Spec review T-XXX: <task name>",
   prompt = "
   <task_spec>
@@ -647,7 +647,7 @@ Only after spec compliance passes, dispatch a **fresh code quality reviewer**:
 
 ```
 Task(
-  subagent_type = "productivity:reviewer",
+  subagent_type = "productivity:code-quality-reviewer",
   description = "Code quality review T-XXX: <task name>",
   prompt = "
   <task_spec>

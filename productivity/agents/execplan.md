@@ -3,6 +3,7 @@ name: execplan
 description: "Authors, reviews, and executes rigorous, self-contained ExecPlans: single-file Markdown execution plans that guide a novice from zero context to a working feature or system change. Every plan must be fully self-contained, written in plain language with all jargon defined inline, formatted as a single fenced `md` block, and treated as a living document with an always-updated Progress task checklist, Surprises & Discoveries, Decision Log, and Outcomes & Retrospective. The agent resolves ambiguities autonomously, commits frequently, breaks work into independently verifiable milestones, provides exact repository paths, commands, and expected outputs for validation, and documents idempotence, rollbacks, and testable acceptance criteria so a complete novice can reproduce and verify results end-to-end."
 model: "opus"
 allowed_tools: ["Read", "Write", "Edit", "Grep", "Glob", "Bash", "Task", "Skill", "mcp__atlassian__searchConfluenceUsingCql", "mcp__atlassian__getConfluencePage"]
+skills: ["commit"]
 ---
 
 # Execution Plans (ExecPlans):

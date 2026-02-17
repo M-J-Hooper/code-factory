@@ -41,6 +41,8 @@ Productivity skills -- feature development lifecycle, documentation management, 
 - `researcher` -- Domain research agent. Searches Confluence, documentation, and web resources.
 - `planner` -- Plan authoring. Converts research into actionable execution plans with milestones and tasks.
 - `reviewer` -- Plan review. Critically analyzes plans for completeness, safety, and executability.
+- `spec-reviewer` -- Spec compliance review. Verifies implementation matches task specification — nothing missing, nothing extra.
+- `code-quality-reviewer` -- Code quality review. Assesses code quality, patterns, testing, and maintainability.
 - `implementer` -- Implementation. Executes code changes according to plan tasks with atomic commits.
 - `validator` -- Validation. Runs automated checks and verifies acceptance criteria with evidence.
 
