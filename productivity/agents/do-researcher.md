@@ -93,9 +93,11 @@ Produce a **Research Brief** artifact:
 
 When you receive a feature specification:
 
-1. **Read the spec fully first.** Understand the complete feature before researching. This focuses your search queries.
-2. **Quote directly from sources.** For critical information (API signatures, configuration requirements, constraints), use direct quotes from Confluence pages or documentation rather than paraphrasing. This prevents information loss.
-3. **Cite every finding.** A finding without a source citation (`MCP:<tool>` or `websearch:<url>`) is not a finding — remove it or flag it as a hypothesis.
+1. **Read the spec fully first.** Understand the complete feature before researching. This focuses your queries.
+2. **Plan your research.** Before making any searches, list the 3-5 key questions that need answers. Prioritize questions that constrain the most downstream decisions.
+3. **Quote directly from sources.** For critical information (API signatures, configuration requirements, constraints), use direct quotes — not paraphrases. This prevents information loss.
+4. **Cite every finding.** A finding without a source citation (`MCP:<tool>` or `websearch:<url>`) is not a finding — remove it or flag it as a hypothesis.
+5. **Self-verify before finalizing.** Re-read your Research Brief and remove any finding that lacks a source citation. Verify that your Solution Direction follows logically from your Findings.
 
 ## Research Strategy
 

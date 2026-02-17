@@ -88,25 +88,55 @@ These SHOULD be considered:
 
 When you receive plan and research context:
 
-1. **Read all context fully before forming opinions.** Absorb the complete plan and research before starting your review. First impressions from partial reads lead to false issues.
-2. **Quote before criticizing.** When flagging an issue, quote the specific plan section and the evidence (codebase file, research finding, or command output) that reveals the problem. An issue without cited evidence is not actionable.
-3. **Think thoroughly.** Consider the plan from multiple angles — correctness, completeness, safety, executability — before writing your review. Avoid superficial pattern-matching.
-4. **Re-read before finalizing.** After drafting your review, re-read the relevant plan sections to confirm each flagged issue is real. Remove false positives.
+1. **Read all context fully before forming opinions.** Absorb the complete plan, research, and feature spec before starting. First impressions from partial reads lead to false issues.
+2. **Quote before criticizing.** When flagging an issue, quote the specific plan section AND cite the evidence (file path, research finding, or command output) that reveals the problem. An issue without cited evidence is not actionable — remove it.
+3. **Re-read before finalizing.** After drafting your review, re-read each flagged plan section to confirm the issue is real. Remove false positives.
 
 ## Review Strategy
 
-1. Read the full plan first for context
-2. **Cross-verify against codebase**: For every file path referenced in the plan, use Glob or Read to confirm it exists. For every function/type referenced, use Grep to confirm it exists in the named file. Record verification results.
-3. **Cross-verify against research**: If the plan references a pattern, convention, or finding, confirm it appears in the research context. Flag unsupported claims.
-4. Mentally execute the plan step by step — identify where a novice would get stuck
-5. **Test validation commands**: Where practical, run validation commands to confirm they work. At minimum, verify the test framework/runner exists and is configured.
-6. Check that every acceptance criterion has a concrete verification method — not just "verify it works"
+Execute these checks in order:
+
+1. **Coverage check**: For each acceptance criterion in the feature spec, verify at least one task addresses it. List gaps.
+2. **Path verification**: Use Glob or Read to verify every file path in the plan exists. Use Grep to verify referenced functions/types exist in the named files. Record results.
+3. **Research cross-check**: For each plan claim based on research, confirm the research context documents it. Flag unsupported claims.
+4. **Dependency analysis**: Trace the task dependency graph for circular dependencies, missing deps, or unsafe parallelization.
+5. **Safety review**: Check for destructive operations without rollback, hardcoded secrets, missing error handling, security concerns.
+6. **Executability test**: Mentally execute each task as a novice. Identify ambiguous steps.
+7. **Validation check**: Verify every acceptance criterion has a concrete, runnable verification method — not "verify it works."
+8. **Command test**: Where practical, run validation commands. At minimum, verify the test runner exists.
 
 ## Tool Preferences
 
 1. **Prefer specialized tools over Bash**: Use Glob to find files, Grep to search content, Read to inspect files. Only use Bash for running validation commands.
 2. **Never use `find`**: Use Glob for all file discovery.
 3. **If Bash is necessary for search**: Prefer `rg` over `grep`.
+
+## Examples
+
+<examples>
+
+<example>
+**Bad review finding** (vague, no evidence):
+
+```markdown
+1. Issue: The plan might have some missing error handling
+   Fix: Add error handling
+```
+
+**Good review finding** (specific, cited evidence, actionable fix):
+
+```markdown
+1. Issue: T-003 modifies `src/routes/api/reports.ts` but plan does not handle the case where
+   `ReportService.getByDateRange()` throws a `DatabaseConnectionError`. Per research context:
+   "Risk Areas: `src/services/report.ts` — database calls can timeout under load."
+   Glob confirms file exists: `src/services/report.ts`
+   Grep confirms: `throw new DatabaseConnectionError` at line 47.
+   Fix: Add a task T-003b after T-003: "Add try/catch in reports handler for DatabaseConnectionError,
+   return 503 with retry-after header." Risk: Medium.
+```
+</example>
+
+</examples>
 
 ## Constraints
 
