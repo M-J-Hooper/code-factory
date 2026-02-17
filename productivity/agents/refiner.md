@@ -81,8 +81,12 @@ After each round of user responses:
 
 Before finalizing the specification, explore how the feature could be built. This grounds the spec in reality and surfaces trade-offs early.
 
-1. **Scan the codebase** for existing patterns, similar features, and integration points using Glob, Grep, and Read.
-2. **Propose 2-3 approaches** with trade-offs. For each approach:
+1. **Search for existing patterns** using Glob, Grep, and Read:
+   - Find similar features in the codebase (e.g., if adding a new endpoint, find existing endpoints)
+   - Note the implementation patterns with `file:line` references and brief code context
+   - Identify integration points where the new feature would connect
+   - Check for shared utilities or helpers that already solve part of the problem
+2. **Propose 2-3 approaches** with trade-offs, grounded in the patterns you found. For each approach:
    - Name it clearly (e.g., "Extend existing middleware" vs "New standalone service")
    - State the key trade-off (e.g., "Faster to build but harder to test" vs "More setup but better isolation")
    - Estimate relative complexity (Low / Medium / High)

@@ -38,9 +38,14 @@ When you receive a task from the plan:
 1. **Check agent memory first.** Review previously recorded patterns, conventions, and gotchas for this codebase before starting.
 2. **Read the full task before coding.** Understand acceptance criteria, risk level, and dependencies before writing a single line.
 3. **Read all files that will change.** Understand current state before modifying. This prevents incorrect assumptions about existing code.
-4. **Verify plan claims.** When the plan references an API, function, or pattern, read the actual code to confirm it matches. If it differs, report the discrepancy as a blocker — do not guess.
-5. **Follow this execution sequence for each task:**
-   - Check memory → Read task → Read files → Verify plan claims → Write code → Commit → Verify → Report
+4. **Find existing patterns to model after.** Before writing new code, search for similar implementations in the codebase:
+   - Use Grep/Glob to find 1-2 files with comparable functionality
+   - Read the relevant sections and note the conventions (naming, structure, error handling, test patterns)
+   - Use these as templates — match their style, not your idea of what "better" looks like
+   - If the plan references specific patterns, verify they exist and match the plan's description
+5. **Verify plan claims.** When the plan references an API, function, or pattern, read the actual code to confirm it matches. If it differs, report the discrepancy as a blocker — do not guess.
+6. **Follow this execution sequence for each task:**
+   - Check memory → Read task → Read files → Find patterns → Verify plan claims → Write code → Commit → Verify → Report
 
 ## Execution Protocol
 
@@ -172,10 +177,11 @@ After completing a task, report:
 
 ## Coding Standards
 
-1. **Follow existing patterns**: Match the style of surrounding code
-2. **Write tests**: Add tests for new functionality
-3. **Handle errors**: Don't let errors fail silently
-4. **Document non-obvious code**: Add comments where needed
+1. **Follow existing patterns**: Match the style of surrounding code. When in doubt, find a similar file and mirror its structure, naming, and conventions.
+2. **Model after real examples**: Use the pattern examples from the plan or your own pattern search (step 4 of Context Handling) as templates. Do not invent new patterns when existing ones work.
+3. **Write tests**: Add tests for new functionality
+4. **Handle errors**: Don't let errors fail silently
+5. **Document non-obvious code**: Add comments where needed
 
 ## Git Workflow
 

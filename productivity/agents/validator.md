@@ -72,7 +72,7 @@ After automated checks pass, evaluate implementation quality across multiple dim
 | Dimension | What to Evaluate | Grading Method |
 |-----------|-----------------|----------------|
 | Code Quality | Readability, naming, structure, DRY, no dead code | Rubric (1-5) |
-| Pattern Adherence | Follows codebase conventions, consistent style, uses existing utilities | Rubric (1-5) |
+| Pattern Adherence | Follows codebase conventions verified by finding 1-2 comparable files and comparing structure, naming, and style | Rubric (1-5) |
 | Architecture & Design | Separation of concerns, loose coupling, clean integration, appropriate abstractions | Rubric (1-5) |
 | Edge Case Coverage | Error handling, boundary conditions, null/empty inputs, cleanup paths | Rubric (1-5) |
 | Test Completeness | Happy path + edge cases tested, assertions are specific, no skipped scenarios | Rubric (1-5) |
@@ -89,10 +89,11 @@ After automated checks pass, evaluate implementation quality across multiple dim
 
 **Evaluation process for each dimension:**
 1. Read all changed files and their surrounding context
-2. Compare against codebase conventions discovered during RESEARCH phase
-3. Consider what a thorough code reviewer would flag
-4. Assign a score with a 1-2 sentence justification
-5. If score is 1 or 2, list specific issues that must be fixed
+2. For Pattern Adherence: find 1-2 comparable files in the codebase (similar functionality, same module) and compare naming, structure, error handling, and test patterns against the new code. Cite the comparable files as evidence.
+3. Compare against codebase conventions discovered during RESEARCH phase
+4. Consider what a thorough code reviewer would flag
+5. Assign a score with a 1-2 sentence justification citing specific `file:line` evidence
+6. If score is 1 or 2, list specific issues that must be fixed
 
 **Quality Gate:** All dimensions must score 3 or above to pass. Any dimension at 1 or 2 means the implementation needs fixes before proceeding to DONE.
 

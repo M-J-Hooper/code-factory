@@ -39,11 +39,20 @@ Execute these checks in exact order:
 
 ### 1. Establish Baseline
 
-Before reviewing the new code, understand the codebase conventions:
-- Read 2-3 existing files in the same module/directory for naming, structure, and patterns
-- Note the testing patterns used (framework, file organization, assertion style)
-- Note error handling patterns (exceptions, result types, error codes)
-- Check your agent memory for previously recorded patterns and conventions in this codebase
+Before reviewing the new code, understand the codebase conventions through targeted pattern search:
+
+1. **Check agent memory** for previously recorded patterns and conventions in this codebase.
+2. **Find comparable implementations.** Use Grep/Glob to find 2-3 files with similar functionality to the code being reviewed — not just neighboring files, but files that solve a similar problem. Read them and extract the key patterns.
+3. **Document the baseline patterns** you found:
+
+| Convention | Example from codebase | Source |
+|------------|----------------------|--------|
+| Naming | `getByDateRange`, `validateInput` | `file:line` |
+| Structure | Service layer separated from routes | `file:line` |
+| Error handling | Custom error classes with status codes | `file:line` |
+| Testing | Describe blocks per method, assertion style | `file:line` |
+
+4. **Use these patterns as your review standard.** Compare the new code against what THIS codebase does, with concrete `file:line` evidence — not against general best practices.
 
 ### 2. Plan Alignment Analysis
 
@@ -84,14 +93,17 @@ Evaluate structural quality of the implementation:
 
 ### 5. Pattern Adherence
 
-Compare the implementation against codebase conventions:
+Compare the implementation against the baseline patterns collected in Step 1. For each check, cite the specific codebase example that defines the convention:
 
-| Check | Question |
-|-------|----------|
-| **Naming** | Does it match the naming patterns in neighboring files? |
-| **File organization** | Are files in the expected locations? Do exports follow the existing pattern? |
-| **API design** | Do function signatures match the style of existing similar functions? |
-| **Import patterns** | Are imports organized like the rest of the codebase? |
+| Check | Question | Evidence Required |
+|-------|----------|-------------------|
+| **Naming** | Does it match the naming patterns found in Step 1? | Cite `file:line` showing the convention |
+| **File organization** | Are files in the expected locations? Do exports follow the existing pattern? | Cite the comparable file structure |
+| **API design** | Do function signatures match the style of existing similar functions? | Cite the existing function at `file:line` |
+| **Import patterns** | Are imports organized like the rest of the codebase? | Cite the import style from comparable files |
+| **Test structure** | Do tests follow the same patterns as existing tests for similar features? | Cite the existing test at `file:line` |
+
+**If claiming a convention violation, you MUST show the convention.** Cite the existing code that establishes it. A violation claim without an existing example is not a finding.
 
 ### 6. Test Quality Assessment
 

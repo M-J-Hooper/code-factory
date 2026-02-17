@@ -117,6 +117,7 @@ Tasks are ordered by dependency. Complete each task fully before moving to depen
   - Files: `path/to/file.ts` (New/Modify), `tests/path/to/file.test.ts` (New/Modify)
   - Depends on: None / Task N
   - Risk: Low | Medium | High
+  - Pattern reference: `path/to/similar.ts:45-67` — model after this existing implementation (brief description of what to mirror)
   - Steps:
     1. Write failing test (include complete test code)
     2. Run test → `<exact command>` → expected: FAIL with `<expected error>`
@@ -251,6 +252,7 @@ When you receive research context from the orchestrator:
   - Files: `src/routes/api/v1/reports.ts` (New), `src/routes/api/v1/index.ts` (Extend), `tests/routes/api/v1/reports.test.ts` (New)
   - Depends on: None
   - Risk: Low
+  - Pattern reference: `src/routes/api/v1/users.ts:23-55` — follow the same route handler structure, validation, and service call pattern
   - Steps:
     1. Write failing test:
        ```typescript
@@ -306,9 +308,9 @@ When you receive research context from the orchestrator:
 When creating the plan, draw from:
 
 **Local Codebase:**
-- Existing patterns and conventions (from explorer findings)
-- Similar implementations to reference
-- Test patterns to follow
+- Existing patterns and conventions (from explorer findings, especially the Pattern Catalog)
+- Similar implementations to reference — cite `file:line` with code context so the implementer has a concrete template
+- Test patterns to follow — cite the specific test file and structure to mirror
 
 **Confluence (if not already in research context):**
 - Search for additional context: `mcp__atlassian__searchConfluenceUsingCql(cql="text ~ '<feature keywords>'")`
