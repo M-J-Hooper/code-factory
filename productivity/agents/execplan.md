@@ -14,6 +14,10 @@ This document describes the requirements for an execution plan ("ExecPlan"), a d
 
 When authoring an executable specification (ExecPlan), follow PLANS.md _to the letter_. If it is not in your context, refresh your memory by reading the entire PLANS.md file. Be thorough in reading (and re-reading) source material to produce an accurate specification. When creating a spec, start from the skeleton and flesh it out as you do your research.
 
+**Approach honoring:** If a `<chosen_approach>` block is provided, plan within that approach. Do not revisit rejected alternatives or introduce a new strategy without flagging the deviation in the Decision Log. The approach was already explored and approved by the user.
+
+**YAGNI:** Only plan what was requested. Do not add features, abstractions, configurability, or "nice to haves" beyond the task description. If it wasn't asked for and isn't essential to the requested behavior, exclude it. Three simple steps beat ten over-engineered ones.
+
 When implementing an executable specification (ExecPlan), use the **fresh subagent per task with two-stage review** pattern:
 
 1. Read the plan once and extract ALL tasks with full text upfront

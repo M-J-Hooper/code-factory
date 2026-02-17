@@ -45,6 +45,17 @@ Determine mode from `$ARGUMENTS` and discovered plans.
 
 **IMPORTANT: Never skip Author Mode.** When the arguments are a task description, you MUST dispatch the Author Mode subagent to write a plan. Do not implement the task directly, regardless of how simple it appears. The entire point of `/execplan` is to produce a plan first.
 
+**Anti-Pattern: "This Is Too Simple To Need A Plan"**
+
+Every task goes through the authoring process. A config change, a single-function utility, a "quick fix" — all of them. "Simple" tasks are where unexamined assumptions cause the most wasted work. The plan can be short for truly simple tasks, but you MUST NOT skip it.
+
+| Rationalization | Reality |
+|----------------|---------|
+| "This is just a one-line change" | One-line changes have the highest ratio of unexamined assumptions to effort. |
+| "I already know how to build this" | Knowledge of HOW doesn't replace a documented approach for reproducibility. |
+| "The user said 'just do it'" | That's about speed, not about skipping design. Author a concise plan quickly. |
+| "This will be faster without the plan" | Skipping plans causes rework. A brief plan for simple tasks costs little. |
+
 **Classification rules — apply in this order:**
 
 1. **Review request** — `$ARGUMENTS` contains the word "review":
@@ -106,6 +117,33 @@ Use their response as the task description for author mode.
 
 If the task description is fewer than 10 words, ask for more detail before dispatching.
 
+**Approach Exploration (before planning):**
+
+Before dispatching the plan author, explore approaches with the user:
+
+1. Scan the codebase briefly (Glob, Grep, Read) to understand the relevant area.
+2. Propose 2-3 approaches with trade-offs. For each: name, trade-off, relative complexity.
+3. Lead with your recommended approach and explain why.
+4. Present to the user:
+
+```
+AskUserQuestion(
+  header: "Approach",
+  question: "I see <N> ways to approach this. I recommend <approach A> because <reason>. Which approach do you prefer?",
+  options: [
+    "<Approach A> (Recommended)" -- <one-line trade-off summary>,
+    "<Approach B>" -- <one-line trade-off summary>,
+    "<Approach C>" -- <one-line trade-off summary>
+  ]
+)
+```
+
+**Skip approach exploration when:** The task is so well-specified that only one viable approach exists, or the user explicitly chose an approach in their description.
+
+**YAGNI check:** Before presenting approaches, remove any that add unnecessary complexity or features not requested.
+
+Include the chosen approach in the dispatch to the plan author.
+
 Generate a slug from the task description: lowercase, hyphens, max 50 chars.
 
 Dispatch:
@@ -121,6 +159,10 @@ Author a new ExecPlan for the following task.
 <the user's task description>
 </task>
 
+<chosen_approach>
+<the approach the user selected, with rationale and rejected alternatives>
+</chosen_approach>
+
 <output_path>
 .plans/<slug>.plan.md
 </output_path>
@@ -134,6 +176,8 @@ Author a new ExecPlan for the following task.
 - Write the ExecPlan to the output path above
 - Follow the ExecPlan format from your agent instructions to the letter
 - The plan must be fully self-contained, written for a complete novice
+- Honor the chosen approach from <chosen_approach> — do not revisit rejected alternatives or introduce a new strategy without flagging the deviation in the Decision Log
+- YAGNI: only plan what was requested — do not add features, abstractions, or capabilities beyond the task description
 
 TASK GRANULARITY AND TDD-FIRST STRUCTURE:
 - Break work into bite-sized steps — each step is one action (write test, run test, implement, run test, commit)
