@@ -30,53 +30,67 @@ If unclear, ask the user which mode they prefer.
 
 ## Step 1: Discover Code Context
 
-**Tool preferences**: Use Glob to find files and Grep to search content. Never use `find` or Bash for file discovery. If Bash is needed for search, prefer `rg` over `grep`. For broad exploration across multiple directories, delegate to a subagent via `Task(subagent_type=Explore)`.
+**Tool preferences**: Use Glob to find files and Grep to search content. Never use `find` or Bash for file discovery. For broad exploration across multiple directories, delegate to a subagent via `Task(subagent_type=Explore)`.
 
 1. Use Glob/Grep to locate relevant source files for `$ARGUMENTS`
 2. If Atlassian MCP tools are available, query for internal documentation and Confluence pages
 3. Search the current repo and common code directories for relevant source files
+4. **Pre-read ALL discovered files** using the Read tool before building the tour plan — full contextual awareness prevents backtracking during delivery
 
 ## Step 2: Build Tour Plan
 
-Identify stops in logical order:
+Design **5-12 stops** in logical narrative order. Each stop specifies: file path, line number, and topic.
 
-1. **Overview**: High-level context from documentation
-2. **Entry point**: main() or equivalent starting point
-3. **Dependencies**: Initialization and dependency injection
-4. **Core logic**: Key handlers, routes, or business logic
-5. **Integration points**: Connections to other services
+| Stop Type | What to show |
+|-----------|-------------|
+| **Overview** | High-level context from documentation |
+| **Entry point** | `main()` or equivalent starting point |
+| **Dependencies** | Initialization and dependency injection |
+| **Core logic** | Key handlers, routes, or business logic |
+| **Integration points** | Connections to other services |
 
-Adapt stops to the topic — not every tour needs all five.
+Adapt stops to the topic — not every tour needs all five types. Order stops to tell a story: follow the code path a request or event takes through the system.
 
 ## Step 3: Deliver Tour
 
 ### Interactive Mode
 
-Show code inline and explain it stop-by-stop, waiting for the user between each.
+Navigate to ONE stop per message. Wait for user confirmation before advancing.
 
 #### How to Present Code
 
-Use the Read tool to load relevant file sections. Present code as fenced blocks with file path and line numbers:
+Present code as fenced blocks with file path and line numbers:
 
 ```
 `path/to/file.go:42-68`
 ⟶ [code snippet]
 ```
 
-Keep snippets focused — show only the lines relevant to the current stop (typically 10-30 lines). Use sub-agents (Task with subagent_type=Explore) to research code you need context on before explaining.
+| Snippet Type | Context to Show |
+|-------------|----------------|
+| Function/struct/class definitions | Start from the definition line, show full signature + key body (10-30 lines) |
+| Code needing surrounding context | Include lines above and below the target (up to 30 lines) |
+| Single statement or call | Minimal excerpt with enough context to understand the flow |
+
+Use sub-agents (`Task(subagent_type=Explore)`) only during Step 1-2 setup research, not during interactive delivery — sub-agents break the conversational flow.
 
 #### Pacing Rules
 
-**CRITICAL**: You MUST wait for user confirmation between stops.
+**CRITICAL**: ONE location per message maximum. You MUST wait for user confirmation between stops.
 
 1. After explaining a stop, ALWAYS ask before moving on:
    - "Ready to see [next concept]?"
    - "Any questions before we move on?"
-   - "Let me know when you're ready to continue"
+2. NEVER advance multiple stops without user acknowledgment.
+3. Allow reading time — keep explanations focused, then pause.
 
-2. NEVER blast through multiple stops without user confirmation between each.
+#### Handling User Questions
 
-3. If the user asks a question about the current code, answer it fully before offering to continue.
+When the user asks about specific code mid-tour:
+
+1. Answer the question fully using pre-read file context from Step 1
+2. If the question requires exploring code not yet read, use the Read tool (not a sub-agent)
+3. After answering, offer to continue the tour from where you left off
 
 #### Example Flow
 
@@ -95,17 +109,17 @@ Keep snippets focused — show only the lines relevant to the current stop (typi
 [Explain, then ask for confirmation again]
 
 [User asks "what does this function do?"]
-[Read the function, research with sub-agent, explain]
+[Read the function, explain using pre-read context]
 ```
 
 ### Written Mode
 
-Produce a complete tour as a single markdown document. No pausing — research everything, then write.
+Produce a complete tour as a single markdown document. No pausing — research everything upfront, then write.
 
 #### Process
 
-1. Complete Steps 1-2 above
-2. Use sub-agents (Task with subagent_type=Explore) in parallel to research each stop
+1. Complete Steps 1-2 (discover + plan)
+2. Use sub-agents (`Task(subagent_type=Explore)`) in parallel to research each stop — sub-agents are appropriate here since there is no interactive flow to interrupt
 3. Write the full tour document
 
 #### Output Format
@@ -164,7 +178,7 @@ When the user asks to post a code tour as a comment on a PR (e.g., "post this to
    gh pr view {PR_NUMBER} --json title,body,files,commits
    gh pr diff {PR_NUMBER}
    ```
-2. Read the changed files to understand the code in full context (not just the diff hunks).
+2. Read the changed files in full context (not only the diff hunks).
 
 #### Building diff links
 
