@@ -6,13 +6,11 @@
     "DISABLE_NON_ESSENTIAL_MODEL_CALLS": "1",
     "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1"
   },
-  "autoUpdatesChannel": "stable",
   "attribution": {
     "commit": "",
     "pr": ""
   },
   "permissions": {
-    "defaultMode": "bypassPermissions",
     "allow": [
       "Bash(grep:*)",
       "Bash(ls:*)",
@@ -111,6 +109,7 @@
       "mcp__atlassian__fetch",
       "mcp__atlassian__searchJiraIssuesUsingJql"
     ],
+    "defaultMode": "bypassPermissions",
     "additionalDirectories": [
       "/Users/rodrigo.fernandes/go",
       "/Users/rodrigo.fernandes/dev",
@@ -166,7 +165,8 @@
     "git-mergetool@mat-brown-contrib": true,
     "git-split-branch@mat-brown-contrib": true,
     "permissions@mat-brown-contrib": true,
-    "pr-description@mat-brown-contrib": true
+    "pr-description@mat-brown-contrib": true,
+    "playground@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
     "claude-plugins-official": {
@@ -195,5 +195,6 @@
     }
   },
   "alwaysThinkingEnabled": true,
+  "autoUpdatesChannel": "stable",
   "bypassPermissionsModeAccepted": true
 }
