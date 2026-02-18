@@ -14,15 +14,6 @@ user-invocable: true
 
 Announce: "I'm using the /do skill to orchestrate feature development with lifecycle tracking."
 
-## Overview
-
-This skill orchestrates feature development through a **multi-phase state machine** with:
-- **On-disk state** stored outside the repo (never committed)
-- **Specialized subagents** for research, planning, implementation, and validation
-- **Resumable execution** from any interruption point
-- **Atomic commits** via `/commit` skill
-- **Two interaction modes**: Interactive (default) or Autonomous
-
 ## Hard Rules
 
 - **Refine before research.** No research until the feature description is detailed enough to act on.
@@ -397,7 +388,7 @@ RE-PLAN on: fundamental plan changes needed
 ### PLAN_DRAFT Phase
 - Spawn `planner` to create plan (references both codebase findings AND Confluence context)
 - Output: Milestones, Task Breakdown, Validation Strategy
-- Plan must embed relevant context inline (not just links)
+- Plan must embed relevant context inline (not only links)
 - **Interactive**: Present plan, ask user to approve or request changes
 - **Autonomous**: Proceed to review, let reviewer catch issues
 

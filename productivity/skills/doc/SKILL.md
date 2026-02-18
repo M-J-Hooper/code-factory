@@ -12,17 +12,6 @@ user-invocable: true
 
 Announce: "I'm using the doc skill to manage Markdown documentation."
 
-## Overview
-
-This skill manages Markdown documentation lifecycle: create, update, improve, maintain, and audit.
-Uses `ddoc` for Confluence synchronization when documents have ddoc frontmatter.
-
-## Context
-
-- Repository root: !`git rev-parse --show-toplevel 2>/dev/null || pwd`
-- Doc directories: !`find . -type d -name "docs" -o -name "documentation" 2>/dev/null | head -5`
-- ddoc available: !`command -v ddoc &>/dev/null && echo "yes" || echo "no"`
-
 ## Step 1: Parse Arguments
 
 Parse `$ARGUMENTS` to determine intent and options:
@@ -207,7 +196,7 @@ Rewrite for clarity, correctness, and consistency without changing meaning.
 | Consistency | Heading hierarchy, list formatting, code fence languages |
 | Completeness | Missing sections for the format type |
 | Accuracy | Outdated commands, broken syntax |
-| Style | Per the style guide below |
+| Style | Per the [style guide](references/style-guide.md) |
 
 3. **Apply improvements** - Rewrite sections that need improvement while:
    - Preserving meaning and intent
@@ -468,94 +457,13 @@ Report the status tree as returned by ddoc.
 
 ---
 
-## Documentation Style Guide
+## Reference Documents
 
-All documents created or improved by this skill follow these conventions:
-
-<style-guide>
-
-### Headings
-
-- Use ATX-style headings (`#`, `##`, etc.)
-- One H1 per document (the title)
-- No skipped levels (H2 → H4 is invalid, use H2 → H3 → H4)
-- Headings should be descriptive, not generic ("Configure Authentication" not "Configuration")
-
-### Links
-
-- Use descriptive link text: `[installation guide](./install.md)` not `[click here](./install.md)`
-- Prefer relative links for internal docs: `./setup.md` not absolute URLs
-- External links should include context: "See the [official documentation](https://...)"
-
-### Code Blocks
-
-- Always include language identifier: \`\`\`bash, \`\`\`python, \`\`\`yaml
-- Use `bash` for shell commands, `shell` for interactive sessions with output
-- Use `text` for output-only blocks
-- Include comments explaining non-obvious commands
-
-### Admonitions
-
-Use GitHub-style admonitions (compatible with ddoc):
-
-```markdown
-> [!NOTE]
-> Informational content.
-
-> [!TIP]
-> Helpful suggestions.
-
-> [!WARNING]
-> Important cautions.
-
-> [!CAUTION]
-> Critical warnings about data loss or security.
-```
-
-### Frontmatter
-
-For ddoc-enabled documents:
-
-```yaml
----
-ddoc:
-  confluence_space: "TEAM"
-  confluence_parent: "123456"
-  title: "Document Title"  # optional, defaults to H1
----
-```
-
-### Writing Rules
-
-| Rule | Example |
-|------|---------|
-| Use active voice | "Run the command" not "The command should be run" |
-| Be direct | "Configure X" not "You will need to configure X" |
-| Avoid jargon | Define terms on first use or link to glossary |
-| Short sentences | Max 25 words per sentence |
-| One idea per paragraph | Break complex explanations into steps |
-| Present tense | "This command creates..." not "This command will create..." |
-
-</style-guide>
-
----
-
-## Definition of Done Checklist
-
-A document is considered complete when:
-
-<checklist>
-- [ ] Title clearly describes the document purpose
-- [ ] All required sections for the format are present
-- [ ] No empty sections (remove or fill)
-- [ ] All code blocks have language tags
-- [ ] All internal links resolve
-- [ ] All external links are valid (or marked as TODO)
-- [ ] No spelling or grammar errors
-- [ ] Follows the style guide above
-- [ ] Has been reviewed by intended audience (or marked as draft)
-- [ ] ddoc frontmatter added if intended for Confluence
-</checklist>
+| Reference | When to load |
+|-----------|-------------|
+| [style-guide.md](references/style-guide.md) | Creating or improving documents — follow these conventions |
+| [examples.md](references/examples.md) | Need usage examples for `/doc` commands |
+| [definition-of-done.md](references/definition-of-done.md) | Verifying document completeness |
 
 ---
 
@@ -571,61 +479,6 @@ Templates are stored in the `templates/` directory of this skill:
 | Tutorial | `tutorial.md` | Learning-oriented walkthroughs |
 | ADR | `adr.md` | Architecture Decision Records |
 
----
-
-## Examples
-
-### Example 1: Create a runbook
-
-```
-/doc create --format runbook --title "Kafka Consumer Lag" --path docs/runbooks/kafka-consumer-lag.md
-```
-
-Creates a new runbook with sections: Overview, Prerequisites, Detection, Response Steps, Verification, Rollback, and Post-Incident.
-
-### Example 2: Improve documentation clarity
-
-```
-/doc improve --path docs/guides/oncall.md --tone concise
-```
-
-Rewrites the oncall guide to be more concise: shortens sentences, removes redundancy, and converts passive to active voice.
-
-### Example 3: Audit a documentation directory
-
-```
-/doc audit --path docs/
-```
-
-Generates a full audit report for all Markdown files in `docs/`, including scores, broken links, missing sections, and prioritized recommendations.
-
-### Example 4: Fix broken links
-
-```
-/doc maintain --path docs/api/
-```
-
-Scans the API docs for broken links and structural issues, offers to auto-fix where possible.
-
-### Example 5: Sync to Confluence
-
-```
-/doc sync --path docs/ --force
-```
-
-Syncs all ddoc-annotated documents in `docs/` to Confluence without prompting.
-
-### Example 6: Create with Confluence target
-
-```
-/doc create --format guide --title "Getting Started" --path docs/getting-started.md \
-  --confluence-space "TEAM" --confluence-parent "123456"
-```
-
-Creates a guide with ddoc frontmatter pre-configured for Confluence sync.
-
----
-
 ## Error Handling
 
 | Error | Action |
@@ -636,22 +489,3 @@ Creates a guide with ddoc frontmatter pre-configured for Confluence sync.
 | Invalid Markdown | Report parse errors with line numbers |
 | Network error (link check) | Mark link as "unable to verify", continue |
 
----
-
-## Guardrails
-
-**Never do:**
-
-- Fabricate commands, APIs, or technical details - if unsure, mark as `<!-- TODO: verify -->`
-- Remove warnings, cautions, or security notes without explicit confirmation
-- Make changes that alter technical meaning without verification
-- Overwrite files without showing changes first (unless `--force`)
-- Sync uncommitted files to Confluence (ddoc prevents this)
-
-**Always do:**
-
-- Show diffs before writing changes
-- Preserve existing document structure unless asked to restructure
-- Keep changes minimal and focused
-- Validate Markdown syntax after changes
-- Report what was changed and what to do next

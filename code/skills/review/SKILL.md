@@ -170,7 +170,7 @@ When reviewing, evaluate against:
 ## Rules
 
 - Reference exact file paths and line numbers from the diff.
-- Be constructive: suggest fixes, not just problems.
+- Be constructive: suggest fixes, not only problems.
 - Do NOT post the review as a GitHub comment automatically. Present it to the user.
 - If no findings exist, state that and recommend approval.
 

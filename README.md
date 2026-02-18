@@ -11,6 +11,7 @@ rtfpessoa's personal [Claude Code](https://docs.anthropic.com/en/docs/claude-cod
 | `/execplan` | productivity | Create, review, execute, or resume execution plans |
 | `/doc` | productivity | Create, update, improve, or audit Markdown docs |
 | `/workspace` | productivity | Set up Claude Code configuration and plugins |
+| `/reflect` | productivity | Capture session learnings and update knowledge files |
 | `/skill-workbench` | productivity | Create and improve skills in this marketplace |
 | `/commit` | git | Create a structured git commit |
 | `/atcommit` | git | Validate and organize atomic commits |
@@ -33,6 +34,7 @@ Productivity skills -- feature development lifecycle, systematic debugging, docu
 - `/doc` -- Manage Markdown documentation lifecycle: create, update, improve, maintain, and audit. Supports Confluence sync via ddoc. Includes templates for runbooks, guides, references, tutorials, and ADRs.
 - `/execplan` -- Create, execute, review, or resume an ExecPlan. Supports four modes: author (write a new plan), review (interactive walkthrough with feedback), execute (run a plan from the start), and resume (continue an in-progress plan).
 - `/workspace` -- Set up and manage Claude Code configuration. Bootstraps the code-factory plugin marketplace, symlinks configuration files, and manages MCP server settings.
+- `/reflect` -- Capture session learnings and update knowledge files. Extracts conventions, corrections, patterns, and gotchas from the current session. Uses confidence-based routing: high-confidence learnings are auto-applied, medium-confidence ones are queued for human review.
 - `/skill-workbench` -- Create new skills or improve existing ones in this plugin marketplace. Supports two modes: CREATE (scaffold a new skill with frontmatter, structure, and OpenCode command) and IMPROVE (audit skills for clarity, conciseness, and completeness; apply improvements directly).
 
 **Agents:**

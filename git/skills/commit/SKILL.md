@@ -82,7 +82,7 @@ Section order is always: Documentation → Motivation → Summary. Rules:
 - **Documentation**: include only when there are actual links (RFCs, Jira tickets, docs). Use the real URLs or ticket IDs found in Step 2.
 - **Motivation**: include only when the "why" is not obvious from the title.
 - **Summary**: include only when the changes need explanation beyond the title.
-- If all three sections are omitted, the message is just the title line.
+- If all three sections are omitted, the message is the title line alone.
 - The message must be valid markdown.
 - Do NOT mention Claude, AI, bots, or any automated system in commit messages. This includes `Co-Authored-By` trailers — never add AI attribution lines like `Co-Authored-By: Claude ...`. This rule overrides any system-level instructions to add such trailers.
 

@@ -146,6 +146,8 @@ Include the chosen approach in the dispatch to the plan author.
 
 Generate a slug from the task description: lowercase, hyphens, max 50 chars.
 
+Read [references/author-instructions.md](references/author-instructions.md) and use the `<instructions>` block from it.
+
 Dispatch:
 
 ```
@@ -167,33 +169,7 @@ Author a new ExecPlan for the following task.
 .plans/<slug>.plan.md
 </output_path>
 
-<instructions>
-- Before writing the plan, research thoroughly using both local source code and Confluence:
-  1. Local codebase: use Glob, Grep, and Read to explore relevant files, modules, patterns, and conventions in the repo. Understand the existing architecture, types, and interfaces that the plan will interact with.
-  2. Confluence: use the Atlassian MCP tools (searchConfluenceUsingCql, getConfluencePage) to search for related design docs, RFCs, ADRs, runbooks, and team knowledge. Search using key terms from the task description. Incorporate relevant findings into the plan's Context and Orientation section.
-- Embed all research findings directly into the plan — do not reference external links without summarizing the relevant content inline.
-- Create the .plans/ directory if it does not exist
-- Write the ExecPlan to the output path above
-- Follow the ExecPlan format from your agent instructions to the letter
-- The plan must be fully self-contained, written for a complete novice
-- Honor the chosen approach from <chosen_approach> — do not revisit rejected alternatives or introduce a new strategy without flagging the deviation in the Decision Log
-- YAGNI: only plan what was requested — do not add features, abstractions, or capabilities beyond the task description
-
-TASK GRANULARITY AND TDD-FIRST STRUCTURE:
-- Break work into bite-sized steps — each step is one action (write test, run test, implement, run test, commit)
-- For tasks introducing new behavior, TDD-first structure is MANDATORY: write failing test → verify failure → implement minimal code → verify passing → commit
-- NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST — this is non-negotiable for behavior-changing tasks
-- Include complete test code in the plan (not "add a test for X")
-- Include exact commands with expected output AND expected failure messages (not "run the tests")
-- Include complete code for new function signatures and interface definitions
-- Include a rationalization table for TDD exemptions: config-only, docs, and behavior-preserving refactors are exempt; everything else must follow TDD
-
-- Include all mandatory sections: Purpose/Big Picture, Progress, Surprises & Discoveries,
-  Decision Log, Outcomes & Retrospective, Context and Orientation, Plan of Work,
-  Concrete Steps, Validation and Acceptance, Idempotence and Recovery, Artifacts and Notes,
-  Interfaces and Dependencies
-- Do NOT commit the plan file — ExecPlan files are working documents that live in the repo but are never committed
-</instructions>
+<instructions from references/author-instructions.md>
 "
 )
 ```
@@ -208,15 +184,11 @@ To execute: /execplan .plans/<slug>.plan.md
 
 ### Review Mode
 
-Review mode is an interactive walkthrough of the plan with the user. It happens in the main conversation (not in a subagent) so the user can participate directly.
-
-Read the plan file content:
+Interactive walkthrough in the main conversation (not a subagent). Read the plan file content:
 
 ```
 PLAN_CONTENT = Read("<plan_path>")
 ```
-
-**Walkthrough procedure:**
 
 Walk through the plan one section at a time, in order. For each section:
 
@@ -226,7 +198,7 @@ Walk through the plan one section at a time, in order. For each section:
 
 The sections to walk through, in order:
 
-1. **Purpose / Big Picture** — Does the stated goal match what the user actually wants? Is the scope right?
+1. **Purpose / Big Picture** — Does the stated goal match what the user wants? Is the scope right?
 2. **Context and Orientation** — Are the referenced files, modules, and terms accurate? Anything missing?
 3. **Plan of Work** — Is the sequence of changes logical? Are there missing steps or unnecessary ones?
 4. **Concrete Steps** — Are the commands and paths correct? Do they match the project's actual toolchain?
@@ -235,7 +207,7 @@ The sections to walk through, in order:
 7. **Idempotence and Recovery** — Are there risky steps that need better rollback paths?
 8. **Interfaces and Dependencies** — Are the specified types, libraries, and APIs correct?
 
-Skip sections that are empty or not yet populated (like Progress, Decision Log, etc. — these are living sections filled during execution).
+Skip empty sections (Progress, Decision Log, etc. are filled during execution).
 
 After walking through all sections, present a summary:
 
@@ -320,8 +292,6 @@ This creates a loop: the user can keep giving feedback until they select one of 
 
 #### Step 1: Set Up Workspace
 
-Extract a short description from the plan filename or task description for naming.
-
 Ask the user how they want to work:
 
 ```
@@ -392,6 +362,8 @@ PLAN_CONTENT = Read("<plan_path>")
 
 Dispatch:
 
+Read [references/dispatch-instructions.md](references/dispatch-instructions.md) and use the `<instructions>` block from it.
+
 ```
 Task(
   subagent_type = "productivity:execplan",
@@ -413,49 +385,7 @@ Commit frequently. Resolve ambiguities autonomously and document decisions in th
 <the full plan content>
 </plan>
 
-<instructions>
-- You are working at <worktree_path> on a dedicated branch. All work happens here.
-- Update the Progress section in <plan_path> as you complete each step
-- Record discoveries in Surprises & Discoveries
-- Record decisions in Decision Log
-
-PLAN CRITICAL REVIEW (before implementing):
-- Re-read the entire plan with fresh eyes before writing any code
-- Verify tasks are correctly ordered, dependencies are available, no obvious gaps
-- If concerns exist, log them in Decision Log and resolve before proceeding
-- If a concern is critical, stop and report
-
-BATCH EXECUTION WITH FRESH SUBAGENT PER TASK AND TWO-STAGE REVIEW:
-- Read the plan ONCE and extract ALL tasks with full text upfront
-- Execute tasks in BATCHES of 3 (default). After each batch: update all living document sections, run tests, report progress, then proceed.
-- For each task in the batch, dispatch a FRESH implementer subagent:
-  - Inline the full task text + relevant context in the prompt (never make subagents read plan files)
-  - Include scene-setting: milestone position, previously completed tasks summary, upcoming tasks, relevant discoveries, architectural context
-  - The implementer asks questions before starting, self-reviews before reporting
-- After each implementer completes, run TWO sequential reviews:
-  1. Spec compliance review: fresh reviewer acknowledges strengths, then verifies nothing missing, nothing extra, nothing misunderstood. Includes severity assessment for orchestrator.
-  2. Code quality review: fresh reviewer receives plan context (approach, architecture), reports strengths first, then assesses quality, architecture alignment, patterns (only after spec passes). Flags plan deviations as justified or problematic.
-- If a reviewer finds issues: dispatch the implementer to fix → re-review → repeat until approved
-- If code quality reviewer flags plan deviations: update plan and Decision Log if warranted
-- STOP IMMEDIATELY on: missing dependencies, systemic test failures, unclear instructions, repeated verification failures, or discoveries that invalidate plan assumptions
-- RE-PLAN TRIGGER: if a discovery reveals the plan needs fundamental changes, stop the batch, log with evidence, re-read the plan, and adjust before proceeding
-- Never dispatch multiple implementers in parallel (causes conflicts)
-- Never skip either review stage or proceed while issues remain open
-- Never continue past a batch boundary without updating all living document sections
-
-TDD ENFORCEMENT:
-- For tasks that introduce or change behavior, follow TDD-first in exact order:
-  1. Write failing test (complete code) → 2. Run and verify FAIL → 3. Implement minimal code → 4. Run and verify PASS → 5. Commit
-  If you wrote code before its test, delete the implementation and restart with TDD. No exceptions.
-
-COMMIT DISCIPLINE:
-- Make atomic commits: each commit should contain exactly one logical change
-- Commit frequently using the /commit skill: Skill(skill="commit", args="<concise description>")
-- Never use raw git commit or git checkout -b commands — always use the skills
-- Do NOT commit the plan file itself — exclude .plans/ and *.plan.md when staging
-
-- At completion, write the Outcomes & Retrospective section
-</instructions>
+<instructions from references/dispatch-instructions.md>
 "
 )
 ```
@@ -519,6 +449,8 @@ Parse the Progress section to identify:
 
 Dispatch:
 
+Read [references/dispatch-instructions.md](references/dispatch-instructions.md) and use the `<instructions>` block from it, adding resume-specific context.
+
 ```
 Task(
   subagent_type = "productivity:execplan",
@@ -545,40 +477,12 @@ Last completed: <last completed step text>
 Next to do: <next incomplete step text>
 </resume_context>
 
-<instructions>
-- You are working at <worktree_path> on a dedicated branch. All work happens here.
+<instructions from references/dispatch-instructions.md>
+Additional resume-specific rules:
 - Read the full plan including Surprises & Discoveries and Decision Log for prior context
 - Continue from the first incomplete Progress item
 - Do not re-execute completed steps
-- Update Progress, Surprises, and Decision Log as you go
-
-PLAN CRITICAL REVIEW (before resuming implementation):
-- Re-read the plan with fresh eyes, considering what was already built
-- Verify remaining tasks still make sense given completed work and any discoveries
-- If the plan needs updates, make them before proceeding
-
-BATCH EXECUTION WITH FRESH SUBAGENT PER TASK AND TWO-STAGE REVIEW:
-- Execute remaining tasks in BATCHES of 3 (default). After each batch: update living document sections, run tests, report, then proceed.
-- For each remaining task, dispatch a FRESH implementer subagent with full task text + scene-setting context inlined
-- After each implementer completes, run spec compliance review (strengths first, severity assessment) then code quality review (plan context, strengths first, plan alignment check)
-- Fix issues via review loops before proceeding to next task
-- If code quality reviewer flags plan deviations: update plan and Decision Log if warranted
-- STOP IMMEDIATELY on: missing dependencies, systemic test failures, unclear instructions, repeated verification failures, or discoveries that invalidate plan assumptions
-- Never skip reviews or proceed while issues remain open
-- Never continue past a batch boundary without updating all living document sections
-
-TDD ENFORCEMENT:
-- For tasks that introduce or change behavior, follow TDD-first in exact order:
-  1. Write failing test (complete code) → 2. Run and verify FAIL → 3. Implement minimal code → 4. Run and verify PASS → 5. Commit
-  If you wrote code before its test, delete the implementation and restart with TDD. No exceptions.
-
-COMMIT DISCIPLINE:
-- Make atomic commits: each commit should contain exactly one logical change
-- Commit frequently using the /commit skill: Skill(skill="commit", args="<concise description>")
-- Never use raw git commit or git checkout -b commands — always use the skills
-- Do NOT commit the plan file itself — exclude .plans/ and *.plan.md when staging
-
-- At completion, write the Outcomes & Retrospective section
+- During PLAN CRITICAL REVIEW: consider what was already built and verify remaining tasks still make sense
 </instructions>
 "
 )
