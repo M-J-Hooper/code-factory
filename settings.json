@@ -111,11 +111,11 @@
     ],
     "defaultMode": "bypassPermissions",
     "additionalDirectories": [
-      "/Users/rodrigo.fernandes/go",
-      "/Users/rodrigo.fernandes/dev",
-      "/Users/rodrigo.fernandes/dd",
-      "/Users/rodrigo.fernandes/Downloads",
-      "~/dev",
+      "/Users/matthew.hooper/go",
+      "/Users/matthew.hooper/workspace",
+      "/Users/matthew.hooper/dd",
+      "/Users/matthew.hooper/Downloads",
+      "~/workspace",
       "~/dd",
       "~/go",
       "~/Downloads",
@@ -127,6 +127,17 @@
   "enabledMcpjsonServers": ["atlassian"],
   "disabledMcpjsonServers": ["datadog"],
   "hooks": {
+    "Notification": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "terminal-notifier -title 'Claude Code' -message 'Input required' -sender com.anthropic.claudefordesktop -sound default"
+          }
+        ]
+      }
+    ],
     "Stop": [
       {
         "hooks": [
@@ -190,7 +201,7 @@
     "code-factory": {
       "source": {
         "source": "github",
-        "repo": "rtfpessoa/code-factory"
+        "repo": "M-J-Hooper/code-factory"
       }
     }
   },

@@ -41,21 +41,14 @@ AskUserQuestion(
 
 ## Step 3: Build Branch Name
 
-Determine the branch prefix from `git config user.name` (lowercase, first token, e.g., "Rodrigo Fernandes" becomes `rodrigo`). Fall back to `feature` if git config is not set.
+Construct the branch name using the pattern `m-j-hooper/<slug>-<TICKET-ID>`
+where `<slug>` is the description converted to lowercase, with spaces replaced by hyphens,
+non-alphanumeric characters removed.
 
-Construct the branch name using this pattern:
-
-- If a ticket ID is present: `<prefix>/<slug>-<TICKET-ID>`
-- If no ticket ID: `<prefix>/<slug>`
-
-Where:
-- `<prefix>` is the user prefix derived above
-- `<slug>` is the description converted to lowercase, with spaces replaced by hyphens, non-alphanumeric characters removed, and truncated to 50 characters.
-
-Examples (assuming prefix `rodrigo`):
-- `add user authentication PROJ-1234` -> `rodrigo/add-user-authentication-PROJ-1234`
-- `fix login timeout bug` -> `rodrigo/fix-login-timeout-bug`
-- `refactor database layer CORE-99` -> `rodrigo/refactor-database-layer-CORE-99`
+Examples:
+- `add user authentication RAWL-123` -> `m-j-hooper/add-user-authentication`
+- `fix login timeout bug` -> `m-j-hooper/fix-login-timeout-bug`
+- `refactor database layer CORE-99` -> `m-j-hooper/refactor-database-layer`
 
 ## Step 4: Create the Branch
 

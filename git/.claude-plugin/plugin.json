@@ -3,7 +3,7 @@
   "version": "0.2.5",
   "description": "Git workflow skills: structured commits, atomic commit validation, PR creation, branch management, and isolated worktrees",
   "author": {
-    "name": "Rodrigo Fernandes",
-    "email": "rodrigo.fernandes@datadoghq.com"
+    "name": "Matt Hooper",
+    "email": "matthew.hooper@datadoghq.com"
   }
 }

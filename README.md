@@ -1,6 +1,6 @@
 # code-factory
 
-rtfpessoa's personal [Claude Code](https://docs.anthropic.com/en/docs/claude-code) and [OpenCode](https://opencode.ai) marketplace -- a collection of plugins, skills, and agent definitions that extend AI coding assistants with structured workflows for execution planning, git operations, and code understanding.
+M-J-Hooper's personal [Claude Code](https://docs.anthropic.com/en/docs/claude-code) and [OpenCode](https://opencode.ai) marketplace -- a collection of plugins, skills, and agent definitions that extend AI coding assistants with structured workflows for execution planning, git operations, and code understanding.
 
 ## Quick Reference
 
@@ -75,7 +75,7 @@ Code understanding skills -- PR review with structured feedback and guided code 
 
 1. Clone the repository:
 
-       git clone https://github.com/rtfpessoa/code-factory.git
+       git clone https://github.com/M-J-Hooper/code-factory.git
        cd code-factory
 
 2. Run the init script to symlink configuration files:
@@ -92,7 +92,7 @@ Code understanding skills -- PR review with structured feedback and guided code 
 
    If a destination already exists as a regular file (not a symlink), the script warns and skips it. If it exists as a symlink, it is replaced.
 
-3. The marketplace is registered in `settings.json` under `extraKnownMarketplaces` as `code-factory` pointing to `rtfpessoa/code-factory` on GitHub. The plugins `productivity@code-factory`, `git@code-factory`, and `code@code-factory` are enabled by default.
+3. The marketplace is registered in `settings.json` under `extraKnownMarketplaces` as `code-factory` pointing to `M-J-Hooper/code-factory` on GitHub. The plugins `productivity@code-factory`, `git@code-factory`, and `code@code-factory` are enabled by default.
 
 ## Configuration Files
 

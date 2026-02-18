@@ -62,7 +62,7 @@ If code-factory is not cloned:
 # Clone to ~/dev/code-factory (recommended location)
 mkdir -p ~/dev
 cd ~/dev
-git clone https://github.com/rtfpessoa/code-factory.git
+git clone https://github.com/M-J-Hooper/code-factory.git
 cd code-factory
 ```
 

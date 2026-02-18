@@ -1,10 +1,10 @@
 {
   "name": "code-factory",
   "version": "0.1.0",
-  "description": "rtfpessoa's personal Claude Code plugin collection",
+  "description": "M-J-Hooper's personal Claude Code plugin collection",
   "owner": {
-    "name": "Rodrigo Fernandes",
-    "email": "rodrigo.fernandes@datadoghq.com"
+    "name": "Matt Hooper",
+    "email": "matthew.hooper@datadoghq.com"
   },
   "plugins": [
     {

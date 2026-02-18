@@ -3,7 +3,7 @@
   "version": "0.1.4",
   "description": "Code understanding skills: PR review with structured feedback and guided code tours",
   "author": {
-    "name": "Rodrigo Fernandes",
-    "email": "rodrigo.fernandes@datadoghq.com"
+    "name": "Matt Hooper",
+    "email": "matthew.hooper@datadoghq.com"
   }
 }
