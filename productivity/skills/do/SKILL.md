@@ -6,7 +6,7 @@ description: >
   "start new feature", "resume feature work", or references to FEATURE.md state files.
   Stores state outside repo (never committed). Supports resumable multi-phase workflow.
   Supports interactive (user input at each phase) or autonomous (auto mode) execution.
-argument-hint: "[feature description] [--auto for autonomous mode]"
+argument-hint: "[feature description] [--auto to skip automation question]"
 user-invocable: true
 ---
 
@@ -16,7 +16,7 @@ Announce: "I'm using the /do skill to orchestrate feature development with lifec
 
 ## Hard Rules
 
-- **Workdir before everything.** Ask user working directory preference and interaction mode IMMEDIATELY on invocation — before any phase work. Set up worktree/branch and write all state files in the target workdir from the start. No files in the original source repo when using worktree or branch mode.
+- **Preferences before everything.** Step 1 (workspace and automation questions) runs IMMEDIATELY on invocation — before discovering runs, parsing arguments, or doing any phase work. No files in the original source repo when using worktree or branch mode.
 - **Refine before research.** No research until the feature description is detailed enough to act on.
 - **Explore approaches before planning.** The refiner must propose 2-3 approaches with trade-offs and get user confirmation before research begins. Lead with the recommended option and explain why.
 - **Plan before code.** No implementation until research and planning phases complete.
@@ -45,13 +45,11 @@ Every feature goes through the full workflow. A config change, a single-function
 **Interactive Mode (default):**
 - User reviews and approves outputs at each phase transition
 - User can provide feedback, request changes, or adjust direction
-- Best for: complex features, unfamiliar codebases, learning
 
-**Autonomous Mode (`--auto` flag):**
+**Autonomous Mode (selected in Step 1 or via `--auto` flag):**
 - Orchestrator makes best decisions based on research
 - Proceeds through all phases without interruption
-- Reports summary only at completion or on blockers
-- Best for: well-defined tasks, trusted patterns, speed
+- Reports at completion or on blockers
 
 ## State Storage
 
@@ -59,9 +57,9 @@ State is stored in the **target working directory's** `.plans/do/<run-id>/` from
 
 | Workdir Mode | State Location | Set Up When |
 |--------------|----------------|-------------|
-| **Worktree + branch** | `<worktree_path>/.plans/do/<run-id>/` | After worktree creation in Step 3 |
-| **Branch only** | `<repo_root>/.plans/do/<run-id>/` | After branch creation in Step 3 |
-| **Current branch** | `<repo_root>/.plans/do/<run-id>/` | Immediately in Step 3 |
+| **Worktree + branch** | `<worktree_path>/.plans/do/<run-id>/` | After worktree creation in Step 4 |
+| **Branch only** | `<repo_root>/.plans/do/<run-id>/` | After branch creation in Step 4 |
+| **Current branch** | `<repo_root>/.plans/do/<run-id>/` | Immediately in Step 4 |
 
 **CRITICAL:** When using worktree mode, NO state files are written in the source repo. The worktree is created first, then ALL state (including FEATURE.md) is written directly in the worktree's `.plans/` directory.
 
@@ -79,11 +77,11 @@ Each run creates:
 
 ## Iteration Behavior
 
-Before starting, determine intent from the user's query:
+After preferences (Step 1), determine intent from the user's query:
 
 1. **Analyze the query**: Does it reference a state file/run-id (resume) or provide a new feature description (fresh start)?
-2. **If fresh start**: Create new run, proceed through RESEARCH phase.
-3. **If resuming**: Parse state file, reconcile git state, continue from current phase.
+2. **If fresh start**: Set up workdir (Step 4), create new run, proceed through REFINE phase.
+3. **If resuming**: Parse state file, reconcile git state, continue from current phase (Step 6).
 4. **If iterating**: User is providing feedback on existing work. Address the feedback directly within the current phase.
 
 **Feedback handling during phases:**
@@ -93,13 +91,62 @@ Before starting, determine intent from the user's query:
 - **EXECUTE feedback**: Modify code as requested, commit the change
 - **VALIDATE feedback**: Add tests, fix issues, re-run validation
 
-## Step 1: Discover Existing Runs and Parse Arguments
+## Step 1: Ask Preferences (ALWAYS FIRST)
+
+**This step runs IMMEDIATELY on invocation — before discovering runs, parsing arguments, or doing any other work.**
 
 ```bash
 REPO_ROOT=$(git rev-parse --show-toplevel)
 ```
 
-Check `$ARGUMENTS` for the `--auto` flag. If present, set `interaction_mode = "autonomous"` and remove the flag from arguments. Otherwise `interaction_mode = "interactive"` (default).
+Check `$ARGUMENTS` for the `--auto` flag. If present, strip it from arguments and pre-select autonomous mode below.
+
+### 1a: Workspace and Automation Preferences
+
+Present all three preferences upfront in a single prompt:
+
+```
+AskUserQuestion(
+  header: "Feature setup",
+  question: "Before we start, how should this feature be developed?",
+  options: [
+    "Worktree + branch (Recommended)" -- Isolated worktree with a feature branch. Source repo stays completely clean — no state files or code changes written there.,
+    "Branch only" -- Feature branch in the current directory. State files written in current repo.,
+    "Current branch" -- Work directly on the current branch. State files written in current repo.
+  ]
+)
+```
+
+Then ask about automation:
+
+```
+AskUserQuestion(
+  header: "Interaction mode",
+  question: "Should this work be automated without asking questions at each phase?",
+  options: [
+    "Interactive (Recommended)" -- Review and approve outputs at each phase transition. Best for complex features.,
+    "Autonomous" -- Proceed through all phases without interruption. Reports at completion or on blockers.
+  ]
+)
+```
+
+**If `--auto` was in arguments:** Skip the automation question — use autonomous mode.
+
+Record choices:
+- `workdir_mode`: `worktree`, `branch_only`, or `current_branch`
+- `interaction_mode`: `interactive` or `autonomous`
+
+### 1b: Source Isolation Rule
+
+| Workdir Mode | Where code changes go | Where state files go | Source repo touched? |
+|--------------|----------------------|---------------------|---------------------|
+| **Worktree + branch** | Worktree only | Worktree's `.plans/` | **NO** — nothing written |
+| **Branch only** | Current repo (on branch) | Current repo's `.plans/` | Yes (on branch) |
+| **Current branch** | Current repo | Current repo's `.plans/` | Yes |
+
+**CRITICAL:** When using worktree or branch mode, NO files (state, code, or otherwise) are written in the original source directory outside the chosen workspace.
+
+## Step 2: Discover Existing Runs
 
 Search for active runs across the repo and any existing worktrees:
 
@@ -110,7 +157,7 @@ find "$REPO_ROOT" "$REPO_ROOT/../worktrees" -maxdepth 4 -path "*/.plans/do/*/FEA
 
 For each discovered `FEATURE.md`, read it and check whether `current_phase: DONE` is present. Runs without `DONE` are active. Parse active runs for: `run_id`, `current_phase`, `phase_status`, `branch`, `worktree_path`, `last_checkpoint`.
 
-## Step 2: Mode Selection
+## Step 3: Mode Selection
 
 **IMPORTANT: Never skip phases.** When arguments are a feature description, you MUST start the full workflow (REFINE -> RESEARCH -> PLAN -> EXECUTE). Do not implement directly, regardless of perceived simplicity.
 
@@ -118,11 +165,11 @@ For each discovered `FEATURE.md`, read it and check whether `current_phase: DONE
 
 1. **State file reference** — `$ARGUMENTS` contains `FEATURE.md` or is a path to an existing `.plans/do/` state file (but NOT a URL starting with `http://` or `https://`):
    - Verify file exists
-   - Parse phase status and route to **Resume Mode** (Step 5)
-   - Inherit `interaction_mode` from state file or use specified flag
+   - Parse phase status and route to **Resume Mode** (Step 6)
+   - Inherit `interaction_mode` from state file unless overridden in Step 1
 
 2. **Feature description, no active runs** — `$ARGUMENTS` is a feature description (including arguments containing URLs) and no active runs exist:
-   - Route to **New Mode** (Step 3)
+   - Route to **New Mode** (Step 4)
 
 3. **Feature description, active runs exist** — `$ARGUMENTS` is a feature description and active runs exist:
 ```
@@ -140,31 +187,11 @@ AskUserQuestion(
    - If active runs exist: list them and ask which to resume
    - If no active runs: prompt for feature description
 
-## Step 3: Workdir Preference and Setup (New Mode)
+## Step 4: Workdir Setup (New Mode)
 
-**This step runs BEFORE any phase work or state files are created.**
+**Preferences were already collected in Step 1. Execute the chosen workspace setup.**
 
-### 3a: Ask Workdir and Automation Preferences
-
-Present all preferences in a single prompt:
-
-```
-AskUserQuestion(
-  header: "Working directory setup",
-  question: "How should this feature be developed?",
-  options: [
-    "Worktree + branch (Recommended)" -- Isolated worktree with a feature branch. Source repo stays clean — no state files written there.,
-    "Branch only" -- Feature branch in the current directory. State files written in current repo.,
-    "Current branch" -- Work directly on the current branch. State files written in current repo.
-  ]
-)
-```
-
-**In autonomous mode (`--auto`):** Skip the question. Default to worktree + branch.
-
-Record the choice as `workdir_mode`: `worktree`, `branch_only`, or `current_branch`.
-
-### 3b: Execute Workdir Setup
+### 4a: Execute Workdir Setup
 
 | Choice | Actions |
 |--------|---------|
@@ -172,7 +199,7 @@ Record the choice as `workdir_mode`: `worktree`, `branch_only`, or `current_bran
 | **Branch only** | `Skill(skill="branch", args="<feature-slug>")` → set `WORKDIR_PATH` to `REPO_ROOT` |
 | **Current branch** | Record current branch → set `WORKDIR_PATH` to `REPO_ROOT` |
 
-### 3c: Initialize State Directory in Target Workdir
+### 4b: Initialize State Directory in Target Workdir
 
 ```bash
 STATE_ROOT="$WORKDIR_PATH/.plans/do"
@@ -195,7 +222,7 @@ run_id: <run-id>
 repo_root: <REPO_ROOT>
 worktree_path: <WORKDIR_PATH or null if same as repo_root>
 workdir_mode: <worktree|branch_only|current_branch>
-branch: <branch name from Step 3b, or current branch>
+branch: <branch name from Step 4a, or current branch>
 base_ref: <base commit SHA>
 current_phase: REFINE
 phase_status: not_started
@@ -206,7 +233,7 @@ interaction_mode: <interactive|autonomous>
 ---
 ```
 
-## Step 4: Dispatch Orchestrator (New Mode)
+## Step 5: Dispatch Orchestrator (New Mode)
 
 Dispatch to orchestrator with workdir already set up:
 
@@ -317,7 +344,7 @@ INTERACTION MODE RULES:
 )
 ```
 
-## Step 5: Resume Mode
+## Step 6: Resume Mode
 
 Read the state file to determine current phase, status, and workdir configuration.
 
@@ -358,7 +385,7 @@ Update state files as you make progress. Never commit .plans/ files (they are gi
 )
 ```
 
-## Step 6: Status Mode
+## Step 7: Status Mode
 
 If user asks for status without wanting to resume:
 
@@ -438,7 +465,7 @@ RE-PLAN on: fundamental plan changes needed
 - **Autonomous**: Auto-approve if no critical issues, loop back for required changes only
 
 ### EXECUTE Phase
-**Working directory is already set up.** Branch and worktree (if applicable) were created in Step 3 before any phase work began. The orchestrator works from `<workdir_path>` and writes all state to `<workdir_path>/.plans/`.
+**Working directory is already set up.** Branch and worktree (if applicable) were created in Step 4 before any phase work began. The orchestrator works from `<workdir_path>` and writes all state to `<workdir_path>/.plans/`.
 
 **Plan critical review — before implementing anything:**
 

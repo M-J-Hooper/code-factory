@@ -493,7 +493,7 @@ AskUserQuestion(
 ```
 AskUserQuestion(
   header: "Plan Approved by Reviewer",
-  question: "The plan has passed review. Ready to start implementation?\n\n<review summary>\n\nThis will create a worktree and branch, then begin coding.",
+  question: "The plan has passed review. Ready to start implementation?\n\n<review summary>",
   options: [
     "Start implementation" -- Proceed to EXECUTE phase,
     "Review changes first" -- Show what the reviewer suggested,
