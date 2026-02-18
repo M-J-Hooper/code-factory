@@ -256,7 +256,7 @@
 
   // --- Models ---
   // Default “daily driver” for coding-agent workflows.
-  "model": "anthropic/claude-opus-4-6",
+  "model": "openai/gpt-5.3-codex",
   // "model": "openai/gpt-5.3-codex",
   // "model": "anthropic/claude-sonnet-4-5",
 
@@ -275,26 +275,7 @@
 
   // --- Agents (easy A/B/C testing) ---
   // Switch agents quickly (Tab / Shift+Tab by default).
-  "default_agent": "plan",
-  "agent": {
-    "codex": {
-      "description": "Go/Python/Java coding agent (gpt-5.3-codex). Best for implementation + tool-heavy workflows.",
-      "model": "openai/gpt-5.3-codex",
-      "prompt": "You are a senior software engineer working primarily in Go, Python, and Java.\n\nWorking style:\n- Navigate like a human: use repo search (rg/grep), and prefer LSP-style jumps (defs/refs) when available.\n- Before editing, locate the minimal set of files/types involved and summarize a short plan.\n- Implement in small, reviewable diffs; preserve existing architecture and conventions.\n- Run the smallest relevant tests/linters; report commands + results.\n- Keep output concise: focus on what changed, why, and how to validate.",
-    },
-
-    "opus": {
-      "description": "Architecture + tricky refactors (Claude Opus 4.5). Great for deep reasoning on design and invariants.",
-      "model": "anthropic/claude-opus-4-6",
-      "prompt": "You are a principal engineer. Prioritize correctness, invariants, and clean design in Go/Python/Java.\n\nWorking style:\n- First build a mental model (key types, flows, and boundaries).\n- Propose a robust plan, then implement with minimal churn.\n- Prefer clear interfaces, strong tests, and careful edge-case handling.",
-    },
-
-    "gemini": {
-      "description": "Large-repo navigation + long-context reasoning (Gemini 3 Pro Preview).",
-      "model": "google/gemini-3-pro-preview",
-      "prompt": "You are a senior engineer optimized for long-context repo understanding in Go/Python/Java.\n\nWorking style:\n- Be systematic: search first, confirm call paths, then change code.\n- Prefer incremental edits with good tests and clear validation steps.",
-    },
-  },
+  "default_agent": "build",
 
   // --- MCP Servers ---
   "mcp": {
