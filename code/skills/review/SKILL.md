@@ -47,9 +47,21 @@ Run in parallel:
 - `gh pr view <number> --json title,body,baseRefName,headRefName,author,additions,deletions,changedFiles,url,labels`
 - `gh pr diff <number>`
 
+## Step 3b: Classify Complexity
+
+Determine the review complexity tier from the PR details fetched in Step 3:
+
+| Tier | Criteria | Review Depth |
+|------|----------|-------------|
+| **Simple** | 1-3 files, single concern | Quick scan: correctness and security only |
+| **Medium** | 4-10 files or multiple concerns | Standard review: all analysis categories |
+| **Complex** | 11+ files, cross-cutting changes, or architectural | Deep review: all categories + architecture analysis + data flow tracing |
+
+**Critical path detection:** Auto-escalate to at least Medium tier if any changed file path contains: `auth`, `security`, `permission`, `payment`, `billing`, `migration`, `schema`, `validator`, `sanitiz`, `crypto`, `secret`, `credential`. Also escalate if the PR title or labels mention security fixes, breaking changes, or data integrity.
+
 ## Step 4: Build Review
 
-Analyze the diff and construct the review using the format below. Each section must be included.
+Analyze the diff and construct the review using the format below. Scale analysis depth to the complexity tier from Step 3b: Simple PRs focus on correctness and security; Medium PRs cover all categories; Complex PRs add architecture analysis and data flow tracing.
 
 ---
 
