@@ -15,6 +15,17 @@ allowed-tools: Bash, Read, Write, Edit, Grep, Glob, Task, WebFetch, WebSearch
 
 Announce: "I'm using the skill workbench to work on skills in this plugin marketplace."
 
+## Path Safety
+
+**NEVER edit, write, or create files under `~/.claude` or `~/.config/opencode`.** These are managed directories — changes there are overwritten on plugin sync. Reading is fine for research purposes.
+
+All write operations MUST target the repo working directory (confirmed in Step 1 via `git rev-parse --show-toplevel`). If a file path contains `/.claude/` or `/.config/opencode/`, resolve it to the equivalent repo-relative path before writing.
+
+| Managed path prefix | Correct write target |
+|----------------------|-------------------|
+| `~/.claude/plugins/cache/{repo}/{plugin}/...` | `{repo-root}/{plugin}/...` |
+| `~/.config/opencode/skills/...` | `{repo-root}/.opencode/skills/...` |
+
 ## Reference Documents
 
 This skill has reference documents for deeper guidance. Load them when needed — not upfront.
@@ -277,3 +288,4 @@ Present a summary using the template in [references/report-template.md](referenc
 | Significant interface change | Describe the proposed change and ask the user before applying. |
 | Skill name conflicts with existing | Inform the user and suggest an alternative name. |
 | Reference file missing | Proceed with inline principles: concise, scannable, complete, consistent, self-contained. |
+| Write target under `~/.claude` or `~/.config/opencode` | NEVER write to managed directories. Resolve to the equivalent code-factory repo path. |
