@@ -221,6 +221,8 @@ Edit `settings.json` to add plugin sources:
       doc/                 # /doc skill
       execplan/            # /execplan skill
       reflect/             # /reflect skill
+      review/              # /review skill
+      tour/                # /tour skill
       skill-workbench/     # /skill-workbench skill
       workspace/           # /workspace skill (this file)
   git/                     # Git workflow plugin
@@ -228,10 +230,7 @@ Edit `settings.json` to add plugin sources:
       atcommit/            # /atcommit skill
       branch/              # /branch skill
       commit/              # /commit skill
+      fixup/               # /fixup skill
       pr/                  # /pr skill
       worktree/            # /worktree skill
-  code/                    # Code understanding plugin
-    skills/
-      review/              # /review skill
-      tour/                # /tour skill
 ```
