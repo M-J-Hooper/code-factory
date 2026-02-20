@@ -94,15 +94,25 @@ Produce a **Review Report**:
 - Deviations from research: <list any plan decisions not supported by research findings>
 - Codebase convention adherence: <does the plan follow documented patterns?>
 
+### Confidence Classification
+
+Tag each finding with a confidence level:
+
+| Confidence | Criteria | Examples |
+|-----------|----------|---------|
+| **HIGH** | Directly supported by tool output or cited evidence | Path verification failure, missing acceptance criterion, confirmed circular dependency |
+| **MEDIUM** | Inferred from patterns or partial evidence | Likely missing edge case, probable ambiguity, pattern deviation without confirmation |
+| **LOW** | Subjective judgment or style preference | Alternative task ordering, optional improvement, different approach suggestion |
+
 ### Required Changes
 These MUST be addressed before execution:
-1. Issue: Description. Evidence: <quote plan section + cite tool output>.
+1. Issue: [HIGH/MEDIUM] Description. Evidence: <quote plan section + cite tool output>.
    Fix: What to change.
 2. ...
 
 ### Recommended Improvements
 These SHOULD be considered but do not block execution:
-1. Suggestion: Description
+1. Suggestion: [MEDIUM/LOW] Description
    Benefit: Why it helps
 
 ### Risk Register
