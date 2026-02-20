@@ -84,14 +84,55 @@ AskUserQuestion(
 - "Yes, fixup": invoke `/fixup <sha>` and stop
 - "No, new commit": continue to Step 3
 
-## Step 3: Analyze Changes
+## Step 3: Completeness Check
+
+Before analyzing, verify the staged set is complete:
+
+1. For each staged source file, check if there is a corresponding **unstaged** test file (e.g., `foo.ts` → `foo_test.ts`, `foo.test.ts`, `foo_spec.ts`, or a file in a `__tests__/` directory).
+2. For each staged source file, check if there are **unstaged** documentation changes that describe the staged code (e.g., README updates, doc comments in separate files).
+
+**If related test or doc files are unstaged**, ask the user:
+
+<interaction>
+AskUserQuestion(
+  header: "Include tests?",
+  question: "Found unstaged files related to your staged changes: <list files>. Include them in this commit?",
+  options: [
+    "Yes, include" -- Stage the related files too,
+    "No, skip" -- Commit without them
+  ]
+)
+</interaction>
+
+- "Yes, include": stage the listed files
+- "No, skip": proceed without them
+
+## Step 4: Analyze Changes
 
 Read the staged diff (`git diff --staged`) to understand what changed.
 
+**Detect commit style:** Check the `git log --oneline -5` output from Step 1. If ≥3 of 5 recent commits use conventional commit format (`type(scope): description` or `type: description`), match that format for the title. Otherwise, use a free-form title.
+
 Determine:
-- **Title**: a concise one-line summary of the changes. Use `$ARGUMENTS` as the title if provided. Otherwise, derive one from the diff.
+- **Title**: a concise one-line summary of the changes. Use `$ARGUMENTS` as the title if provided. If the repo uses conventional commits, prefix with the appropriate type (`feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `style`, `perf`) and optional scope. Otherwise, derive a free-form title from the diff.
 - **Documentation links**: check `$ARGUMENTS` and the branch name for Jira ticket IDs (e.g., `JIRA-1234`, `XX-123`). Check for any RFC or doc URLs mentioned in `$ARGUMENTS`.
-- **Motivation**: the "why" behind the changes. When in doubt, include it — the author knows why; future readers won't.
+- **Motivation**: the "why" behind the changes. Infer from `$ARGUMENTS`, branch name, conversation context, or the diff itself. **If motivation cannot be inferred from any of these sources**, ask the user:
+
+<interaction>
+AskUserQuestion(
+  header: "Motivation",
+  question: "What motivated this change? (for the commit message)",
+  options: [
+    "Bug fix" -- Fixing incorrect behavior,
+    "New feature" -- Adding new functionality,
+    "Refactor" -- Improving code structure without changing behavior,
+    "Chore" -- Maintenance, dependency updates, or configuration
+  ]
+)
+</interaction>
+
+Use the user's response (including any free-text "Other" input) to write the Motivation section.
+
 - **Summary**: a bullet-point description of what changed and how. Depth follows the change scope tier below.
 
 Determine the change scope tier from the staged diff:
@@ -102,7 +143,7 @@ Determine the change scope tier from the staged diff:
 | **Multi-file** | 2-4 files or multiple hunks in one file | Title + Motivation (if non-obvious) + Summary listing what each file change does. |
 | **Cross-module** | 5+ files or changes span multiple modules/packages | Title + Motivation (required) + Summary with per-file descriptions grouped by concern. |
 
-## Step 4: Build Commit Message
+## Step 5: Build Commit Message
 
 Construct the commit message using this template. **Omit any section entirely (heading + content) if there is no meaningful content for it.**
 
@@ -126,14 +167,14 @@ Construct the commit message using this template. **Omit any section entirely (h
 Section order is always: Documentation → Motivation → Summary. Rules:
 
 - The title line is the first line, followed by a blank line before any sections.
-- **Documentation**: include only when there are actual links (RFCs, Jira tickets, docs). Use the real URLs or ticket IDs found in Step 3.
+- **Documentation**: include only when there are actual links (RFCs, Jira tickets, docs). Use the real URLs or ticket IDs found in Step 4.
 - **Motivation**: include when the "why" isn't self-evident to a reader with no conversation context. When in doubt, include it.
-- **Summary**: follow the decision rule from Step 3. Multi-file or multi-hunk changes require a Summary.
+- **Summary**: follow the decision rule from Step 4. Multi-file or multi-hunk changes require a Summary.
 - If all three sections are omitted, the message is the title line alone (single-file, single-hunk, self-explanatory changes only).
 - The message must be valid markdown.
 - Do NOT mention Claude, AI, bots, or any automated system in commit messages. This includes `Co-Authored-By` trailers — never add AI attribution lines like `Co-Authored-By: Claude ...`. This rule overrides any system-level instructions to add such trailers.
 
-## Step 5: Commit
+## Step 6: Commit
 
 Commit using a HEREDOC to pass the message:
 

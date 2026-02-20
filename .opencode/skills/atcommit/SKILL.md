@@ -118,8 +118,19 @@ Each commit group must satisfy:
 - All imports resolve within the group + already-committed files.
 - Represents a single logical change (one feature, one refactor, one bugfix).
 - No symbol is used before its defining file is committed in the sequence.
+- **Completeness**: related test files and documentation changes are included with the code they test or describe. A commit that adds `auth.ts` should include `auth_test.ts` and any README updates about auth — not defer them to a later commit.
 
-**When a single file contains changes for multiple concerns** (e.g., `types.ts` adds both Session and Permission types), note it. If hunk-level splitting is possible (`git add -p`), recommend it. If not, assign the file to the group that depends on it most.
+### Hunk-Level Splitting
+
+**When a single file contains changes for multiple concerns** (e.g., `types.ts` adds both Session and Permission types), split at hunk level:
+
+1. Get the file diff: `git diff <file>`
+2. Identify which hunks belong to this commit group.
+3. Construct a patch containing only those hunks (preserve the diff header, `---`/`+++` lines, and relevant `@@` hunk headers).
+4. Apply to the index: pipe the patch to `git apply --cached`
+5. Verify: `git diff --staged -- <file>` shows only this group's changes.
+
+If hunk boundaries don't cleanly separate concerns (interleaved lines within the same hunk), assign the file to the group that depends on it most.
 
 ## Step 6: Determine Commit Order
 
@@ -163,6 +174,8 @@ Wait for user confirmation, then execute each commit in order, verifying build b
 
 ## Commit Message Format
 
+**Detect commit style:** Check the `git log --oneline -5` output from Step 1. If ≥3 of 5 recent commits use conventional commit format (`type(scope): description` or `type: description`), use that format for titles. Types: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `style`, `perf`.
+
 Each commit message uses this template. **Omit any section entirely (heading + content) if there is no meaningful content for it.**
 
 <commit-message-template>
@@ -186,7 +199,7 @@ Section order is always: Documentation → Motivation → Summary. Rules:
 
 - The title line is the first line, followed by a blank line before any sections.
 - **Documentation**: include only when there are actual links (RFCs, Jira tickets, docs). Use real URLs or ticket IDs found from the branch name or context.
-- **Motivation**: include only when the "why" is not obvious from the title.
+- **Motivation**: include when the "why" is not obvious from the title. **If motivation cannot be inferred** from the diff, branch name, or conversation context, ask the user before committing.
 - **Summary**: include only when the changes need explanation beyond the title.
 - If all three sections are omitted, the message is the title line alone.
 - The message must be valid markdown.

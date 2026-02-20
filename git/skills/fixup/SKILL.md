@@ -70,6 +70,19 @@ Determine the **change set** — the files to match against branch commits:
 
 **If `$ARGUMENTS` contains a commit hash or unambiguous description:** resolve it to a SHA and skip to Step 4. Verify the SHA is within the branch range (`<merge-base>..HEAD`).
 
+**Single-commit fast path:** If there is exactly one commit on the branch, it is the target. Confirm with the user and skip to Step 4:
+
+<interaction>
+AskUserQuestion(
+  header: "Target commit",
+  question: "Only one commit on this branch: <sha> (<message>). Fixup into it?",
+  options: [
+    "Yes" -- Create fixup targeting that commit,
+    "No, new commit" -- Create a regular commit instead via /commit
+  ]
+)
+</interaction>
+
 For each branch commit, compute a **file overlap score**:
 
 1. **Direct overlap**: count of files that appear in both the change set and the commit's touched files.
