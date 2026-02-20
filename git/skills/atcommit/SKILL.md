@@ -35,7 +35,46 @@ Categorize every changed file into: **staged**, **unstaged**, **untracked**.
 **Automatic exclusions:** When staging files, always exclude:
 - `.plans/` directory and `*.plan.md` files (working documents for /do and /execplan)
 
-## Step 2: Build the Dependency Graph
+## Step 2: Fixup Detection
+
+Check if the changes are a correction to an existing branch commit before organizing new commits.
+
+**Skip this step if** the current branch is main/master.
+
+Determine the merge base and get branch commits (up to 30):
+
+```bash
+MERGE_BASE=$(git merge-base HEAD main 2>/dev/null || git merge-base HEAD master 2>/dev/null || echo "")
+git log --oneline --reverse $MERGE_BASE..HEAD -30
+```
+
+**If no merge base or no commits ahead of base:** skip to Step 3.
+
+For each branch commit, get its touched files:
+
+```bash
+git diff-tree --no-commit-id --name-only -r <sha>
+```
+
+Compute **direct file overlap** between the full change set (staged + unstaged + untracked, excluding `.plans/` and `*.plan.md`) and each commit's touched files. A commit is a **fixup candidate** if it has direct overlap with ≥50% of the change set files and has the highest overlap among all branch commits.
+
+**If a fixup candidate is found:**
+
+<interaction>
+AskUserQuestion(
+  header: "Fixup?",
+  question: "These changes overlap with commit <sha> (<message>). Create a fixup commit instead of new atomic commits?",
+  options: [
+    "Yes, fixup" -- Create a fixup commit targeting that commit via /fixup,
+    "No, new commits" -- Proceed with atomic commit organization
+  ]
+)
+</interaction>
+
+- "Yes, fixup": invoke `/fixup <sha>` and stop
+- "No, new commits": continue to Step 3
+
+## Step 3: Build the Dependency Graph
 
 For EACH changed file (staged, unstaged, and untracked), **read it** and extract:
 
@@ -47,7 +86,7 @@ Construct a file-level adjacency list: `file → [files it depends on]`.
 
 **Do not skip untracked files.** Staged files may import from untracked files — this is the most common atomicity violation.
 
-## Step 3: Validate the Staged Set
+## Step 4: Validate the Staged Set
 
 Check the staged files against the dependency graph for these violations:
 
@@ -65,9 +104,9 @@ Report every violation with the specific files and symbols involved.
 
 **Check committed versions, not only working copies.** When staged files import from unchanged committed files, verify compatibility against the committed version (use `git show HEAD:<file>`), not the working copy which may have unstaged modifications.
 
-**If no violations and all staged files form a single logical concern:** the staged set is atomic. Skip to Step 6.
+**If no violations and all staged files form a single logical concern:** the staged set is atomic. Skip to Step 7.
 
-## Step 4: Compute Commit Groups
+## Step 5: Compute Commit Groups
 
 Using the dependency graph:
 
@@ -82,14 +121,14 @@ Each commit group must satisfy:
 
 **When a single file contains changes for multiple concerns** (e.g., `types.ts` adds both Session and Permission types), note it. If hunk-level splitting is possible (`git add -p`), recommend it. If not, assign the file to the group that depends on it most.
 
-## Step 5: Determine Commit Order
+## Step 6: Determine Commit Order
 
 1. **Foundation first** — shared types, interfaces, and constants before their consumers.
 2. **Dependencies before dependents** — if A imports B, B is committed first.
 3. **Independent concerns in any order** — but keep related features contiguous in history.
 4. **Refactoring separate from features** — never mix structural cleanup with behavioral changes.
 
-## Step 6: Verify Each Group Builds
+## Step 7: Verify Each Group Builds
 
 For each commit group, before executing:
 
@@ -107,7 +146,7 @@ git stash pop
 
 **Do not skip this step.** Baseline instinct catches obvious broken imports but misses transitive dependencies, re-exports, and side-effect imports.
 
-## Step 7: Present Plan and Execute
+## Step 8: Present Plan and Execute
 
 Show the commit plan as a table:
 
@@ -192,7 +231,7 @@ Never silently fix staging. Always explain what was wrong and what needs to chan
 ## Error Handling
 
 - **Circular dependencies across groups**: merge the groups — circular deps must be committed together.
-- **Build failure after staging a group**: the group is missing a dependency. Re-run Step 2 for that group.
+- **Build failure after staging a group**: the group is missing a dependency. Re-run Step 3 for that group.
 - **User insists on committing a broken set**: warn explicitly that the commit will not build in isolation, explain the consequences for bisect/cherry-pick, and let the user decide.
 - **Commit hook failure**: report the error. Do NOT retry with `--no-verify`. Let the user decide how to proceed.
 - **Excluded files staged**: if `.plan.md` or `.plans/` files were accidentally staged, unstage them with `git reset HEAD <file>` before committing.

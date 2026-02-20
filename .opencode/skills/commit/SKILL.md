@@ -45,7 +45,46 @@ AskUserQuestion(
 
 **If there are already staged changes:** proceed with those (do not touch unstaged files).
 
-## Step 2: Analyze Changes
+## Step 2: Fixup Detection
+
+Check if the changes are a correction to an existing branch commit before creating a new commit.
+
+**Skip this step if** the current branch is main/master.
+
+Determine the merge base and get branch commits (up to 30):
+
+```bash
+MERGE_BASE=$(git merge-base HEAD main 2>/dev/null || git merge-base HEAD master 2>/dev/null || echo "")
+git log --oneline --reverse $MERGE_BASE..HEAD -30
+```
+
+**If no merge base or no commits ahead of base:** skip to Step 3.
+
+For each branch commit, get its touched files:
+
+```bash
+git diff-tree --no-commit-id --name-only -r <sha>
+```
+
+Compute **direct file overlap** between the change set (staged files if any, otherwise all modified files) and each commit's touched files. A commit is a **fixup candidate** if it has direct overlap with ≥50% of the change set files and has the highest overlap among all branch commits.
+
+**If a fixup candidate is found:**
+
+<interaction>
+AskUserQuestion(
+  header: "Fixup?",
+  question: "These changes overlap with commit <sha> (<message>). Create a fixup commit instead?",
+  options: [
+    "Yes, fixup" -- Create a fixup commit targeting that commit via /fixup,
+    "No, new commit" -- Proceed with a regular new commit
+  ]
+)
+</interaction>
+
+- "Yes, fixup": invoke `/fixup <sha>` and stop
+- "No, new commit": continue to Step 3
+
+## Step 3: Analyze Changes
 
 Read the staged diff (`git diff --staged`) to understand what changed.
 
@@ -63,7 +102,7 @@ Determine the change scope tier from the staged diff:
 | **Multi-file** | 2-4 files or multiple hunks in one file | Title + Motivation (if non-obvious) + Summary listing what each file change does. |
 | **Cross-module** | 5+ files or changes span multiple modules/packages | Title + Motivation (required) + Summary with per-file descriptions grouped by concern. |
 
-## Step 3: Build Commit Message
+## Step 4: Build Commit Message
 
 Construct the commit message using this template. **Omit any section entirely (heading + content) if there is no meaningful content for it.**
 
@@ -87,14 +126,14 @@ Construct the commit message using this template. **Omit any section entirely (h
 Section order is always: Documentation → Motivation → Summary. Rules:
 
 - The title line is the first line, followed by a blank line before any sections.
-- **Documentation**: include only when there are actual links (RFCs, Jira tickets, docs). Use the real URLs or ticket IDs found in Step 2.
+- **Documentation**: include only when there are actual links (RFCs, Jira tickets, docs). Use the real URLs or ticket IDs found in Step 3.
 - **Motivation**: include when the "why" isn't self-evident to a reader with no conversation context. When in doubt, include it.
-- **Summary**: follow the decision rule from Step 2. Multi-file or multi-hunk changes require a Summary.
+- **Summary**: follow the decision rule from Step 3. Multi-file or multi-hunk changes require a Summary.
 - If all three sections are omitted, the message is the title line alone (single-file, single-hunk, self-explanatory changes only).
 - The message must be valid markdown.
 - Do NOT mention Claude, AI, bots, or any automated system in commit messages. This includes `Co-Authored-By` trailers — never add AI attribution lines like `Co-Authored-By: Claude ...`. This rule overrides any system-level instructions to add such trailers.
 
-## Step 4: Commit
+## Step 5: Commit
 
 Commit using a HEREDOC to pass the message:
 
