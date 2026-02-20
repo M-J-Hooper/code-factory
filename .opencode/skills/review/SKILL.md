@@ -78,6 +78,14 @@ Analyze the diff and construct the review using the format below. Scale analysis
 
 ---
 
+### Narrative Summary
+
+*Include for Medium and Complex PRs. Omit for Simple PRs.*
+
+<2-4 sentences explaining what this PR does end-to-end, its overall quality assessment, and the key areas that need attention. This orients the reader before they encounter individual findings. Write in plain prose, not bullet points.>
+
+---
+
 ### Goal
 
 <1-3 sentences explaining what this PR accomplishes and why. Focus on intent, not implementation details. If the PR body contains useful context, incorporate it here.>
