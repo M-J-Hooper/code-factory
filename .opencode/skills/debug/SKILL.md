@@ -70,9 +70,11 @@ REPO_ROOT=$(git rev-parse --show-toplevel)
 STATE_ROOT="$REPO_ROOT/.plans/debug"
 mkdir -p "$STATE_ROOT"
 
-# Ensure .plans/ is gitignored
-if ! grep -q "^\.plans/$" "$REPO_ROOT/.gitignore" 2>/dev/null; then
-  echo ".plans/" >> "$REPO_ROOT/.gitignore"
+# Verify .plans/ is in global gitignore (core.excludesFile) — do NOT modify the repo's .gitignore
+GLOBAL_IGNORE=$(git config --global core.excludesFile 2>/dev/null)
+if [ -z "$GLOBAL_IGNORE" ] || ! grep -q "^\.plans/$" "$GLOBAL_IGNORE" 2>/dev/null; then
+  echo "WARNING: .plans/ is not in your global gitignore. Add it to avoid committing state files."
+  echo "Run: echo '.plans/' >> $(git config --global core.excludesFile || echo '~/.gitignore') && git config --global core.excludesFile $(git config --global core.excludesFile || echo '~/.gitignore')"
 fi
 ```
 

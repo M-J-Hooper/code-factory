@@ -14,12 +14,14 @@ Announce: "I'm using the execplan skill to manage execution plans."
 
 ## Step 1: Discover Existing Plans
 
-Ensure `.plans/` is gitignored:
+Verify `.plans/` is in the global gitignore (do NOT modify the repo's `.gitignore`):
 
 ```bash
 REPO_ROOT=$(git rev-parse --show-toplevel)
-if ! grep -q "^\.plans/$" "$REPO_ROOT/.gitignore" 2>/dev/null; then
-  echo ".plans/" >> "$REPO_ROOT/.gitignore"
+GLOBAL_IGNORE=$(git config --global core.excludesFile 2>/dev/null)
+if [ -z "$GLOBAL_IGNORE" ] || ! grep -q "^\.plans/$" "$GLOBAL_IGNORE" 2>/dev/null; then
+  echo "WARNING: .plans/ is not in your global gitignore. Add it to avoid committing state files."
+  echo "Run: echo '.plans/' >> $(git config --global core.excludesFile || echo '~/.gitignore') && git config --global core.excludesFile $(git config --global core.excludesFile || echo '~/.gitignore')"
 fi
 ```
 
