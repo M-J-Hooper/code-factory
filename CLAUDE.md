@@ -45,6 +45,7 @@ Available skills from the code-factory plugin marketplace. Use `/skill-name` or 
 | `/atcommit` | Organize multi-file changes into atomic, dependency-safe commits. |
 | `/branch` | Create a well-named feature branch from a ticket ID or description. |
 | `/pr` | Push and create a GitHub pull request with a structured description. |
+| `/pr-ready` | Fix CI failures and address automated review feedback on an open PR. |
 
 ### Code
 

@@ -261,6 +261,10 @@ EOF
 
 After the PR is created, report the PR URL to the user.
 
+## Step 8: Invoke `/pr-ready`
+
+After reporting the PR URL, invoke `/pr-ready` with the PR number to fix CI failures and address automated review feedback.
+
 ## Error Handling
 
 - **`gh` not installed or not authenticated**: inform the user to install and authenticate the `gh` CLI. Stop.
