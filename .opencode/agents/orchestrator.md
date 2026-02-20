@@ -148,6 +148,20 @@ Files for each phase:
 - After each commit: record commit SHA in FEATURE.md Progress section
 - On any failure: write "Failure Event" in FEATURE.md with reproduction steps
 
+**Phase handoff contract validation:**
+
+After each subagent returns, verify the artifact contains expected sections before writing to state files. If a required section is missing, log a warning and ask the subagent to regenerate.
+
+| Phase | Artifact | Required Sections |
+|-------|----------|------------------|
+| RESEARCH (explorer) | Codebase Map | Entry Points, Key Types/Functions, Integration Points, Conventions, Findings |
+| RESEARCH (researcher) | Research Brief | Findings, Solution Direction, Open Questions |
+| PLAN_DRAFT | PLAN.md | Milestones, Task Breakdown, Validation Strategy |
+| PLAN_REVIEW | Review Report | Summary, Approval Status |
+| VALIDATE | Validation Report | Summary (PASS/FAIL), Acceptance Criteria, Quality Scorecard |
+
+Validation protocol: For each required section, check that the heading exists in the artifact text. This is a structural check (does the section exist?), not a content quality check (is it good?). Missing sections indicate the subagent prompt may need adjustment.
+
 **Never commit .plans/ files.** When staging for commits, always exclude:
 - The `.plans/` directory
 - Any `*.plan.md` or `FEATURE.md` files
