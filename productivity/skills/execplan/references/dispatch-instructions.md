@@ -6,7 +6,7 @@ Shared instructions for Execute and Resume mode dispatches. Include this content
 
 ```
 <instructions>
-- You are working at <worktree_path> on a dedicated branch. All work happens here.
+- You are working on a dedicated branch. All work happens here.
 - Update the Progress section in <plan_path> as you complete each step
 - Record discoveries in Surprises & Discoveries
 - Record decisions in Decision Log
@@ -44,7 +44,7 @@ COMMIT DISCIPLINE:
 - Make atomic commits: each commit should contain one logical change
 - Commit frequently using the /commit skill: Skill(skill="commit", args="<concise description>")
 - Never use raw git commit or git checkout -b commands — always use the skills
-- Do NOT commit the plan file itself — exclude .plans/ and *.plan.md when staging
+- Do NOT commit plan files — they live in ~/workspace/plans/ (outside the repo)
 
 - At completion, write the Outcomes & Retrospective section
 </instructions>

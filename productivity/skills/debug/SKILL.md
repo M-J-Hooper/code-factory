@@ -60,25 +60,18 @@ If you catch yourself thinking any of these, STOP and return to Phase 1:
 
 Determine from `$ARGUMENTS` and conversation whether to start a new session or resume:
 
-**If `$ARGUMENTS` references a `.plans/debug/` state file:** Resume mode (Step 1b).
+**If `$ARGUMENTS` references a `~/workspace/plans/debug/` state file:** Resume mode (Step 1b).
 **Otherwise:** New session.
 
 ### New Session
 
 ```bash
-REPO_ROOT=$(git rev-parse --show-toplevel)
-STATE_ROOT="$REPO_ROOT/.plans/debug"
-mkdir -p "$STATE_ROOT"
-
-# Ensure .plans/ is gitignored
-if ! grep -q "^\.plans/$" "$REPO_ROOT/.gitignore" 2>/dev/null; then
-  echo ".plans/" >> "$REPO_ROOT/.gitignore"
-fi
+mkdir -p ~/workspace/plans/debug
 ```
 
 Generate a session ID: `<timestamp>-<slug>` (slug from the bug description, kebab-case, max 30 chars).
 
-Create `$STATE_ROOT/<session-id>/DEBUG.md`:
+Create `~/workspace/plans/debug/<session-id>/DEBUG.md`:
 
 ```markdown
 ---

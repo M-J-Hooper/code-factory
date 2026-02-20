@@ -14,19 +14,15 @@ Announce: "I'm using the execplan skill to manage execution plans."
 
 ## Step 1: Discover Existing Plans
 
-Ensure `.plans/` is gitignored:
-
 ```bash
-REPO_ROOT=$(git rev-parse --show-toplevel)
-if ! grep -q "^\.plans/$" "$REPO_ROOT/.gitignore" 2>/dev/null; then
-  echo ".plans/" >> "$REPO_ROOT/.gitignore"
-fi
+PLANS_DIR="$HOME/workspace/plans"
+mkdir -p "$PLANS_DIR"
 ```
 
-Search the project for existing ExecPlan files:
+Search for existing ExecPlan files:
 
-- Glob for `.plans/*.plan.md`
-- Glob for `**/*.plan.md` (max depth 3, excluding `.plans/`)
+- Glob for `~/workspace/plans/*.plan.md`
+- Glob for `**/*.plan.md` (max depth 3) in the current working directory
 - Check for `EXECPLAN.md` or `PLAN.md` in project root
 
 For each discovered plan, read its Progress section and classify:
@@ -166,7 +162,7 @@ Author a new ExecPlan for the following task.
 </chosen_approach>
 
 <output_path>
-.plans/<slug>.plan.md
+~/workspace/plans/<slug>.plan.md
 </output_path>
 
 <instructions from references/author-instructions.md>
@@ -176,10 +172,10 @@ Author a new ExecPlan for the following task.
 
 After the agent returns, report:
 ```
-ExecPlan authored: .plans/<slug>.plan.md
+ExecPlan authored: ~/workspace/plans/<slug>.plan.md
 
-To review: /execplan review .plans/<slug>.plan.md
-To execute: /execplan .plans/<slug>.plan.md
+To review: /execplan review ~/workspace/plans/<slug>.plan.md
+To execute: /execplan ~/workspace/plans/<slug>.plan.md
 ```
 
 ### Review Mode
@@ -299,58 +295,23 @@ AskUserQuestion(
   header: "Workspace",
   question: "Where should this plan be executed?",
   options: [
-    "Worktree + new branch (Recommended)" -- Create an isolated git worktree and feature branch so main workspace stays clean,
-    "New branch in current directory" -- Create a feature branch here without a worktree,
-    "Current branch" -- Work on the already checked-out branch with no worktree or branch creation
+    "New branch (Recommended)" -- Create a feature branch in the current directory,
+    "Current branch" -- Work on the already checked-out branch with no branch creation
   ]
 )
 ```
 
-**If the user chose "Worktree + new branch":**
+**If the user chose "New branch":**
 
-1. Invoke the `/worktree` skill to create an isolated workspace:
-
-```
-Skill(skill="worktree", args="<short description from plan>")
-```
-
-The skill will report the worktree path. Store it as `WORKTREE_PATH`.
-
-2. Change into the worktree directory:
-
-```
-cd <WORKTREE_PATH>
-```
-
-3. Invoke the `/branch` skill to create a feature branch:
+Invoke the `/branch` skill to create a feature branch:
 
 ```
 Skill(skill="branch", args="<short description from plan>")
 ```
-
-4. Copy the plan file into the worktree so the execution agent can update it:
-
-```
-cp <original plan_path> <WORKTREE_PATH>/<plan_path>
-```
-
-**If the user chose "New branch in current directory":**
-
-1. Store the current working directory as `WORKTREE_PATH`.
-
-2. Invoke the `/branch` skill to create a feature branch:
-
-```
-Skill(skill="branch", args="<short description from plan>")
-```
-
-No plan file copy is needed — the plan is already accessible.
 
 **If the user chose "Current branch":**
 
-1. Store the current working directory as `WORKTREE_PATH`.
-
-No branch creation or plan file copy needed — work proceeds on the current branch.
+No branch creation needed — work proceeds on the current branch.
 
 #### Step 2: Dispatch Execution Agent
 
@@ -376,10 +337,6 @@ Commit frequently. Resolve ambiguities autonomously and document decisions in th
 <plan_path>
 <the plan file path>
 </plan_path>
-
-<worktree_path>
-<the worktree directory path>
-</worktree_path>
 
 <plan>
 <the full plan content>
@@ -408,7 +365,7 @@ AskUserQuestion(
     "Create PR (Recommended)" -- Push branch and open a pull request for review,
     "Merge to base branch" -- Merge directly into the base branch locally,
     "Keep branch" -- Leave the branch as-is for later handling,
-    "Discard work" -- Delete the branch and worktree (requires typed confirmation)
+    "Discard work" -- Delete the branch (requires typed confirmation)
   ]
 )
 ```
@@ -416,9 +373,9 @@ AskUserQuestion(
 | Choice | Action |
 |--------|--------|
 | **Create PR** | `Skill(skill="pr", args="<concise PR title>")`. Report PR URL. |
-| **Merge to base** | `git checkout <base>`, `git merge <branch>`, clean up worktree. |
-| **Keep branch** | Report branch name and worktree path. No cleanup. |
-| **Discard** | Require typed confirmation "discard". Then remove worktree and branch. |
+| **Merge to base** | `git checkout <base>`, `git merge <branch>`. |
+| **Keep branch** | Report branch name. No cleanup. |
+| **Discard** | Require typed confirmation "discard". Then `git branch -D <branch>`. |
 
 If the plan is NOT complete, report what remains and offer to resume later.
 
@@ -428,12 +385,9 @@ If the plan is NOT complete, report what remains and offer to resume later.
 
 Determine where the plan was executed:
 
-1. Run `git worktree list` to find existing worktrees.
-2. Match the worktree by looking for one whose directory name corresponds to the plan slug.
-3. If found, store the path as `WORKTREE_PATH` and `cd` into it.
-4. If not found, check for the plan's feature branch locally (run `git branch --list` and match by plan slug). If the branch exists, check it out and store the current directory as `WORKTREE_PATH`.
-5. If no matching worktree or branch is found, the plan may have been executed on the current branch. Check whether the current branch has commits related to the plan (e.g., `git log --oneline -10` and match against the plan's task description). If so, store the current directory as `WORKTREE_PATH` and continue on the current branch.
-6. If none of the above match, ask the user how to proceed using the same workspace question as Execute Mode Step 1. If the branch already exists on the remote, check it out instead of creating a new one.
+1. Check for the plan's feature branch locally (run `git branch --list` and match by plan slug). If the branch exists, check it out.
+2. If no matching branch is found, the plan may have been executed on the current branch. Check whether the current branch has commits related to the plan (e.g., `git log --oneline -10` and match against the plan's task description). If so, continue on the current branch.
+3. If none of the above match, ask the user how to proceed. If the branch already exists on the remote, check it out instead of creating a new one.
 
 #### Step 2: Dispatch Resume Agent
 
@@ -463,10 +417,6 @@ Continue from the first incomplete step.
 <plan_path>
 <the plan file path>
 </plan_path>
-
-<worktree_path>
-<the worktree directory path>
-</worktree_path>
 
 <plan>
 <the full plan content>

@@ -197,7 +197,7 @@ Skill(skill="commit", args="<description>")
 - PR creation (via `/pr`)
 
 **Never commit:**
-- State files (FEATURE.md, anything in `.plans/`)
+- State files (FEATURE.md, anything in `~/workspace/plans/`)
 - Temporary or generated files
 - Secrets or credentials
 

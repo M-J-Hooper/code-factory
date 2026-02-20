@@ -5,6 +5,7 @@
 # This script creates symlinks for the following files:
 #   mcp.json        -> ~/.mcp.json                      (MCP server configuration)
 #   settings.json   -> ~/.claude/settings.json           (Claude Code global settings)
+#   CLAUDE.md       -> ~/.claude/CLAUDE.md               (Claude Code global instructions)
 #   opencode.jsonc  -> ~/.config/opencode/opencode.jsonc (OpenCode CLI configuration)
 #
 # Behavior:
@@ -23,11 +24,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SRCS=(
     "$SCRIPT_DIR/mcp.json"
     "$SCRIPT_DIR/settings.json"
+    "$SCRIPT_DIR/CLAUDE.md"
     "$SCRIPT_DIR/opencode.jsonc"
 )
 DESTS=(
     "$HOME/.mcp.json"
     "$HOME/.claude/settings.json"
+    "$HOME/.claude/CLAUDE.md"
     "$HOME/.config/opencode/opencode.jsonc"
 )
 

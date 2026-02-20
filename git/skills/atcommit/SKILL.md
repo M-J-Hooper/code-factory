@@ -32,9 +32,6 @@ git branch --show-current  # check for ticket IDs like JIRA-1234
 
 Categorize every changed file into: **staged**, **unstaged**, **untracked**.
 
-**Automatic exclusions:** When staging files, always exclude:
-- `.plans/` directory and `*.plan.md` files (working documents for /do and /execplan)
-
 ## Step 2: Build the Dependency Graph
 
 For EACH changed file (staged, unstaged, and untracked), **read it** and extract:
@@ -195,4 +192,3 @@ Never silently fix staging. Always explain what was wrong and what needs to chan
 - **Build failure after staging a group**: the group is missing a dependency. Re-run Step 2 for that group.
 - **User insists on committing a broken set**: warn explicitly that the commit will not build in isolation, explain the consequences for bisect/cherry-pick, and let the user decide.
 - **Commit hook failure**: report the error. Do NOT retry with `--no-verify`. Let the user decide how to proceed.
-- **Excluded files staged**: if `.plan.md` or `.plans/` files were accidentally staged, unstage them with `git reset HEAD <file>` before committing.

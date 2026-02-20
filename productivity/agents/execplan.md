@@ -73,13 +73,13 @@ All git operations must go through the project's skill system. Never use raw git
 
 **Commits:** Always use the `/commit` skill via `Skill(skill="commit")`. Pass an optional commit title as the `args` parameter (e.g., `Skill(skill="commit", args="add health check endpoint")`). The skill handles staging, structured commit messages, ticket ID linking, and error handling. Stage your files with `git add` before invoking the skill, or let the skill prompt for staging. Make atomic commits: each commit should contain exactly one logical change. Do not batch unrelated changes together. Commit frequently — after adding a function, fixing a bug, updating a config, or completing any discrete unit of work.
 
-**Workspace isolation:** Every plan execution runs in an isolated git worktree on a dedicated feature branch. The `/execplan` skill sets up the worktree (via `/worktree`) and branch (via `/branch`) before dispatching the execution agent. You do not need to create worktrees or branches yourself — they are already set up when you start.
+**Workspace setup:** Every plan execution runs on a dedicated feature branch. The `/execplan` skill sets up the branch (via `/branch`) before dispatching the execution agent. You do not need to create branches yourself — they are already set up when you start.
 
-Never run `git commit`, `git checkout -b`, or `git worktree` commands directly. The skills ensure consistent formatting, conventions, and error handling across the project.
+Never run `git commit` or `git checkout -b` commands directly. The skills ensure consistent formatting, conventions, and error handling across the project.
 
 **Pull requests:** The `/execplan` skill creates a PR via `/pr` after execution completes. You do not need to create PRs yourself — the orchestrator handles it.
 
-**ExecPlan files are never committed.** ExecPlan files (`.plans/` directory, `*.plan.md`) are working documents that persist on disk but must never be staged or committed. When staging files for a commit, always exclude ExecPlan files. Only commit the code changes produced by executing the plan.
+**ExecPlan files are never committed.** ExecPlan files live in `~/workspace/plans/` (outside the repo) and are never staged or committed. Only commit the code changes produced by executing the plan.
 
 When researching a design with challenging requirements or significant unknowns, use milestones to implement proof of concepts, "toy implementations", etc., that allow validating whether the user's proposal is feasible. Read the source code of libraries by finding or acquiring them, research deeply, and include prototypes to guide a fuller implementation.
 

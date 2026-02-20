@@ -17,7 +17,6 @@ M-J-Hooper's personal [Claude Code](https://docs.anthropic.com/en/docs/claude-co
 | `/atcommit` | git | Validate and organize atomic commits |
 | `/pr` | git | Create a GitHub pull request |
 | `/branch` | git | Create a well-named feature branch |
-| `/worktree` | git | Create an isolated git worktree |
 | `/review` | code | Review a pull request with structured feedback |
 | `/tour` | code | Guided code walkthrough (interactive or written) |
 
@@ -52,14 +51,13 @@ Productivity skills -- feature development lifecycle, systematic debugging, docu
 
 ### git
 
-Git workflow skills -- structured commits, PR creation, and branch management.
+Git workflow skills -- structured commits, PR creation, branch management, and atomic commit validation.
 
 **Skills:**
 
 - `/commit` -- Create a well-structured git commit with optional Documentation, Motivation, and Summary sections. Analyzes staged changes, detects Jira ticket IDs from branch names, and builds a formatted commit message.
 - `/pr` -- Create a GitHub pull request from the current branch. Collects commits since divergence from the base branch, detects ticket IDs and URLs from commit messages, and builds a structured PR description.
 - `/branch` -- Create a well-named feature branch from a ticket ID or description. Generates branches with the naming convention `<user>/<slug>-<TICKET-ID>` from the default branch (prefix derived from `git config user.name`).
-- `/worktree` -- Create an isolated git worktree for feature development. Sets up a detached worktree from the default branch in a sibling directory, ready for `/branch` to create a feature branch.
 - `/atcommit` -- Validate and organize changes into self-contained atomic commits. Builds a dependency graph across changed files, detects violations (missing deps, mixed concerns, forward references), and proposes commit groups in the correct order.
 
 ### code

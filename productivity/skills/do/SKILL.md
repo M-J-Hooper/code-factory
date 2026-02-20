@@ -20,7 +20,7 @@ Announce: "I'm using the /do skill to orchestrate feature development with lifec
 - **Explore approaches before planning.** The refiner must propose 2-3 approaches with trade-offs and get user confirmation before research begins. Lead with the recommended option and explain why.
 - **Plan before code.** No implementation until research and planning phases complete.
 - **YAGNI ruthlessly.** Remove unnecessary features from specifications and plans. If a capability wasn't requested and isn't essential, exclude it. Three simple requirements beat ten over-engineered ones.
-- **Workspace isolation first.** Create worktree and branch before any code changes (EXECUTE phase).
+- **Branch before coding.** Create a feature branch before any code changes (EXECUTE phase).
 - **Tests before implementation.** When a task introduces or changes behavior, write a failing test FIRST. Watch it fail. Then implement. No exceptions. Code written before its test must be deleted and restarted with TDD.
 - **Atomic commits only.** Commit after every logical change, not batched.
 - **Hard stop on blockers.** When encountering ambiguity or missing information, stop and report rather than guessing.
@@ -55,24 +55,17 @@ Every feature goes through the full workflow. A config change, a single-function
 
 ## State Storage
 
-State is stored in the **current working directory's** `.plans/do/<run-id>/`.
-
-- **Before EXECUTE phase:** State lives in the source repo's `.plans/`
-- **During EXECUTE phase:** State is copied to and maintained in the **worktree's** `.plans/`
-
-**CRITICAL:** Once a worktree is created, all state file updates MUST go to the **worktree's** `.plans/` directory, never back to the source repo. This keeps all working files together in the isolated workspace.
+State is stored in `~/workspace/plans/do/<run-id>/` (a global directory outside any repo).
 
 Each run creates:
 ```
-<cwd>/.plans/do/<run-id>/
+~/workspace/plans/do/<run-id>/
   FEATURE.md              # Canonical state (YAML frontmatter + markdown)
   RESEARCH.md             # Research phase outputs (codebase map, research brief)
   PLAN.md                 # Execution plan (milestones, tasks, validation strategy)
   REVIEW.md               # Plan review feedback
   VALIDATION.md           # Validation results and evidence
 ```
-
-**Critical:** `.plans/` files are NEVER committed to git. Add `.plans/` to `.gitignore`.
 
 ## Iteration Behavior
 
@@ -93,14 +86,7 @@ Before starting, determine intent from the user's query:
 ## Step 1: Initialize State Directory
 
 ```bash
-REPO_ROOT=$(git rev-parse --show-toplevel)
-STATE_ROOT="$REPO_ROOT/.plans/do"
-mkdir -p "$STATE_ROOT"
-
-# Ensure .plans/ is gitignored
-if ! grep -q "^\.plans/$" "$REPO_ROOT/.gitignore" 2>/dev/null; then
-  echo ".plans/" >> "$REPO_ROOT/.gitignore"
-fi
+mkdir -p ~/workspace/plans/do
 ```
 
 ## Step 2: Discover Existing Runs
@@ -109,7 +95,7 @@ Search for active runs (not marked DONE):
 
 Use Glob to find state files:
 ```
-Glob(pattern="FEATURE.md", path="$STATE_ROOT")
+Glob(pattern="**/FEATURE.md", path="~/workspace/plans/do")
 ```
 
 For each discovered `FEATURE.md`, read it and check whether `current_phase: DONE` is present in the frontmatter. Runs without `DONE` are active.
@@ -135,7 +121,7 @@ Remove the flag from arguments before further processing.
 
 **Classification rules — apply in this order:**
 
-1. **State file reference** — `$ARGUMENTS` contains `FEATURE.md` or is a path to an existing `.plans/do/` state file (but NOT a URL starting with `http://` or `https://`):
+1. **State file reference** — `$ARGUMENTS` contains `FEATURE.md` or is a path to an existing `~/workspace/plans/do/` state file (but NOT a URL starting with `http://` or `https://`):
    - Verify file exists
    - Parse phase status and route to appropriate phase
    - Inherit `interaction_mode` from state file or use specified flag
@@ -165,7 +151,7 @@ AskUserQuestion(
 
 Generate a run ID: `<timestamp>-<slug>` where slug is derived from feature description.
 
-Create the run directory and initial state file at `$STATE_ROOT/<run-id>/FEATURE.md`:
+Create the run directory and initial state file at `~/workspace/plans/do/<run-id>/FEATURE.md`:
 
 ```yaml
 ---
@@ -221,14 +207,13 @@ APPROACH EXPLORATION:
 
 STATE MANAGEMENT:
 - You are the single writer of the state files — update them after every significant action
-- Write phase artifacts to the current working directory's .plans/do/<run-id>/:
+- Write phase artifacts to ~/workspace/plans/do/<run-id>/:
   - RESEARCH.md: codebase map and research brief after RESEARCH phase
   - PLAN.md: milestones, tasks, and validation strategy after PLAN_DRAFT phase
   - REVIEW.md: review feedback after PLAN_REVIEW phase
   - VALIDATION.md: validation results after VALIDATE phase
 - Update FEATURE.md frontmatter and living sections (Progress Log, Decisions Made, etc.) continuously
-- Once in a worktree, ALL state updates go to the worktree's .plans/ (never back to source repo)
-- Never commit .plans/ files (they are gitignored)
+- State files live in ~/workspace/plans/ (outside the repo) — they are never committed
 
 TDD ENFORCEMENT:
 - Tasks that introduce or change behavior MUST follow TDD-first: write failing test → verify failure → implement → verify pass → commit
@@ -237,7 +222,7 @@ TDD ENFORCEMENT:
 - Config-only changes, docs, and behavior-preserving refactors are exempt from TDD-first
 
 GIT WORKFLOW:
-- BEFORE EXECUTE phase: call /worktree first, then /branch (mandatory, no exceptions)
+- BEFORE EXECUTE phase: call /branch to create a feature branch (mandatory, no exceptions)
 - Use /commit for atomic commits during EXECUTE (after every logical change)
 - Use /pr to create pull request in DONE phase
 
@@ -314,7 +299,7 @@ Task(
 Resume an interrupted feature development workflow.
 Read FEATURE.md and phase artifacts (RESEARCH.md, PLAN.md, etc.) to understand context and progress.
 Reconcile git state (branch, working tree), then continue from the current phase and task.
-Update state files as you make progress. Never commit .plans/ files (they are gitignored).
+Update state files as you make progress. State files live in ~/workspace/plans/ (outside the repo).
 </task>
 "
 )
@@ -401,13 +386,12 @@ RE-PLAN on: fundamental plan changes needed
 
 ### EXECUTE Phase
 **MANDATORY before any code changes:**
-1. Call `/worktree` to create isolated workspace
-2. Call `/branch` to create feature branch
-3. Update state file with branch name
+1. Call `/branch` to create feature branch
+2. Update state file with branch name
 
 **Plan critical review — before implementing anything:**
 
-The orchestrator re-reads the entire plan with fresh eyes, verifies task ordering and dependencies, checks the worktree has what the plan expects. Raises concerns before any code is written.
+The orchestrator re-reads the entire plan with fresh eyes, verifies task ordering and dependencies, checks the workspace has what the plan expects. Raises concerns before any code is written.
 
 **Batch execution with two-stage review:**
 

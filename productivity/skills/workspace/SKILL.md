@@ -29,6 +29,7 @@ This skill helps set up and manage a Claude Code development environment with:
 |-------------|-------------|---------|
 | `mcp.json` | `~/.mcp.json` | MCP server configuration (Atlassian, Datadog, Chrome DevTools) |
 | `settings.json` | `~/.claude/settings.json` | Claude Code global settings (permissions, model, plugins) |
+| `CLAUDE.md` | `~/.claude/CLAUDE.md` | Claude Code global instructions (coding conventions, PR rules, personal preferences) |
 | `opencode.jsonc` | `~/.config/opencode/opencode.jsonc` | OpenCode CLI configuration |
 
 ## Step 1: Parse Mode
@@ -82,7 +83,7 @@ The script will:
 
 ```bash
 # Check symlinks
-ls -la ~/.mcp.json ~/.claude/settings.json ~/.config/opencode/opencode.jsonc
+ls -la ~/.mcp.json ~/.claude/settings.json ~/.claude/CLAUDE.md ~/.config/opencode/opencode.jsonc
 
 # Verify Claude Code sees the plugins
 claude --help
@@ -108,6 +109,7 @@ Check current configuration status:
 # Check if symlinks exist and point to correct locations
 readlink ~/.mcp.json
 readlink ~/.claude/settings.json
+readlink ~/.claude/CLAUDE.md
 readlink ~/.config/opencode/opencode.jsonc
 
 # Check code-factory version
@@ -126,7 +128,7 @@ After setup, these plugins are enabled:
 | Plugin | Source | Skills |
 |--------|--------|--------|
 | `productivity@code-factory` | Local | `/do`, `/debug`, `/doc`, `/execplan`, `/reflect`, `/skill-workbench`, `/workspace` |
-| `git@code-factory` | Local | `/commit`, `/atcommit`, `/pr`, `/branch`, `/worktree` |
+| `git@code-factory` | Local | `/commit`, `/atcommit`, `/pr`, `/branch` |
 | `code@code-factory` | Local | `/review`, `/tour` |
 | `superpowers@claude-plugins-official` | GitHub | TDD, debugging, brainstorming |
 | `dd@datadog-claude-plugins` | GitHub | Datadog-specific tools |
@@ -213,6 +215,7 @@ Edit `settings.json` to add plugin sources:
 ~/dev/code-factory/
   init.sh                  # Bootstrap script
   settings.json            # Claude Code settings -> ~/.claude/settings.json
+  CLAUDE.md                # Claude Code instructions -> ~/.claude/CLAUDE.md
   mcp.json                 # MCP config -> ~/.mcp.json
   opencode.jsonc           # OpenCode config -> ~/.config/opencode/opencode.jsonc
   productivity/            # Productivity plugin
@@ -230,7 +233,6 @@ Edit `settings.json` to add plugin sources:
       branch/              # /branch skill
       commit/              # /commit skill
       pr/                  # /pr skill
-      worktree/            # /worktree skill
   code/                    # Code understanding plugin
     skills/
       review/              # /review skill

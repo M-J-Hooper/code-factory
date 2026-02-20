@@ -24,9 +24,6 @@ Run in parallel:
 
 **If no staged and no unstaged changes:** inform the user there is nothing to commit and stop.
 
-**Automatic exclusions:** When staging files, always exclude:
-- `.plans/` directory and `*.plan.md` files (working documents for /do and /execplan)
-
 **If there are unstaged changes but nothing staged:**
 
 <interaction>
@@ -40,8 +37,8 @@ AskUserQuestion(
 )
 </interaction>
 
-- "All changes": run `git add -A`, then unstage excluded files: `git reset HEAD -- '.plans/' '*.plan.md' 2>/dev/null || true`
-- "Let me choose": list the changed files (excluding `.plans/` and `*.plan.md`) and let the user specify which to stage
+- "All changes": run `git add -A`
+- "Let me choose": list the changed files and let the user specify which to stage
 
 **If there are already staged changes:** proceed with those (do not touch unstaged files).
 
@@ -109,4 +106,3 @@ After the commit succeeds, report the commit hash and a brief confirmation to th
 - **Nothing to commit**: inform the user and stop.
 - **Commit hook failure**: report the error. Do NOT retry with `--no-verify`. Let the user decide how to proceed.
 - **Staging failure**: report which files failed and why.
-- **Excluded files staged**: if `.plan.md` or `.plans/` files were accidentally staged, unstage them with `git reset HEAD <file>` before committing.

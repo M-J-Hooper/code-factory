@@ -119,13 +119,17 @@
       "~/dd",
       "~/go",
       "~/Downloads",
-      "/tmp",
+            "/tmp",
       "/private/var/tmp"
     ]
   },
   "model": "opus",
-  "enabledMcpjsonServers": ["atlassian"],
-  "disabledMcpjsonServers": ["datadog"],
+  "enabledMcpjsonServers": [
+    "atlassian"
+  ],
+  "disabledMcpjsonServers": [
+    "datadog"
+  ],
   "hooks": {
     "Notification": [
       {
@@ -134,18 +138,6 @@
           {
             "type": "command",
             "command": "terminal-notifier -title 'Claude Code' -message 'Input required' -sender com.anthropic.claudefordesktop -sound default"
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "agent",
-            "prompt": "Call `/reflect` to extract high-signal, actionable learnings from the just-finished conversation (corrections, explicit conventions, repeated patterns, gotchas, tool/command discoveries), score each 0–1 with brief evidence, dedupe via grep/search in target files, auto-append ONLY new single-line imperative bullets (10–20 words; no reorganizing) for high-confidence (≥0.8) to AGENTS.md/CLAUDE.md or default ~/.claude/projects/*/memory/MEMORY.md, queue medium (0.5–0.79) to ~/.claude/projects/*/memory/pending-learnings.md using the specified Pending template with date/confidence/target/evidence, discard <0.5, make all updates through this single `/reflect` invocation, and return JSON only: `{ \"ok\": true, \"applied\": N, \"queued\": M }` or `{ \"ok\": true, \"reason\": \"No actionable learnings\" }`.",
-            "model": "sonnet",
-            "timeout": 600
           }
         ]
       }
@@ -165,7 +157,7 @@
     "superpowers@claude-plugins-official": true,
     "commit-commands@claude-plugins-official": true,
     "pr-review-toolkit@claude-plugins-official": true,
-    "gopls-lsp@claude-plugins-official": true,
+    "gopls-lsp@claude-plugins-official": false,
     "rust-analyzer-lsp@claude-plugins-official": true,
     "dual-agents-review@datadog-claude-plugins": true,
     "osx-notifications@datadog-claude-plugins": true,
@@ -207,5 +199,6 @@
   },
   "alwaysThinkingEnabled": true,
   "autoUpdatesChannel": "stable",
-  "bypassPermissionsModeAccepted": true
+  "bypassPermissionsModeAccepted": true,
+  "skipDangerousModePermissionPrompt": true
 }

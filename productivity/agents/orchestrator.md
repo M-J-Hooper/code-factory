@@ -117,14 +117,7 @@ When dispatching to agents that produce structured artifacts, include a brief ex
 
 ## State File Protocol
 
-State is stored in the **current working directory's** `.plans/do/<run-id>/`.
-
-**CRITICAL:** Once you create a worktree and move into it, ALL state file updates MUST go to the **worktree's** `.plans/` directory. Never write back to the source repo. This keeps all working files together in the isolated workspace.
-
-**State migration during EXECUTE setup:**
-1. Before creating worktree: state is in source repo's `.plans/`
-2. After creating worktree: copy `.plans/do/<run-id>/` to worktree
-3. From then on: all updates go to worktree's `.plans/`
+State is stored in `~/workspace/plans/do/<run-id>/` (a global directory outside any repo).
 
 Files for each phase:
 
@@ -142,9 +135,7 @@ Files for each phase:
 - After each commit: record commit SHA in FEATURE.md Progress section
 - On any failure: write "Failure Event" in FEATURE.md with reproduction steps
 
-**Never commit .plans/ files.** When staging for commits, always exclude:
-- The `.plans/` directory
-- Any `*.plan.md` or `FEATURE.md` files
+**Plan and state files live in `~/workspace/plans/` (outside the repo) and are never committed.**
 
 ## Phase Execution
 
@@ -497,7 +488,7 @@ AskUserQuestion(
 ```
 AskUserQuestion(
   header: "Plan Approved by Reviewer",
-  question: "The plan has passed review. Ready to start implementation?\n\n<review summary>\n\nThis will create a worktree and branch, then begin coding.",
+  question: "The plan has passed review. Ready to start implementation?\n\n<review summary>\n\nThis will create a feature branch, then begin coding.",
   options: [
     "Start implementation" -- Proceed to EXECUTE phase,
     "Review changes first" -- Show what the reviewer suggested,
@@ -523,36 +514,20 @@ AskUserQuestion(
 
 You MUST complete workspace setup before writing any code. Check the state file:
 - If `branch` is `null` → setup required
-- If `branch` is set → verify worktree exists, skip to Task Loop
+- If `branch` is set → skip to Task Loop
 
-**Step 1: Create isolated worktree via `/worktree`:**
-```
-Skill(skill="worktree", args="<feature-slug>")
-```
-This creates a clean workspace separate from the main repo.
-
-**Step 2: Create feature branch via `/branch`:**
+**Step 1: Create feature branch via `/branch`:**
 ```
 Skill(skill="branch", args="<feature-slug>")
 ```
 This creates and checks out the feature branch.
 
-**Step 3: Migrate state to worktree:**
-```bash
-# Copy state directory from source repo to worktree
-cp -r <source_repo>/.plans/do/<run-id> <worktree_path>/.plans/do/
-```
-Ensure `.plans/` is in the worktree's `.gitignore`.
-
-**Step 4: Update state file (in worktree):**
+**Step 2: Update state file:**
 - Set `branch` to the created branch name
 - Set `base_ref` to the base commit SHA
-- Set `worktree_path` to the worktree directory
 - Log "Workspace Setup Complete" in Progress Log
 
-From this point forward, ALL state updates go to the worktree's `.plans/` directory.
-
-**CRITICAL:** Do NOT proceed to code changes until both `/worktree` AND `/branch` have been called and state is updated.
+**CRITICAL:** Do NOT proceed to code changes until `/branch` has been called and state is updated.
 
 **Plan Critical Review (do this ONCE before the task loop):**
 
@@ -560,7 +535,7 @@ Before implementing anything, re-read the entire PLAN.md with fresh eyes. Verify
 
 1. **Sanity check**: Do the tasks still make sense given what you know now? Are there obvious gaps?
 2. **Ordering check**: Are dependencies correctly ordered? Would reordering reduce risk?
-3. **Environment check**: Does the worktree have what the plan expects? (files exist, dependencies installed, etc.)
+3. **Environment check**: Does the workspace have what the plan expects? (files exist, dependencies installed, etc.)
 
 If you have concerns, raise them NOW — before any code is written:
 - **Interactive mode**: Present concerns to the user and ask whether to proceed, adjust, or re-plan.
@@ -618,7 +593,7 @@ Task(
   </role>
 
   <constraints>
-  - Work from: <worktree_path>
+  - Work from: <current working directory>
   - Commit atomically via /commit after every logical change
   - Follow TDD-first for behavior changes: write failing test → verify FAIL → implement → verify PASS → commit
   - Do not add features or refactor beyond what the task specifies
@@ -664,7 +639,7 @@ Task(
   </task>
 
   <constraints>
-  - Work from: <worktree_path>
+  - Work from: <current working directory>
   - Every finding must cite a file:line reference
   - Report: COMPLIANT (all requirements met) or ISSUES (list specific gaps with file:line)
   - Acknowledge strengths before listing issues
@@ -719,7 +694,7 @@ Task(
   </task>
 
   <constraints>
-  - Work from: <worktree_path>
+  - Work from: <current working directory>
   - Every finding must cite a file:line reference
   - Report: APPROVED or ISSUES with specific findings and severity
   - Always include Strengths section and Plan Alignment section
@@ -737,7 +712,7 @@ Task(
 After both reviews pass:
 - Mark task `[x]` with commit SHA in Progress
 - Record any review findings in Surprises and Discoveries
-- Update FEATURE.md state file (in worktree's `.plans/`)
+- Update FEATURE.md state file (in `~/workspace/plans/`)
 - Check if the current batch is complete → if yes, proceed to **Batch Report**
 - Otherwise, proceed to the next task in the batch
 
@@ -810,11 +785,10 @@ If during execution you discover the plan needs fundamental changes (not minor f
 - Continue past a batch boundary without reporting (even in autonomous mode)
 
 **Task execution rules:**
-- Update Progress section in FEATURE.md after each task (in worktree's .plans/)
+- Update Progress section in FEATURE.md after each task (in ~/workspace/plans/)
 - Record discoveries in Surprises and Discoveries section of FEATURE.md
 - Record decisions in Decisions Made section of FEATURE.md
-- All state file writes go to the worktree's `.plans/` directory
-- Never commit .plans/ files (they are gitignored)
+- All state file writes go to `~/workspace/plans/` (outside the repo, never committed)
 
 **Exit criteria:** All milestone tasks complete, no known failing checks
 
@@ -933,7 +907,7 @@ AskUserQuestion(
     "Create PR (Recommended)" -- Push branch and open a pull request for review,
     "Merge to base branch" -- Merge directly into the base branch locally,
     "Keep branch" -- Leave the branch as-is for later handling,
-    "Discard work" -- Delete the branch and worktree (requires typed confirmation)
+    "Discard work" -- Delete the branch (requires typed confirmation)
   ]
 )
 ```
@@ -945,9 +919,9 @@ AskUserQuestion(
 | Choice | Action |
 |--------|--------|
 | **Create PR** | `Skill(skill="pr", args="<concise feature title>")`. Report PR URL to user. |
-| **Merge to base** | `git checkout <base>`, `git merge <branch>`, clean up worktree. |
-| **Keep branch** | Report branch name and worktree path. No cleanup. |
-| **Discard** | Require typed confirmation "discard". Then `git worktree remove`, `git branch -D`. |
+| **Merge to base** | `git checkout <base>`, `git merge <branch>`. |
+| **Keep branch** | Report branch name. No cleanup. |
+| **Discard** | Require typed confirmation "discard". Then `git branch -D <branch>`. |
 
 5. Update state with outcome (PR URL, merge commit, or discard note)
 6. Archive state (move to `runs/completed/`)
