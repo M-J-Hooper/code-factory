@@ -109,29 +109,37 @@ If none, write "None."
 
 ### Findings
 
+Tag each finding with a confidence level:
+
+| Confidence | Criteria | Examples |
+|-----------|----------|---------|
+| **HIGH** | Definite issue supported by code evidence | Bug, security flaw, broken contract, type error, null dereference |
+| **MEDIUM** | Likely issue based on patterns or context | Code smell, missing edge case, probable race condition, questionable design |
+| **LOW** | Subjective observation or style preference | Alternative approach, naming preference, optional refactor |
+
 #### Critical
 
 Issues that must be fixed before merge.
 
-| Category | Location | Issue | Suggestion |
-|----------|----------|-------|------------|
-| <Correctness/Security/etc> | `file:line` | <description> | <fix> |
+| Category | Confidence | Location | Issue | Suggestion |
+|----------|-----------|----------|-------|------------|
+| <Correctness/Security/etc> | HIGH/MEDIUM | `file:line` | <description> | <fix> |
 
 #### Suggestions
 
 Improvements that would strengthen the PR.
 
-| Category | Location | Issue | Suggestion |
-|----------|----------|-------|------------|
-| <Design/Testing/etc> | `file:line` | <description> | <fix> |
+| Category | Confidence | Location | Issue | Suggestion |
+|----------|-----------|----------|-------|------------|
+| <Design/Testing/etc> | HIGH/MEDIUM/LOW | `file:line` | <description> | <fix> |
 
 #### Nits
 
 Minor style or consistency points.
 
-| Location | Note |
-|----------|------|
-| `file:line` | <description> |
+| Confidence | Location | Note |
+|-----------|----------|------|
+| MEDIUM/LOW | `file:line` | <description> |
 
 Omit any severity section with no entries.
 
