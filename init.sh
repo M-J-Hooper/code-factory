@@ -3,9 +3,11 @@
 # init.sh -- Bootstrap code-factory: symlink configs and install OpenCode assets globally.
 #
 # This script:
-#   1. Symlinks configuration files into the user's home directory.
-#   2. Runs sync-opencode.sh to generate OpenCode assets in the repo.
-#   3. Symlinks .opencode/{skills,agents,commands} into ~/.config/opencode/.
+#   1. Installs rtk (Rust Token Killer) via cargo if not already present.
+#   2. Symlinks configuration files into the user's home directory.
+#   3. Symlinks Claude Code hooks from hooks/ into ~/.claude/hooks/.
+#   4. Runs sync-opencode.sh to generate OpenCode assets in the repo.
+#   5. Symlinks .opencode/{skills,agents,commands} into ~/.config/opencode/.
 #
 # Behavior:
 #   - If the destination is an existing symlink, it is removed and re-created.
@@ -22,6 +24,27 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 errors=()
+
+# Install or update rtk (Rust Token Killer) via cargo
+echo "Checking rtk installation..."
+if ! command -v cargo &>/dev/null; then
+    errors+=("rtk: cargo not found, install Rust toolchain first (https://rustup.rs)")
+    echo "FAIL  rtk requires cargo (install Rust via https://rustup.rs)"
+else
+    if command -v rtk &>/dev/null && rtk gain &>/dev/null; then
+        echo "  OK  rtk already installed ($(rtk --version 2>/dev/null || echo 'unknown version'))"
+        echo "  Checking for updates..."
+    else
+        echo "  Installing rtk via cargo..."
+    fi
+    if cargo install --git https://github.com/rtk-ai/rtk 2>&1; then
+        echo "  OK  rtk up-to-date ($(rtk --version 2>/dev/null || echo 'unknown version'))"
+    else
+        errors+=("rtk: cargo install failed")
+        echo "FAIL  rtk installation failed"
+    fi
+fi
+echo ""
 
 SRCS=(
     "$SCRIPT_DIR/mcp.json"
@@ -60,6 +83,30 @@ for i in "${!SRCS[@]}"; do
         continue
     fi
     echo "LINK  $dest -> $src"
+done
+
+# Symlink Claude Code hooks from hooks/ into ~/.claude/hooks/
+echo ""
+echo "Linking Claude Code hooks..."
+HOOKS_DIR="$HOME/.claude/hooks"
+mkdir -p "$HOOKS_DIR"
+for hook_src in "$SCRIPT_DIR/hooks"/*; do
+    [[ -f "$hook_src" ]] || continue
+    hook_name=$(basename "$hook_src")
+    hook_dest="$HOOKS_DIR/$hook_name"
+    if [[ -L "$hook_dest" ]]; then
+        rm "$hook_dest"
+    elif [[ -e "$hook_dest" ]]; then
+        errors+=("$hook_src -> $hook_dest: destination already exists as a regular file")
+        echo "  FAIL  $hook_dest already exists as a regular file, cannot link"
+        continue
+    fi
+    if ! ln -s "$hook_src" "$hook_dest"; then
+        errors+=("$hook_src -> $hook_dest: ln -s failed")
+        echo "  FAIL  could not link $hook_dest -> $hook_src"
+    else
+        echo "  LINK  $hook_dest -> $hook_src"
+    fi
 done
 
 # Generate OpenCode assets in the repo
@@ -102,8 +149,8 @@ if [[ -d "$OPENCODE_DIR/skills" ]]; then
     done
 fi
 
-# Symlink agent and command files
-for subdir in agents commands; do
+# Symlink agent, command, and plugin files
+for subdir in agents commands plugins; do
     src_dir="$OPENCODE_DIR/$subdir"
     dest_dir="$GLOBAL_DIR/$subdir"
     [[ -d "$src_dir" ]] || continue
@@ -119,7 +166,7 @@ for subdir in agents commands; do
             new_manifest+=("$dest_file")
             echo "  LINK  $subdir/$rel"
         fi
-    done < <(find "$src_dir" -type f -name "*.md" | sort)
+    done < <(find "$src_dir" -type f \( -name "*.md" -o -name "*.ts" \) | sort)
 done
 
 # Manifest cleanup: remove stale global files

@@ -145,7 +145,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/rodrigo.fernandes/.claude/hooks/rtk-rewrite.sh"
+            "command": "~/.claude/hooks/rtk-rewrite.sh"
           }
         ]
       }
