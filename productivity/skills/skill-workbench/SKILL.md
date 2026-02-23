@@ -2,7 +2,7 @@
 name: skill-workbench
 description: >
   Use when the user wants to create new skills, audit existing skills, improve
-  skill quality, or manage the code-factory plugin marketplace. Triggers:
+  skill quality, or manage skills and agents in any repository. Triggers:
   "create skill", "new skill", "improve skills", "audit skills", "skill quality",
   "skill workbench", "make skills better".
 argument-hint: "[create <name> | improve <name|plugin|docs|tools>]"
@@ -12,7 +12,7 @@ allowed-tools: Bash, Read, Write, Edit, Grep, Glob, Task, WebFetch, WebSearch
 
 # Skill Workbench
 
-Announce: "I'm using the skill workbench to work on skills in this plugin marketplace."
+Announce: "I'm using the skill workbench to work on skills in this repository."
 
 ## Path Safety
 
@@ -42,13 +42,13 @@ This skill has reference documents for deeper guidance. Load them when needed �
 
 ## Step 1: Scope and Route
 
-Confirm this is the code-factory repo:
+Identify the repo root and detect skill infrastructure:
 
 ```bash
-git rev-parse --show-toplevel
+REPO_ROOT=$(git rev-parse --show-toplevel)
 ```
 
-**If not code-factory:** inform the user and stop.
+Set `REPO_ROOT` for all subsequent file operations. The skill workbench works in any repository — it adapts to the skill/agent/plugin structure found.
 
 Parse `$ARGUMENTS` to determine the operation mode:
 
@@ -71,8 +71,11 @@ Discover repo assets (run in parallel):
 - `Glob("**/.claude-plugin/plugin.json")` — plugin manifests
 - `Glob("**/agents/*.md")` — agent definitions
 - `git log --oneline -20` — recent changes for context
+- Check for `Makefile` at repo root (optional — used for structural validation if present)
 
 Read each plugin's `plugin.json` to note current versions (needed for version bumps).
+
+**If no skills, agents, or plugins found:** inform the user that this repo has no skill infrastructure and offer to create initial structure.
 
 **If no arguments:** ask the user whether they want to create a new skill or improve existing ones.
 
@@ -178,11 +181,11 @@ skill({ name: "{name}" })
 
 ### 2f: Validate and Version Bump
 
-1. Bump the owning plugin's version in `.claude-plugin/plugin.json` (minor bump for new skills).
-2. Run `make all` to validate frontmatter, cross-references, structure, and JSON.
+1. Bump the owning plugin's version in `.claude-plugin/plugin.json` if it exists (minor bump for new skills).
+2. Run `make all` if a Makefile with that target exists. Otherwise, manually validate frontmatter, cross-references, and JSON.
 3. Fix any failures (max 3 iterations).
 4. Run the quality gate from [skill-quality-checklist.md](references/skill-quality-checklist.md).
-5. Update `README.md` to include the new skill in the Quick Reference table and plugin description.
+5. Update `README.md` to include the new skill in the Quick Reference table and plugin description (if README exists).
 
 Route to Step 5 (Report).
 
@@ -240,7 +243,7 @@ Apply changes directly. Prioritize:
 3. Remove filler words found in Step 3b.
 4. Verify announce line, numbered steps, error handling section.
 5. Verify description starts with "Use when" and contains no workflow summary.
-6. Check cross-references resolve: `make check-refs`.
+6. Check cross-references resolve: `make check-refs` (if Makefile with that target exists; otherwise manually verify links).
 7. Verify SKILL.md body is under 500 lines — extract heavy reference to separate files if needed.
 8. For discipline-enforcing skills: verify rationalization tables, red flag lists, and bright-line rules are present (see [persuasion-principles.md](references/persuasion-principles.md)).
 
@@ -254,7 +257,7 @@ Apply changes directly. Prioritize:
 - Minimal output on success, clear messages on failure.
 - Add missing validation targets if gaps found.
 
-**Version bump required:** Any skill or agent change requires a patch bump in the owning plugin's `.claude-plugin/plugin.json`. New skills require a minor bump.
+**Version bump required (if plugin.json exists):** Any skill or agent change requires a patch bump in the owning plugin's `.claude-plugin/plugin.json`. New skills require a minor bump. Skip if no plugin manifest exists.
 
 ### 3d: Test Changes
 
@@ -291,6 +294,8 @@ Before structural validation, confirm behavioral testing from Step 2d (CREATE) o
 
 ### 4b: Structural Validation
 
+If the repo has a `Makefile` with validation targets:
+
 ```bash
 make all
 ```
@@ -301,6 +306,8 @@ If `make all` fails:
 2. Fix that specific issue.
 3. Re-run `make all`.
 4. Maximum 3 iterations. If still failing, report remaining errors to the user.
+
+**If no Makefile exists:** perform manual structural validation using the checks below.
 
 After `make all` passes, verify manually:
 
@@ -321,10 +328,10 @@ Present a summary using the template in [references/report-template.md](referenc
 
 | Error | Action |
 |-------|--------|
-| Not in code-factory repo | Inform user this skill targets the code-factory plugin marketplace. Stop. |
+| No skills, agents, or plugins found | Inform user and offer to create initial skill infrastructure in the repo. |
 | No arguments and no recent skill changes | Ask user: create a new skill or improve existing ones? |
 | `make all` fails after 3 attempts | Report remaining failures with specific error output. |
-| Multiple plugins need version bumps | Bump each independently. Run `make check-versions` to verify. |
+| Multiple plugins need version bumps | Bump each independently. Run `make check-versions` to verify (if Makefile exists). |
 | Broken cross-reference | If the target skill should exist, create it. Otherwise fix the reference. |
 | Significant interface change | Describe the proposed change and ask the user before applying. |
 | Skill name conflicts with existing | Inform the user and suggest an alternative name. |
