@@ -60,9 +60,9 @@ Claude Code is not installed. Install it with:
 If code-factory is not cloned:
 
 ```bash
-# Clone to ~/dev/code-factory (recommended location)
-mkdir -p ~/dev
-cd ~/dev
+# Clone to ~/workspace/code-factory (recommended location)
+mkdir -p ~/workspace
+cd ~/workspace
 git clone https://github.com/M-J-Hooper/code-factory.git
 cd code-factory
 ```
@@ -70,7 +70,7 @@ cd code-factory
 ### Run Bootstrap Script
 
 ```bash
-cd ~/dev/code-factory
+cd ~/workspace/code-factory
 ./init.sh
 ```
 
@@ -94,7 +94,7 @@ claude --help
 Pull latest changes and re-run bootstrap:
 
 ```bash
-cd ~/dev/code-factory
+cd ~/workspace/code-factory
 git pull origin main
 ./init.sh
 ```
@@ -113,7 +113,7 @@ readlink ~/.claude/CLAUDE.md
 readlink ~/.config/opencode/opencode.jsonc
 
 # Check code-factory version
-cd ~/dev/code-factory && git log -1 --oneline
+cd ~/workspace/code-factory && git log -1 --oneline
 ```
 
 Report:
@@ -212,7 +212,7 @@ Edit `settings.json` to add plugin sources:
 ## Directory Structure
 
 ```
-~/dev/code-factory/
+~/workspace/code-factory/
   init.sh                  # Bootstrap script
   settings.json            # Claude Code settings -> ~/.claude/settings.json
   CLAUDE.md                # Claude Code instructions -> ~/.claude/CLAUDE.md
