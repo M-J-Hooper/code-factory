@@ -60,7 +60,7 @@
             },
           },
         },
-        "claude-sonnet-4-5": {
+        "claude-sonnet-4-6": {
           "options": {
             "thinking": {
               "type": "enabled",
@@ -76,7 +76,7 @@
         "setCacheKey": true,
       },
       "models": {
-        "gemini-3-pro-preview": {
+        "gemini-3.1-pro-preview": {
           "options": {
             "generationConfig": {
               "temperature": 0.7,
@@ -258,11 +258,12 @@
   // Default “daily driver” for coding-agent workflows.
   "model": "openai/gpt-5.3-codex",
   // "model": "openai/gpt-5.3-codex",
-  // "model": "anthropic/claude-sonnet-4-5",
+  // "model": "anthropic/claude-sonnet-4-6",
 
   // Used for lightweight tasks (e.g., titles).
-  // "small_model": "anthropic/claude-sonnet-4-5",
-  // "small_model": "google/gemini-3-pro-preview",
+  // "small_model": "anthropic/claude-sonnet-4-6",
+  // "small_model": "anthropic/claude-haiku-4-5",
+  // "small_model": "google/gemini-3.1-pro-preview",
 
   // "mode": {
   //   "plan": {
