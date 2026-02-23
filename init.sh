@@ -144,15 +144,17 @@ echo "$sorted_manifest" > "$MANIFEST"
 echo ""
 echo "Linked ${#new_manifest[@]} files to ~/.config/opencode/. Cleaned $cleaned stale files."
 
-# Install pre-commit hook
-HOOK_SRC="$SCRIPT_DIR/.githooks/pre-commit"
-HOOK_DEST="$SCRIPT_DIR/.git/hooks/pre-commit"
-if [[ -f "$HOOK_SRC" ]]; then
+# Install git hooks from .githooks/
+for HOOK_SRC in "$SCRIPT_DIR/.githooks"/*; do
+    [[ -f "$HOOK_SRC" ]] || continue
+    HOOK_NAME=$(basename "$HOOK_SRC")
+    HOOK_DEST="$SCRIPT_DIR/.git/hooks/$HOOK_NAME"
     if [[ -L "$HOOK_DEST" ]]; then
         rm "$HOOK_DEST"
     elif [[ -e "$HOOK_DEST" ]]; then
         errors+=("$HOOK_SRC -> $HOOK_DEST: destination already exists as a regular file")
         echo "FAIL  $HOOK_DEST already exists as a regular file, cannot link"
+        continue
     fi
     if [[ ! -e "$HOOK_DEST" ]]; then
         if ! ln -s "$HOOK_SRC" "$HOOK_DEST"; then
@@ -162,7 +164,7 @@ if [[ -f "$HOOK_SRC" ]]; then
             echo "LINK  $HOOK_DEST -> $HOOK_SRC"
         fi
     fi
-fi
+done
 
 # Final error summary
 if [[ ${#errors[@]} -gt 0 ]]; then
