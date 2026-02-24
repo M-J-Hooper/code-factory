@@ -123,8 +123,12 @@
     ]
   },
   "model": "opus",
-  "enabledMcpjsonServers": ["atlassian"],
-  "disabledMcpjsonServers": ["datadog"],
+  "enabledMcpjsonServers": [
+    "atlassian"
+  ],
+  "disabledMcpjsonServers": [
+    "datadog"
+  ],
   "hooks": {
     "Stop": [
       {
@@ -212,5 +216,6 @@
   },
   "alwaysThinkingEnabled": true,
   "autoUpdatesChannel": "stable",
-  "bypassPermissionsModeAccepted": true
+  "bypassPermissionsModeAccepted": true,
+  "skipDangerousModePermissionPrompt": true
 }
