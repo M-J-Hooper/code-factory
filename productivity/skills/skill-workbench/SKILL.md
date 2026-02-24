@@ -18,12 +18,22 @@ Announce: "I'm using the skill workbench to work on skills in this repository."
 
 **NEVER edit, write, or create files under `~/.claude` or `~/.config/opencode`.** These are managed directories — changes there are overwritten on plugin sync. Reading is fine for research purposes.
 
-All write operations MUST target the repo working directory (confirmed in Step 1 via `git rev-parse --show-toplevel`). If a file path contains `/.claude/` or `/.config/opencode/`, resolve it to the equivalent repo-relative path before writing.
+**Before every Write or Edit call**, verify the target path starts with `$REPO_ROOT`. If a file path contains `/.claude/` or `/.config/opencode/`, resolve it to the equivalent repo-relative path before writing.
 
 | Managed path prefix | Correct write target |
 |----------------------|-------------------|
 | `~/.claude/plugins/cache/{repo}/{plugin}/...` | `{repo-root}/{plugin}/...` |
 | `~/.config/opencode/skills/...` | `{repo-root}/.opencode/skills/...` |
+
+**Red flags — STOP if you think any of these:**
+
+| Thought | Reality |
+|---------|---------|
+| "I'll edit the cached copy directly — it's faster" | Cache is overwritten on sync. Edit the repo source. |
+| "This is a quick fix to the installed version" | Installed versions are read-only copies. Fix the source. |
+| "The glob result points to `~/.claude`, so I'll edit there" | Glob finds cache copies. Resolve to repo path before editing. |
+| "I need to update `~/.config/opencode` to test" | Plugin sync handles deployment. Edit repo source and sync. |
+| "It's just one small change, I'll fix the source later" | Later never comes. Edit the source now. |
 
 ## Reference Documents
 
