@@ -20,6 +20,7 @@ rtfpessoa's personal [Claude Code](https://docs.anthropic.com/en/docs/claude-cod
 | `/fixup` | git | Create a fixup commit targeting an earlier branch commit |
 | `/pr` | git | Create a GitHub pull request |
 | `/branch` | git | Create a well-named feature branch |
+| `/fix-conflicts` | git | Resolve merge, rebase, cherry-pick, and revert conflicts |
 | `/worktree` | git | Create an isolated git worktree |
 ## Plugins
 
@@ -54,7 +55,7 @@ Productivity skills -- feature development lifecycle, systematic debugging, docu
 
 ### git
 
-Git workflow skills -- structured commits, fixup commits, PR creation, and branch management.
+Git workflow skills -- structured commits, fixup commits, PR creation, branch management, and merge conflict resolution.
 
 **Skills:**
 
@@ -64,6 +65,7 @@ Git workflow skills -- structured commits, fixup commits, PR creation, and branc
 - `/worktree` -- Create an isolated git worktree for feature development. Sets up a detached worktree from the default branch in a sibling directory, ready for `/branch` to create a feature branch.
 - `/atcommit` -- Validate and organize changes into self-contained atomic commits. Builds a dependency graph across changed files, detects violations (missing deps, mixed concerns, forward references), and proposes commit groups in the correct order.
 - `/fixup` -- Match current changes to an existing branch commit and create a fixup commit. Scores commits by file overlap and directory proximity, handles ambiguous matches interactively, and reminds the user to autosquash.
+- `/fix-conflicts` -- Resolve merge, rebase, cherry-pick, and revert conflicts systematically. Detects conflict state with helper scripts, analyzes both sides using commit history, resolves by conflict type (UU, UD, DU, AU, UA, AA), handles lock files and generated files specially, and verifies no conflict markers remain.
 
 ## Installation
 
