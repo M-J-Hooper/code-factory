@@ -110,7 +110,25 @@ AskUserQuestion(
 )
 </interaction>
 
-### Special cases
+### Version and changelog conflicts
+
+When a version field or changelog conflicts, the upstream (main) side has released a new version. **NEVER merge version entries.** The upstream release history is immutable.
+
+**Resolution rule:** Keep all upstream version entries and release notes exactly as they are. Bump your version to be strictly above the upstream version, then add your changelog entry as the newest.
+
+| File | How to resolve |
+|------|---------------|
+| **Version fields** (package.json `version`, plugin.json `version`, Cargo.toml `version`, pyproject.toml `version`) | Take the upstream version. If your version was equal or higher, bump to the next appropriate semver above upstream (e.g., upstream released `1.3.0`, your branch had `1.3.0` -> bump to `1.4.0`). |
+| **Changelogs** (CHANGELOG.md, HISTORY.md, CHANGES.md) | Keep ALL upstream entries untouched. Add your entry above the upstream's latest, with the new bumped version. |
+| **Release manifests** (versions.json, lerna.json, release-please config) | Same as version fields: upstream wins, then bump yours above. |
+
+| Rationalization | Reality |
+|----------------|---------|
+| "Both versions are the same, so I can keep either" | The upstream entry represents a published release. Your entry represents unreleased work. Bump yours. |
+| "I'll merge the changelog entries under one version" | Each version in a changelog represents a distinct release. Combining them rewrites release history. |
+| "My version is higher, so I should keep mine" | Upstream was released first. Its version is now occupied. Bump yours above it. |
+
+### Other special cases
 
 | File type | Resolution approach |
 |-----------|-------------------|
