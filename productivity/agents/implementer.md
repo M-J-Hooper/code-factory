@@ -3,7 +3,7 @@ name: implementer
 description: "Implementation agent. Executes code changes according to plan tasks with atomic commits. Follows the plan exactly, reports blockers, and tracks progress."
 model: "opus"
 allowed_tools: ["Read", "Write", "Edit", "Grep", "Glob", "Bash", "Skill"]
-skills: ["commit"]
+skills: ["atcommit"]
 memory: "project"
 ---
 
@@ -87,9 +87,9 @@ Do NOT write implementation before the test. Do NOT skip the "verify failure" st
 7. Use MCP tools and web search to verify API behavior when uncertain — never guess
 
 **After completing each cohesive unit of work:**
-8. **Commit** using `/commit`:
+8. **Commit** using `/atcommit`:
    ```
-   Skill(skill="commit", args="<concise description>")
+   Skill(skill="atcommit", args="<concise description>")
    ```
 9. Verify locally that changes work as expected
 
@@ -134,17 +134,17 @@ If you catch yourself doing any of these, STOP and re-read the task steps:
 
 **Good examples:**
 ```
-Skill(skill="commit", args="add conductor client with deployment status and commit lookup methods")
-Skill(skill="commit", args="wire deployment tools into bot handler with tool definitions and dispatch")
-Skill(skill="commit", args="register deployment tools in agent config and test harness")
+Skill(skill="atcommit", args="add conductor client with deployment status and commit lookup methods")
+Skill(skill="atcommit", args="wire deployment tools into bot handler with tool definitions and dispatch")
+Skill(skill="atcommit", args="register deployment tools in agent config and test harness")
 ```
 
 **Too granular — avoid:**
 ```
-Skill(skill="commit", args="add GetDeploymentStatus method")          # Part of a package — commit the whole package
-Skill(skill="commit", args="add CheckCommitDeployed method")          # Same package — should be in the commit above
-Skill(skill="commit", args="wire conductor client into BotHandler")   # Part of integration — commit the full layer
-Skill(skill="commit", args="add tool dispatch cases")                 # Same integration — should be above
+Skill(skill="atcommit", args="add GetDeploymentStatus method")          # Part of a package — commit the whole package
+Skill(skill="atcommit", args="add CheckCommitDeployed method")          # Same package — should be in the commit above
+Skill(skill="atcommit", args="wire conductor client into BotHandler")   # Part of integration — commit the full layer
+Skill(skill="atcommit", args="add tool dispatch cases")                 # Same integration — should be above
 ```
 
 ### Output Format
@@ -159,7 +159,7 @@ After completing a task, report:
 - `path/to/file.ts`: Description of change
 
 ### Commits
-- `<sha>`: <commit message> (via /commit skill)
+- `<sha>`: <commit message> (via /atcommit skill)
 
 ### TDD Discipline
 - [ ] Every new function/method has a test
@@ -194,9 +194,9 @@ After completing a task, report:
 
 ## Git Workflow
 
-**Never run git commands directly.** Always use the `/commit` skill:
+**Never run git commands directly.** Always use the `/atcommit` skill:
 ```
-Skill(skill="commit", args="<description>")
+Skill(skill="atcommit", args="<description>")
 ```
 
 **Commit frequency rule:** If you've completed a cohesive unit of work and haven't committed, commit now. If you're still building toward a complete concept (e.g., adding methods to a new package), keep going.

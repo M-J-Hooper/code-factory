@@ -42,7 +42,7 @@ TDD ENFORCEMENT:
 
 COMMIT DISCIPLINE:
 - Make atomic commits: each commit should contain one logical change
-- Commit frequently using the /commit skill: Skill(skill="commit", args="<concise description>")
+- Commit frequently using the /atcommit skill: Skill(skill="atcommit", args="<concise description>")
 - Never use raw git commit or git checkout -b commands — always use the skills
 - Do NOT commit the plan file itself — exclude .plans/ and *.plan.md when staging
 

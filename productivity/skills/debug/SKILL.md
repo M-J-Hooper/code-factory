@@ -317,7 +317,7 @@ Task(
   1. The failing test already exists (or write one first)
   2. Implement the minimal fix to make the test pass
   3. Verify all existing tests still pass
-  4. Commit via /commit skill
+  4. Commit via /atcommit skill
   </task>
 
   <constraints>

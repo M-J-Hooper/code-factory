@@ -299,7 +299,7 @@ TDD ENFORCEMENT:
 
 GIT WORKFLOW:
 - Working directory (worktree/branch) is ALREADY set up — do NOT create branches or worktrees during EXECUTE
-- Use /commit for atomic commits during EXECUTE (one complete concept per commit — not individual functions or files)
+- Use /atcommit for atomic commits during EXECUTE (one complete concept per commit — not individual functions or files)
 - Use /pr to create pull request in DONE phase
 
 SUBAGENT COORDINATION — BATCH EXECUTION WITH FRESH SUBAGENT PER TASK AND TWO-STAGE REVIEW:

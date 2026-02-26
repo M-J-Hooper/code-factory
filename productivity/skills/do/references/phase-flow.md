@@ -83,7 +83,7 @@ When a task introduces or changes behavior, follow this exact sequence — no ex
 2. Run the test — verify it FAILS for the expected reason (not a syntax error)
 3. Write minimal implementation to make the test pass
 4. Run the test — verify it PASSES and all other tests still pass
-5. Commit atomically via `/commit`
+5. Commit atomically via `/atcommit`
 
 **Red flags — STOP and restart the task with TDD if you catch yourself:**
 - Writing implementation code before the test

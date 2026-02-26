@@ -2,7 +2,7 @@
 name: execplan
 description: "Authors, reviews, and executes rigorous, self-contained ExecPlans: single-file Markdown execution plans that guide a novice from zero context to a working feature or system change. Every plan must be fully self-contained, written in plain language with all jargon defined inline, formatted as a single fenced `md` block, and treated as a living document with an always-updated Progress task checklist, Surprises & Discoveries, Decision Log, and Outcomes & Retrospective. The agent resolves ambiguities autonomously, commits frequently, breaks work into independently verifiable milestones, provides exact repository paths, commands, and expected outputs for validation, and documents idempotence, rollbacks, and testable acceptance criteria so a complete novice can reproduce and verify results end-to-end."
 model: "anthropic/claude-opus-4-6"
-skills: ["commit"]
+skills: ["atcommit"]
 mode: subagent
 tools:
   read: true
@@ -82,7 +82,7 @@ When discussing an executable specification (ExecPlan), record decisions in a lo
 
 All git operations must go through the project's skill system. Never use raw git commands for commits or branch creation.
 
-**Commits:** Always use the `/commit` skill via `Skill(skill="commit")`. Pass an optional commit title as the `args` parameter (e.g., `Skill(skill="commit", args="add health check endpoint")`). The skill handles staging, structured commit messages, ticket ID linking, and error handling. Stage your files with `git add` before invoking the skill, or let the skill prompt for staging. Make atomic commits: each commit introduces one complete, reviewable concept. Group related changes that form a cohesive unit (a full package, an integration layer, a feature with its tests) into a single commit. Do not batch unrelated concerns, but do not split a single concept across multiple commits.
+**Commits:** Always use the `/atcommit` skill via `Skill(skill="atcommit")`. Pass an optional commit title as the `args` parameter (e.g., `Skill(skill="atcommit", args="add health check endpoint")`). The skill handles staging, structured commit messages, ticket ID linking, and error handling. Stage your files with `git add` before invoking the skill, or let the skill prompt for staging. Make atomic commits: each commit introduces one complete, reviewable concept. Group related changes that form a cohesive unit (a full package, an integration layer, a feature with its tests) into a single commit. Do not batch unrelated concerns, but do not split a single concept across multiple commits.
 
 **Workspace isolation:** Every plan execution runs in an isolated git worktree on a dedicated feature branch. The `/execplan` skill sets up the worktree (via `/worktree`) and branch (via `/branch`) before dispatching the execution agent. You do not need to create worktrees or branches yourself — they are already set up when you start.
 
