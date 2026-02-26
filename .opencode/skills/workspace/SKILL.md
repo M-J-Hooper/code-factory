@@ -1,236 +1,219 @@
 ---
 name: workspace
 description: >
-  Use when setting up Claude Code configuration on a new machine, bootstrapping
-  the code-factory plugin marketplace, or troubleshooting configuration issues.
-  Triggers: "setup workspace", "bootstrap claude", "configure claude code",
-  "install plugins", "sync configuration", "update code-factory".
-argument-hint: "[setup|update|status]"
+  Use when the user wants to manage Datadog workspaces (remote cloud development
+  environments): create, list, delete, SSH, connect IDE, or validate setup.
+  Also use when the `/do` skill needs a remote workspace instead of a local worktree.
+  Triggers: "workspace", "create workspace", "list workspaces", "delete workspace",
+  "ssh workspace", "datadog workspace", "remote dev environment", "connect workspace".
+argument-hint: "[create|list|delete|ssh|connect|validate] [workspace-name]"
 user-invocable: true
 ---
 
-# Workspace Setup
+# Datadog Workspace Manager
 
-Announce: "I'm using the workspace skill to set up Claude Code configuration."
+Announce: "I'm using the workspace skill to manage Datadog workspaces."
 
-Bootstrap Claude Code with the code-factory plugin marketplace and personal configuration.
-
-## Overview
-
-This skill helps set up and manage a Claude Code development environment with:
-- **Plugin marketplace** (productivity and git plugins)
-- **MCP server configuration** (Atlassian, Datadog, Chrome DevTools)
-- **Claude Code settings** (permissions, model preferences, enabled plugins)
-- **OpenCode CLI configuration** (alternative CLI support)
-
-## What Gets Configured
-
-| Source File | Destination | Purpose |
-|-------------|-------------|---------|
-| `mcp.json` | `~/.mcp.json` | MCP server configuration (Atlassian, Datadog, Chrome DevTools) |
-| `settings.json` | `~/.claude/settings.json` | Claude Code global settings (permissions, model, plugins) |
-| `opencode.jsonc` | `~/.config/opencode/opencode.jsonc` | OpenCode CLI configuration |
+Manage remote cloud development environments (CDEs) via the `workspaces` CLI. Workspaces are dev containers running on dedicated EC2 instances with pre-configured tools and repo access.
 
 ## Step 1: Parse Mode
 
-Check `$ARGUMENTS` to determine the operation:
-- `setup` or empty: Full setup from scratch
-- `update`: Pull latest changes and re-run bootstrap
-- `status`: Check current configuration status
+Parse `$ARGUMENTS` to determine the operation:
 
-## Step 2: Setup Mode
+| Argument prefix | Mode |
+|----------------|------|
+| `create <name>` | Create a new workspace |
+| `list` | List existing workspaces |
+| `delete <name>` | Delete a workspace |
+| `ssh <name>` | SSH into a workspace |
+| `connect <name>` | Connect IDE to a workspace |
+| `validate` | Validate prerequisites and setup |
+| No arguments | Ask user which operation |
 
-### Prerequisites
+If no arguments:
 
-Verify Claude Code is installed:
+```
+AskUserQuestion(
+  header: "Workspace operation",
+  question: "What would you like to do?",
+  options: [
+    "Create" -- Create a new Datadog workspace,
+    "List" -- List existing workspaces,
+    "Delete" -- Delete a workspace,
+    "SSH" -- SSH into a workspace,
+    "Connect" -- Connect IDE to a workspace,
+    "Validate" -- Check prerequisites and setup
+  ]
+)
+```
+
+## Step 2: Validate Prerequisites
+
+Run before `create` or `validate` modes. Skip for other modes.
+
+Check in parallel:
 
 ```bash
-claude --version
+which workspaces
+workspaces list 2>&1
 ```
 
-If not installed, provide installation instructions:
-```
-Claude Code is not installed. Install it with:
-  npm install -g @anthropic-ai/claude-code
-```
+| Check | Pass | Fail action |
+|-------|------|-------------|
+| `workspaces` CLI | Binary found | `brew update && brew install datadog-workspaces` |
+| Appgate VPN | `workspaces list` succeeds | "Connect to Appgate VPN before creating workspaces" |
+| GitHub auth | `workspaces list` succeeds | `ddtool auth github login` |
 
-### Clone Repository
-
-If code-factory is not cloned:
+If CLI not installed, offer to install:
 
 ```bash
-# Clone to ~/dev/code-factory (recommended location)
-mkdir -p ~/dev
-cd ~/dev
-git clone https://github.com/rtfpessoa/code-factory.git
-cd code-factory
+brew update && brew install datadog-workspaces
 ```
 
-### Run Bootstrap Script
+For `validate` mode: report all check results and stop.
+
+## Step 3: Create Workspace
+
+### 3a: Gather Parameters
+
+Determine workspace parameters from arguments and current context:
 
 ```bash
-cd ~/dev/code-factory
-./init.sh
+REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
+REPO_NAME=$(basename "$REPO_ROOT" 2>/dev/null)
+CURRENT_BRANCH=$(git symbolic-ref --short HEAD 2>/dev/null)
 ```
 
-The script will:
-1. Create symlinks for configuration files
-2. Skip files that already exist as regular files (with warning)
-3. Re-create symlinks if they already exist (idempotent)
+| Parameter | Source | Default |
+|-----------|--------|---------|
+| `name` | From arguments after "create" | Ask user |
+| `--repo` | Current git repo name | Ask user if not in a repo |
+| `--branch` | New feature branch via `/branch` | Created and pushed to remote |
+| `--region` | User preference | `eu-west-3` |
+| `--dotfiles` | Always | `https://github.com/rtfpessoa/dotfiles` |
+| `--shell` | Always | `fish` |
+| `--instance-type` | Always | `aws:m6gd.4xlarge` (ARM Graviton2) |
 
-### Verify Installation
+If no name provided:
+
+```
+AskUserQuestion(
+  header: "Workspace name",
+  question: "Name for the new workspace?",
+  options: []
+)
+```
+
+### 3b: Create Feature Branch
+
+Create a feature branch and push it to remote so the workspace can check it out:
+
+```
+Skill(skill="branch", args="<name or feature description>")
+```
+
+Then push the branch:
 
 ```bash
-# Check symlinks
-ls -la ~/.mcp.json ~/.claude/settings.json ~/.config/opencode/opencode.jsonc
-
-# Verify Claude Code sees the plugins
-claude --help
+git push -u origin <branch-name>
 ```
 
-## Step 3: Update Mode
-
-Pull latest changes and re-run bootstrap:
+### 3c: Create Workspace
 
 ```bash
-cd ~/dev/code-factory
-git pull origin main
-./init.sh
+workspaces create <name> \
+  --repo <repo> \
+  --branch <branch-name> \
+  --region eu-west-3 \
+  --instance-type aws:m6gd.4xlarge \
+  --dotfiles https://github.com/rtfpessoa/dotfiles \
+  --shell fish
 ```
 
-Changes are immediately available via symlinks.
+Omit `--repo` if not in a git repo and user doesn't specify one.
 
-## Step 4: Status Mode
+Creation is async. The CLI shows progress. Wait for it to complete.
 
-Check current configuration status:
+### 3d: Report
+
+```
+Workspace "<name>" created on branch "<branch-name>".
+
+SSH:     ssh workspace-<name>
+IDE:     workspaces connect <name> --editor intellij
+Delete:  workspaces delete <name>
+
+The workspace will be garbage collected after 20 days of inactivity
+and has a hard TTL of 6 months.
+```
+
+## Step 4: List Workspaces
 
 ```bash
-# Check if symlinks exist and point to correct locations
-readlink ~/.mcp.json
-readlink ~/.claude/settings.json
-readlink ~/.config/opencode/opencode.jsonc
-
-# Check code-factory version
-cd ~/dev/code-factory && git log -1 --oneline
+workspaces list
 ```
 
-Report:
-- Whether each config file is a symlink to code-factory
-- Current code-factory commit
-- Any files that are regular files instead of symlinks
+Report the list including workspace names, status, and expiration dates.
 
-## Available Plugins
+## Step 5: Delete Workspace
 
-After setup, these plugins are enabled:
+If name not provided, run `workspaces list` first and ask user to pick.
 
-| Plugin | Source | Skills |
-|--------|--------|--------|
-| `productivity@code-factory` | Local | `/do`, `/debug`, `/doc`, `/execplan`, `/review`, `/tour`, `/reflect`, `/skill-workbench`, `/workspace` |
-| `git@code-factory` | Local | `/commit`, `/atcommit`, `/fixup`, `/pr`, `/branch`, `/worktree` |
-| `superpowers@claude-plugins-official` | GitHub | TDD, debugging, brainstorming |
-| `dd@datadog-claude-plugins` | GitHub | Datadog-specific tools |
+Confirm before deleting:
 
-## MCP Servers
-
-The configuration includes these MCP servers:
-
-| Server | Status | Purpose |
-|--------|--------|---------|
-| `atlassian` | Enabled | Jira and Confluence access |
-| `datadog` | Disabled | Datadog API access (enable if needed) |
-| `chrome-devtools` | Available | Browser debugging |
-
-To enable/disable servers, edit `settings.json`:
-```json
-{
-  "enabledMcpjsonServers": ["atlassian"],
-  "disabledMcpjsonServers": ["datadog"]
-}
+```
+AskUserQuestion(
+  header: "Delete workspace",
+  question: "Delete workspace '<name>'? This removes everything including the home directory.",
+  options: [
+    "Yes, delete" -- Permanently delete the workspace,
+    "Cancel" -- Keep the workspace
+  ]
+)
 ```
 
-## Customization
+If confirmed:
 
-### Local Settings Override
-
-For machine-specific settings that shouldn't be synced, create:
 ```bash
-# ~/.claude/settings.local.json (not symlinked, not committed)
-{
-  "model": "sonnet"
-}
+workspaces delete <name>
 ```
 
-### Adding New Plugins
+## Step 6: SSH into Workspace
 
-Edit `settings.json` to enable additional plugins:
-```json
-{
-  "enabledPlugins": {
-    "new-plugin@marketplace": true
-  }
-}
+```bash
+ssh workspace-<name>
 ```
 
-### Adding New Marketplaces
+The prefix `workspace-` is required. Tab completion works.
 
-Edit `settings.json` to add plugin sources:
-```json
-{
-  "extraKnownMarketplaces": {
-    "my-marketplace": {
-      "source": {
-        "source": "github",
-        "repo": "username/repo"
-      }
-    }
-  }
-}
+If SSH fails:
+
+```bash
+workspaces ssh-config <name>
 ```
 
-## Useful Commands
+Then retry SSH.
 
-| Command | Description |
-|---------|-------------|
-| `./init.sh` | Run bootstrap (idempotent) |
-| `make all` | Run all checks and lint |
-| `git pull && ./init.sh` | Update to latest |
+## Step 7: Connect IDE
+
+```bash
+workspaces connect <name> --editor <editor>
+```
+
+Default editor is `intellij` if not specified.
 
 ## Error Handling
 
-| Issue | Solution |
-|-------|----------|
-| Settings not applied | Restart Claude Code after running init.sh |
-| File exists error | init.sh skips regular files; back up and remove, then re-run |
-| Plugin not loading | Check `enabledPlugins` in settings.json |
-| MCP server error | Check `enabledMcpjsonServers` and credentials |
-| Permission denied | Ensure init.sh is executable: `chmod +x init.sh` |
-| Symlink broken | Re-run `./init.sh` to recreate |
+| Error | Action |
+|-------|--------|
+| `workspaces` CLI not found | Install: `brew update && brew install datadog-workspaces` |
+| Connection refused / timeout | Check Appgate VPN is connected |
+| Auth error | Run `ddtool auth github login` |
+| SSH connection refused | Run `workspaces ssh-config <name>` to fix SSH config |
+| Workspace not found | Run `workspaces list` to show available workspaces |
+| Create fails | Check Appgate VPN, GitHub auth, and instance type availability |
+| Missing `workspace-` prefix in SSH | Use `ssh workspace-<name>`, not `ssh <name>` |
 
-## Directory Structure
+## Reference
 
-```
-~/dev/code-factory/
-  init.sh                  # Bootstrap script
-  settings.json            # Claude Code settings -> ~/.claude/settings.json
-  mcp.json                 # MCP config -> ~/.mcp.json
-  opencode.jsonc           # OpenCode config -> ~/.config/opencode/opencode.jsonc
-  productivity/            # Productivity plugin
-    skills/
-      debug/               # /debug skill
-      do/                  # /do skill
-      doc/                 # /doc skill
-      execplan/            # /execplan skill
-      reflect/             # /reflect skill
-      review/              # /review skill
-      tour/                # /tour skill
-      skill-workbench/     # /skill-workbench skill
-      workspace/           # /workspace skill (this file)
-  git/                     # Git workflow plugin
-    skills/
-      atcommit/            # /atcommit skill
-      branch/              # /branch skill
-      commit/              # /commit skill
-      fixup/               # /fixup skill
-      pr/                  # /pr skill
-      worktree/            # /worktree skill
-```
+For advanced configuration (secrets, instance types, IDE templates, Claude Code setup), see [references/advanced.md](references/advanced.md).

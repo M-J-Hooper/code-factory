@@ -10,7 +10,7 @@ rtfpessoa's personal [Claude Code](https://docs.anthropic.com/en/docs/claude-cod
 | `/debug` | productivity | Systematic debugging with root cause investigation |
 | `/execplan` | productivity | Create, review, execute, or resume execution plans |
 | `/doc` | productivity | Create, update, improve, or audit Markdown docs |
-| `/workspace` | productivity | Set up Claude Code configuration and plugins |
+| `/workspace` | productivity | Manage Datadog workspaces (remote CDEs) |
 | `/reflect` | productivity | Capture session learnings and update knowledge files |
 | `/skill-workbench` | productivity | Create and improve skills in this marketplace |
 | `/review` | productivity | Review a pull request with structured feedback |
@@ -27,7 +27,7 @@ rtfpessoa's personal [Claude Code](https://docs.anthropic.com/en/docs/claude-cod
 
 ### productivity
 
-Productivity skills -- feature development lifecycle, systematic debugging, documentation management, execution planning, PR review, guided code tours, workspace setup, and skill workbench.
+Productivity skills -- feature development lifecycle, systematic debugging, documentation management, execution planning, PR review, guided code tours, Datadog workspace management, and skill workbench.
 
 **Skills:**
 
@@ -37,7 +37,7 @@ Productivity skills -- feature development lifecycle, systematic debugging, docu
 - `/execplan` -- Create, execute, review, or resume an ExecPlan. Supports four modes: author (write a new plan), review (interactive walkthrough with feedback), execute (run a plan from the start), and resume (continue an in-progress plan).
 - `/review` -- Review a pull request with structured feedback across five categories (Correctness, Security, Design, Testing, Style) with severity levels (critical, suggestion, nit). Presents findings to the user without posting automatically.
 - `/tour` -- Guided code walkthroughs to explain architecture, flows, or structure. Supports three modes: interactive (step-by-step with pauses), written (complete markdown document), and PR comment (collapsible sections posted to a GitHub PR).
-- `/workspace` -- Set up and manage Claude Code configuration. Bootstraps the code-factory plugin marketplace, symlinks configuration files, and manages MCP server settings.
+- `/workspace` -- Manage Datadog workspaces (remote cloud development environments). Create, list, delete, SSH into, and connect IDEs to workspaces via the `workspaces` CLI. Integrates with `/do` as a 4th workspace mode alongside worktree, branch, and current-branch.
 - `/reflect` -- Capture session learnings and update knowledge files. Extracts conventions, corrections, patterns, and gotchas from the current session. Uses confidence-based routing: high-confidence learnings are auto-applied, medium-confidence ones are queued for human review.
 - `/skill-workbench` -- Create new skills or improve existing ones in this plugin marketplace. Supports two modes: CREATE (scaffold a new skill with frontmatter, structure, and OpenCode command) and IMPROVE (audit skills for clarity, conciseness, and completeness; apply improvements directly).
 

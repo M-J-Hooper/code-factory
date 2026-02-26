@@ -1,6 +1,6 @@
 ---
 description: >
-  Use when setting up Claude Code configuration on a new machine, bootstrapping
+  Use when the user wants to manage Datadog workspaces (remote cloud development
 ---
 
 Invoke the `workspace` skill with explicit syntax:

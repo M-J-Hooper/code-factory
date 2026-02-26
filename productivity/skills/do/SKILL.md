@@ -58,8 +58,9 @@ State is stored in the **target working directory's** `.plans/do/<run-id>/` from
 | **Worktree + branch** | `<worktree_path>/.plans/do/<run-id>/` | After worktree creation in Step 4 |
 | **Branch only** | `<repo_root>/.plans/do/<run-id>/` | After branch creation in Step 4 |
 | **Current branch** | `<repo_root>/.plans/do/<run-id>/` | Immediately in Step 4 |
+| **Datadog workspace** | Remote: managed in workspace `/do` session | After SSH + new `/do` inside workspace |
 
-**CRITICAL:** When using worktree mode, NO state files are written in the source repo. The worktree is created first, then ALL state (including FEATURE.md) is written directly in the worktree's `.plans/` directory.
+**CRITICAL:** When using worktree or workspace mode, NO state files are written in the source repo. The worktree is created first, then ALL state (including FEATURE.md) is written directly in the worktree's `.plans/` directory.
 
 Each run creates:
 ```
@@ -110,7 +111,8 @@ AskUserQuestion(
   options: [
     "Worktree + branch (Recommended)" -- Isolated worktree with a feature branch. Source repo stays completely clean — no state files or code changes written there.,
     "Branch only" -- Feature branch in the current directory. State files written in current repo.,
-    "Current branch" -- Work directly on the current branch. State files written in current repo.
+    "Current branch" -- Work directly on the current branch. State files written in current repo.,
+    "Datadog workspace" -- Remote CDE on EC2. Creates workspace for the repo/branch, you SSH in and continue.
   ]
 )
 ```
@@ -131,7 +133,7 @@ AskUserQuestion(
 **If `--auto` was in arguments:** Skip the automation question — use autonomous mode.
 
 Record choices:
-- `workdir_mode`: `worktree`, `branch_only`, or `current_branch`
+- `workdir_mode`: `worktree`, `branch_only`, `current_branch`, or `workspace`
 - `interaction_mode`: `interactive` or `autonomous`
 
 ### 1b: Source Isolation Rule
@@ -141,6 +143,7 @@ Record choices:
 | **Worktree + branch** | Worktree only | Worktree's `.plans/` | **NO** — nothing written |
 | **Branch only** | Current repo (on branch) | Current repo's `.plans/` | Yes (on branch) |
 | **Current branch** | Current repo | Current repo's `.plans/` | Yes |
+| **Datadog workspace** | Remote workspace | Remote `.plans/` | **NO** — nothing written locally |
 
 **CRITICAL:** When using worktree or branch mode, NO files (state, code, or otherwise) are written in the original source directory outside the chosen workspace.
 
@@ -196,6 +199,7 @@ AskUserQuestion(
 | **Worktree + branch** | `Skill(skill="worktree", args="<feature-slug>")` → `Skill(skill="branch", args="<feature-slug>")` → set `WORKDIR_PATH` to worktree path |
 | **Branch only** | `Skill(skill="branch", args="<feature-slug>")` → set `WORKDIR_PATH` to `REPO_ROOT` |
 | **Current branch** | Record current branch → set `WORKDIR_PATH` to `REPO_ROOT` |
+| **Datadog workspace** | `Skill(skill="workspace", args="create <feature-slug>")` → Report SSH instructions → **STOP** (user continues with new `/do` session inside workspace) |
 
 ### 4b: Initialize State Directory in Target Workdir
 
