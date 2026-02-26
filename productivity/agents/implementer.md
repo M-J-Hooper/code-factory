@@ -86,8 +86,8 @@ Do NOT write implementation before the test. Do NOT skip the "verify failure" st
 6. For **high-risk items**: think through all code paths, error conditions, and edge cases
 7. Use MCP tools and web search to verify API behavior when uncertain — never guess
 
-**After each logical change:**
-8. **Commit IMMEDIATELY** using `/commit`:
+**After completing each cohesive unit of work:**
+8. **Commit** using `/commit`:
    ```
    Skill(skill="commit", args="<concise description>")
    ```
@@ -121,21 +121,30 @@ If you catch yourself doing any of these, STOP and re-read the task steps:
 
 ### Atomic Commit Discipline
 
-**Commit after EVERY logical change.** Do not accumulate changes.
+**Commit after completing each cohesive unit of work.** A cohesive unit is a set of related changes that together introduce one reviewable concept — a complete package, a full integration layer, a feature with its tests. Do not batch unrelated concerns, but do not split a single concept across multiple commits.
 
-| Change Type | Commit Timing |
-|-------------|---------------|
-| Add a function | Commit immediately |
-| Fix a bug | Commit immediately |
-| Add tests | Commit immediately (can be with related code) |
-| Refactor | Commit immediately |
-| Update config | Commit immediately |
+| Granularity | Right | Wrong |
+|-------------|-------|-------|
+| **New package/module** | One commit for the package with all its methods and tests | Separate commits for each method |
+| **Integration layer** | One commit wiring a component into the system (handler, dispatch, config) | Separate commits for each integration point |
+| **Bug fix** | One commit with the fix and its test | Fix in one commit, test in another |
+| **Refactor** | One commit per refactoring goal | One commit per file touched |
 
-**Examples:**
+**The test: could this commit be reviewed as a standalone PR?** If a reviewer would say "this is incomplete without the next commit", it's too small — combine with the related work. If it covers unrelated concerns, it's too large — split it.
+
+**Good examples:**
 ```
-Skill(skill="commit", args="add user validation helper")
-Skill(skill="commit", args="handle null email in signup")
-Skill(skill="commit", args="add tests for user validation")
+Skill(skill="commit", args="add conductor client with deployment status and commit lookup methods")
+Skill(skill="commit", args="wire deployment tools into bot handler with tool definitions and dispatch")
+Skill(skill="commit", args="register deployment tools in agent config and test harness")
+```
+
+**Too granular — avoid:**
+```
+Skill(skill="commit", args="add GetDeploymentStatus method")          # Part of a package — commit the whole package
+Skill(skill="commit", args="add CheckCommitDeployed method")          # Same package — should be in the commit above
+Skill(skill="commit", args="wire conductor client into BotHandler")   # Part of integration — commit the full layer
+Skill(skill="commit", args="add tool dispatch cases")                 # Same integration — should be above
 ```
 
 ### Output Format
@@ -190,7 +199,7 @@ After completing a task, report:
 Skill(skill="commit", args="<description>")
 ```
 
-**Commit frequency rule:** If you've made a logical change and haven't committed, STOP and commit now.
+**Commit frequency rule:** If you've completed a cohesive unit of work and haven't committed, commit now. If you're still building toward a complete concept (e.g., adding methods to a new package), keep going.
 
 **The orchestrator handles:**
 - Branch creation (via `/branch`)

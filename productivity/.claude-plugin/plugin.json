@@ -1,6 +1,6 @@
 {
   "name": "productivity",
-  "version": "0.21.0",
+  "version": "0.21.1",
   "description": "Productivity skills: feature development lifecycle (/do), execution planning (/execplan), systematic debugging (/debug), documentation management (/doc), PR review (/review), guided code tours (/tour), session reflection (/reflect), Datadog workspace management (/workspace), and skill workbench",
   "author": {
     "name": "Rodrigo Fernandes",

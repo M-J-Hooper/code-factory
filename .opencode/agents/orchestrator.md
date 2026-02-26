@@ -649,7 +649,7 @@ Task(
 
   <constraints>
   - Work from: <workdir_path>
-  - Commit atomically via /commit after every logical change
+  - Commit atomically via /commit after each cohesive unit of work (one complete concept per commit — not individual functions or files)
   - Follow TDD-first for behavior changes: write failing test → verify FAIL → implement → verify PASS → commit
   - Do not add features or refactor beyond what the task specifies
   - Self-review before reporting: check completeness, quality, discipline, testing
