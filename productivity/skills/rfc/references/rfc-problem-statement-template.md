@@ -35,13 +35,27 @@
 # Requirements
 
 *What this project must do. Cover:*
-- *Use cases*
-- *Cost constraints*
-- *Backwards compatibility*
-- *Performance requirements*
-- *Reliability requirements*
+- *Use cases with concrete examples*
+- *Cost constraints with budget range*
+- *Backwards compatibility requirements*
+- *Performance requirements with measurable targets*
+- *Reliability requirements with SLO targets*
 - *Security and compliance requirements*
+
+# Constraints
+
+*Hard limits on the solution space:*
+- *Latency, throughput, or storage limits*
+- *Staffing and timeline constraints*
+- *Compliance requirements (PCI, HIPAA, SOX)*
+- *Existing system dependencies that cannot change*
 
 # Out of Scope
 
-*What is explicitly outside the boundaries of this project. Important for delimiting scope.*
+*What is explicitly outside the boundaries of this project, and the rationale for each exclusion.*
+
+# Risks and Open Questions
+
+*Known risks and unresolved questions:*
+- *For each risk: likelihood, impact, and suggested mitigation*
+- *For each open question: who owns answering it and the impact if the answer goes against assumptions*

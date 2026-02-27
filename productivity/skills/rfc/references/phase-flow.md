@@ -25,18 +25,30 @@ RFC type: <problem_statement|design>
 Refine this RFC topic into a detailed specification. This is for an RFC document, not code.
 
 1. Analyze the topic for ambiguity, missing context, and scope questions.
-2. Propose 2-3 approaches to scoping this RFC. For each approach:
+2. Gather concrete inputs from the user. Ask for each of these (one at a time, preferring multiple choice):
+   - Problem statement with specific examples and measured impact
+   - Constraints: latency, cost, staffing, deadlines, compliance requirements
+   - Existing system details: what exists today, links or descriptions of current architecture
+   - Non-goals: what is explicitly out of scope and why
+   - Alternatives the user has already considered (even rough ideas)
+   - Risks the user already suspects
+   - Migration expectations: phased rollout, backwards compatibility, data backfill
+   - Open questions the user already knows about
+   If the user does not provide these, the RFC will fill gaps with guesses. Guesses read as AI-generated.
+3. Propose 2-3 approaches to scoping this RFC. For each approach:
    - What would be included and excluded
    - Target audience and stakeholders
    - Estimated complexity and coverage
    Lead with the recommended approach and explain why.
-3. After the user selects an approach, produce a refined specification:
-   - Problem statement (2-3 sentences)
-   - Scope boundaries (in/out)
-   - Target audience
+4. After the user selects an approach, produce a refined specification:
+   - Problem statement (2-3 sentences, with quantified impact)
+   - Scope boundaries (in/out, with rationale for each exclusion)
+   - Target audience and the decision they need to make
+   - Constraints and non-goals
+   - Known alternatives and suspected risks
    - Key questions that research must answer
    - Success criteria for the RFC document itself
-4. Questions to the user should be ONE at a time, preferring multiple choice.
+5. Questions to the user should be ONE at a time, preferring multiple choice.
 </task>
 "
 )
@@ -294,29 +306,48 @@ Task(
 <task>
 Write the RFC document following the plan exactly. Write to the output_path.
 
-Rules:
+You are the tech lead writing for senior engineers, SRE/oncall, and product leadership. They need to make a go/no-go decision based on this document.
+
+Tone: crisp, technical, specific. No hype. No generic filler.
+Style: short sentences. Active voice. Prefer nouns and verbs over adjectives. If data is missing, write an explicit assumption or flag it as an Open Question. Do not invent facts.
+
+MULTI-PASS EDITORIAL PROCESS:
+
+Pass 1 (Draft):
 1. Follow the template structure. Do not add or remove sections unless the plan specifies it.
 2. Write each section per the plan's instructions (key points, sources, quality criteria).
 3. CITE SOURCES: Every technical claim must reference a research finding, code path, or user decision.
    Use inline citations: (Source: <reference>)
 4. Open questions that could not be resolved go in the 'Open Questions' section. Do not guess answers.
-5. Use clear, direct prose. Write from a staff software engineer perspective:
-   - Data-backed claims with specific numbers
-   - Explicit trade-off analysis for every decision
-   - Concrete alternatives with clear rejection rationale
-   - Measurable success metrics
-   - Realistic risk assessment with mitigation strategies
-6. Follow these typographic rules strictly:
-   - No em dashes (--- or the character). Rewrite the sentence, use a colon, semicolon, or split into two sentences.
-   - Straight quotes only: " and '. Never use curly quotes.
-   - No bold or italic formatting inside sentences. Use headings, lists, or code formatting instead.
-7. After writing all sections, do a self-review pass:
-   - Check coherence: do sections reference each other consistently?
-   - Check completeness: are all plan items covered?
-   - Check citations: does every claim have a source?
-   - Check quality: would a staff engineer find this convincing?
-   - Check typography: no em dashes, no curly quotes, no mid-sentence bold/italic?
-8. Write the final document to the output path.
+5. Include sharp edges: what will break first, what is annoying about this design, what we are punting.
+6. Include cost and capacity estimates with stated assumptions.
+7. Include operational impact: what changes for oncall, what alerts/dashboards/runbooks are needed.
+8. Write "How we know it worked" with measurable acceptance criteria.
+
+Pass 2 (Tighten):
+After the full draft, do a tightening pass:
+1. Remove banned words: "robust", "seamless", "leveraging", "best-in-class", "comprehensive", "streamline", "cutting-edge", "innovative", "empower". Replace each with a specific, measurable claim.
+2. Remove motivational transitions: "This brings us to...", "It is worth noting...", "Importantly, ..."
+3. Remove thesis restatements. State each point once.
+4. Check terminology consistency: every concept uses the same term throughout.
+5. Replace vague qualifiers ("significant", "minimal", "substantial") with numbers or explicit assumptions.
+6. Verify each paragraph is under 5 sentences. Split longer ones.
+7. Apply typographic rules:
+   - No em dashes. Use colons, semicolons, or split sentences.
+   - Straight quotes only.
+   - No bold or italic formatting inside sentences.
+
+Pass 3 (Red Team):
+After tightening, do a critic pass:
+1. List the 3 strongest objections a reviewer would raise.
+2. For each objection, either strengthen the relevant section or add the objection and response to the document.
+3. Check: would a staff engineer find every section convincing? Flag and fix weak spots.
+4. Check coherence: do sections reference each other consistently?
+5. Check completeness: are all plan items covered?
+6. Check citations: does every claim have a source?
+7. Verify the document reads like it was written by an engineer who built the system, not by someone summarizing it from the outside.
+
+Write the final document to the output path.
 </task>
 "
 )

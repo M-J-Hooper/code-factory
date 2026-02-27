@@ -62,6 +62,27 @@ Reference for maintaining staff-level quality in RFC documents.
 | Mitigation strategy | Concrete actions, not "we'll monitor" |
 | Acceptance criteria | When is the risk resolved vs. accepted? |
 
+### Sharp Edges
+
+Every RFC must include a "Sharp Edges" section or equivalent content distributed across relevant sections. This is what separates human-written RFCs from generated ones.
+
+| Standard | Example |
+|----------|---------|
+| What breaks first | "The batch job will OOM above 500K records per run" |
+| What is annoying | "Requires manual cert rotation every 90 days until we automate" |
+| What we are punting | "Multi-region support is deferred to phase 2; single-region only for GA" |
+| Strongest objection | "Critics will argue X. We accept this because Y." |
+
+### Operational Impact
+
+Required for design documents. Encouraged for problem statements that describe a system change.
+
+| Standard | Example |
+|----------|---------|
+| What changes for oncall | "New alert: queue-depth > 10K for 5 minutes. Runbook: drain and restart consumer." |
+| Cost and capacity estimates | "Estimated 3 additional c5.2xlarge instances at ~$400/month. Assumptions: 50K events/s steady state." |
+| How we know it worked | "Success: P99 latency < 200ms for 7 consecutive days after GA. Measured via Datadog APM." |
+
 ## Writing Style
 
 | Do | Don't |
@@ -72,6 +93,35 @@ Reference for maintaining staff-level quality in RFC documents.
 | Keep paragraphs under 5 sentences | Long paragraphs lose readers |
 | Use tables for comparisons | Tables scan faster than prose for structured data |
 | Lead with the conclusion | "We recommend approach A because X. Here's the analysis..." |
+| Prefer nouns and verbs over adjectives | "The queue drops messages above 10K/s" not "The highly performant queue gracefully handles load" |
+| Use exact numbers and examples | "Adds 12ms per request at P99" not "adds minimal overhead" |
+| Use "We propose" sparingly | Only in the proposal section. Everywhere else, state facts and evidence. |
+| Maintain a glossary | Define each term once. Use the same term throughout. |
+
+## Banned Language
+
+These words and phrases signal AI-generated text. Replace them with specific, measurable claims.
+
+| Banned | Why | Replace with |
+|--------|-----|-------------|
+| robust | Means nothing without a metric | "Survives 3 AZ failures with <5s recovery" |
+| seamless | Nothing is seamless; name the integration cost | "Requires a 2-line config change per service" |
+| leverage / leveraging | Corporate filler | "use", "call", "extend" |
+| best-in-class | Unverifiable superlative | Cite the benchmark or drop it |
+| comprehensive | Vague scope claim | List what is covered and what is not |
+| streamline | Hides complexity | "Removes 2 of 4 manual steps" |
+| cutting-edge / state-of-the-art | Marketing language | Name the specific technique and its trade-offs |
+| ensure / guarantee | Overpromises; nothing is guaranteed | "Reduces the probability of X by Y" or "Detects X within Y seconds" |
+| scalable (without numbers) | Meaningless alone | "Scales to 100K req/s per pod" |
+| world-class | Unverifiable | Delete or cite a specific ranking |
+| innovative / novel | Self-congratulatory | Describe what it does differently and why that matters |
+| optimize (without target) | Vague | "Reduce P99 latency from X to Y" |
+| empower / enable | Corporate filler | Describe the concrete capability added |
+
+Also avoid:
+- Motivational transitions: "This brings us to...", "It is worth noting that...", "Importantly, ..."
+- Thesis restatements: Do not repeat the problem statement in every section.
+- Hedging stacks: "It might potentially be possible to..." Pick a position.
 
 ## Typographic Rules
 
@@ -115,3 +165,9 @@ Before finalizing any RFC section, verify:
 - [ ] No em dashes (`---` or `—`) anywhere in the document
 - [ ] Only straight quotes (`"` and `'`), no curly quotes
 - [ ] No bold or italic formatting inside sentences
+- [ ] No banned words from the Banned Language list
+- [ ] No motivational transitions or thesis restatements
+- [ ] Sharp edges are present: what breaks first, what is annoying, what we are punting
+- [ ] Terminology is consistent throughout (same concept = same term)
+- [ ] Cost and capacity estimates included, with stated assumptions
+- [ ] Operational impact described: oncall changes, alerts, runbooks
