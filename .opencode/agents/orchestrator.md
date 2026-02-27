@@ -127,9 +127,9 @@ When dispatching to agents that produce structured artifacts, include a brief ex
 
 ## State File Protocol
 
-State is stored in the **target working directory's** `.plans/do/<run-id>/` from the first phase. The `/do` skill sets up the working directory (worktree/branch) and creates the state directory BEFORE dispatching to this orchestrator.
+State is stored in `~/docs/plans/do/<short-name>/`, outside the repo. The `/do` skill creates this directory and the initial state file BEFORE dispatching to this orchestrator. The `<state_path>` in your dispatch prompt points to the FEATURE.md file.
 
-**CRITICAL:** The `<workdir_path>` provided in your dispatch prompt is the ONLY location for state files. Never write state to a different directory. For worktree mode, this means the source repo has NO state files.
+**CRITICAL:** State files live in `~/docs/plans/do/<short-name>/` — never in the repo. The `<workdir_path>` is where code changes happen; the `<state_path>` is where state files live. These are separate locations.
 
 Files for each phase:
 
@@ -142,7 +142,7 @@ Files for each phase:
 | `VALIDATION.md` | VALIDATE phase | Test results, acceptance evidence |
 
 **Update protocol:**
-- All state writes go to `<workdir_path>/.plans/do/<run-id>/` — the path from your dispatch prompt
+- All state writes go to `~/docs/plans/do/<short-name>/` — the directory containing the FEATURE.md from your dispatch prompt
 - On phase entry: update `current_phase` in FEATURE.md frontmatter, log in Progress
 - After each subagent returns: write outputs to the appropriate phase file
 - After each commit: record commit SHA in FEATURE.md Progress section
@@ -162,9 +162,7 @@ After each subagent returns, verify the artifact contains expected sections befo
 
 Validation protocol: For each required section, check that the heading exists in the artifact text. This is a structural check (does the section exist?), not a content quality check (is it good?). Missing sections indicate the subagent prompt may need adjustment.
 
-**Never commit .plans/ files.** When staging for commits, always exclude:
-- The `.plans/` directory
-- Any `*.plan.md` or `FEATURE.md` files
+**State files live outside the repo** (`~/docs/plans/do/`). They are never in the git working tree and never need to be excluded from commits.
 
 ## Phase Execution
 
@@ -577,11 +575,11 @@ AskUserQuestion(
 
 **Entry criteria:** Plan approved or `current_phase: EXECUTE`
 
-**Working directory is already set up.** The `/do` skill created the worktree/branch and initialized state files in the target workdir BEFORE dispatching to this orchestrator. The `<workdir_path>` in your dispatch prompt is where you work and where all state lives.
+**Working directory is already set up.** The `/do` skill created the worktree/branch BEFORE dispatching to this orchestrator. The `<workdir_path>` is where code changes happen. State files live in `~/docs/plans/do/<short-name>/` (from `<state_path>`).
 
 Verify the workdir is ready:
 - Confirm you are on the correct branch (`git branch --show-current` from `<workdir_path>`)
-- Confirm state files exist at `<workdir_path>/.plans/do/<run-id>/`
+- Confirm state files exist at `~/docs/plans/do/<short-name>/` (the directory from `<state_path>`)
 - If either check fails, report a blocker — do NOT attempt to set up a working directory
 
 **Plan Critical Review (do this ONCE before the task loop):**
@@ -767,7 +765,7 @@ Task(
 After both reviews pass:
 - Mark task `[x]` with commit SHA in Progress
 - Record any review findings in Surprises and Discoveries
-- Update FEATURE.md state file (in worktree's `.plans/`)
+- Update FEATURE.md state file (in `~/docs/plans/do/<short-name>/`)
 - Check if the current batch is complete → if yes, proceed to **Batch Report**
 - Otherwise, proceed to the next task in the batch
 
@@ -843,8 +841,8 @@ If during execution you discover the plan needs fundamental changes (not minor f
 - Update Progress section in FEATURE.md after each task (in `<workdir_path>/.plans/`)
 - Record discoveries in Surprises and Discoveries section of FEATURE.md
 - Record decisions in Decisions Made section of FEATURE.md
-- All state file writes go to `<workdir_path>/.plans/` — the location provided at dispatch
-- Never commit .plans/ files (they are gitignored)
+- All state file writes go to `~/docs/plans/do/<short-name>/` — the directory from `<state_path>`
+- State files live outside the repo — no gitignore needed
 
 **Exit criteria:** All milestone tasks complete, no known failing checks
 

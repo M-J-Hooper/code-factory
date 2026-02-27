@@ -48,7 +48,7 @@ Reference for detailed phase behaviors. Loaded by the orchestrator when executin
 - **Autonomous**: Auto-approve if no critical issues, loop back for required changes only
 
 ## EXECUTE Phase
-**Working directory is already set up.** Branch and worktree (if applicable) were created in Step 4 before any phase work began. The orchestrator works from `<workdir_path>` and writes all state to `<workdir_path>/.plans/`.
+**Working directory is already set up.** Branch and worktree (if applicable) were created in Step 4 before any phase work began. The orchestrator works from `<workdir_path>` and writes all state to `~/docs/plans/do/<short-name>/`.
 
 **Plan critical review — before implementing anything:**
 

@@ -40,10 +40,10 @@ Every RFC goes through the full workflow. A "quick" problem statement, a "simple
 
 ## State Storage
 
-All state is stored in `~/docs/plans/<short-name>/`:
+All state is stored in `~/docs/plans/rfc/<short-name>/`:
 
 ```
-~/docs/plans/<short-name>/
+~/docs/plans/rfc/<short-name>/
   RFC-STATE.md          # Canonical state (YAML frontmatter + progress)
   RESEARCH.md           # Research findings (web, Confluence, Jira, GitHub)
   EXPLORATION.md        # Source code analysis (if applicable)
@@ -154,13 +154,13 @@ For each discovered `RFC-STATE.md`, read it and check `current_phase`. Runs with
 SHORT_NAME="<derived-slug>"
 DATE=$(date +%Y-%m-%d)
 
-mkdir -p ~/docs/plans/$SHORT_NAME
+mkdir -p ~/docs/plans/rfc/$SHORT_NAME
 mkdir -p ~/docs/rfcs
 ```
 
 ### 4b: Create Initial State File
 
-Write `~/docs/plans/$SHORT_NAME/RFC-STATE.md` (see [references/state-file-schema.md](references/state-file-schema.md) for the full schema).
+Write `~/docs/plans/rfc/$SHORT_NAME/RFC-STATE.md` (see [references/state-file-schema.md](references/state-file-schema.md) for the full schema).
 
 Initial frontmatter:
 
@@ -195,7 +195,7 @@ Then proceed to **Phase Loop** (Step 6).
 Read the state file. Determine current phase and status.
 
 ```bash
-cat ~/docs/plans/<short-name>/RFC-STATE.md
+cat ~/docs/plans/rfc/<short-name>/RFC-STATE.md
 ```
 
 Read any existing phase artifacts (RESEARCH.md, EXPLORATION.md, PLAN.md, REVIEW.md).
@@ -259,7 +259,7 @@ Dispatch `productivity:researcher` with:
 - Instruction to search: web (prior art, best practices), Confluence (internal context, existing RFCs), Jira (related tickets), GitHub (related PRs/issues)
 - Each finding must cite its source
 
-Output: Write `~/docs/plans/<short-name>/RESEARCH.md`
+Output: Write `~/docs/plans/rfc/<short-name>/RESEARCH.md`
 
 ### EXPLORE Phase
 
@@ -270,7 +270,7 @@ Dispatch `productivity:explorer` with:
 - Research findings
 - Instruction to map relevant code areas, interfaces, dependencies, and existing patterns
 
-Output: Write `~/docs/plans/<short-name>/EXPLORATION.md`
+Output: Write `~/docs/plans/rfc/<short-name>/EXPLORATION.md`
 
 ### PLAN Phase
 
@@ -280,7 +280,7 @@ Dispatch `productivity:planner` with:
 - Instruction to create a section-by-section writing plan
 - Each section plan should include: what to write, which research/exploration findings to cite, quality criteria, open questions to resolve
 
-Output: Write `~/docs/plans/<short-name>/PLAN.md`
+Output: Write `~/docs/plans/rfc/<short-name>/PLAN.md`
 
 ### CONSISTENCY_CHECK Phase
 
@@ -301,7 +301,7 @@ Present the plan to the user for review. In interactive mode:
 
 In autonomous mode: log the plan summary and proceed unless blocking issues exist.
 
-Output: Write `~/docs/plans/<short-name>/REVIEW.md` with feedback and decisions.
+Output: Write `~/docs/plans/rfc/<short-name>/REVIEW.md` with feedback and decisions.
 
 ### WRITE Phase
 

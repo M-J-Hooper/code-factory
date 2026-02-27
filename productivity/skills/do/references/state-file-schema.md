@@ -5,7 +5,7 @@ Reference for the /do skill's state file format. Load when creating or parsing s
 ## Directory Structure
 
 ```
-.plans/do/<run-id>/
+~/docs/plans/do/<short-name>/
   FEATURE.md              # Canonical state and living document
   RESEARCH.md             # Codebase map + research brief (written after RESEARCH)
   PLAN.md                 # Milestones, tasks, validation strategy (written after PLAN_DRAFT)
@@ -18,7 +18,7 @@ Reference for the /do skill's state file format. Load when creating or parsing s
 ```markdown
 ---
 schema_version: 1
-run_id: 20250212-user-auth
+short_name: user-auth
 repo_root: /path/to/repo
 worktree_path: /path/to/worktrees/repo-user-auth  # set during EXECUTE setup (null if no worktree)
 workdir_mode: worktree  # worktree | branch_only | current_branch
