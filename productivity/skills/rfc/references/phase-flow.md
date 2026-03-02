@@ -87,9 +87,14 @@ Research sources (search ALL of these):
 4. **GitHub**: Related PRs, issues, existing implementations, code patterns
 
 For each finding:
-- Cite the source (URL, page title, ticket ID, file path)
+- Capture the source URL (Confluence page URL, Jira ticket URL, GitHub URL, web URL, or file path)
+- Format citations as markdown links with short text: [short title](url)
+  Examples: [Event Pipeline RFC](https://confluence.example.com/pages/123), [LOGS-4521](https://jira.example.com/browse/LOGS-4521)
+  For code paths, use inline code: \`services/user/models/schema.go:45-80\`
 - Extract the relevant data point or insight
 - Note how it relates to the RFC topic
+
+CRITICAL: Always capture the full URL for each source. The WRITE phase needs URLs to create clickable citations.
 
 Organize findings by:
 1. **Domain Context**: What exists today, what has been tried before
@@ -317,7 +322,9 @@ Pass 1 (Draft):
 1. Follow the template structure. Do not add or remove sections unless the plan specifies it.
 2. Write each section per the plan's instructions (key points, sources, quality criteria).
 3. CITE SOURCES: Every technical claim must reference a research finding, code path, or user decision.
-   Use inline citations: (Source: <reference>)
+   Use markdown links with short text: [short title](url). For code paths, use inline code.
+   NEVER use verbose parenthetical citations like (Source: Confluence, "Page Title" page 123456).
+   Examples: [Event Pipeline RFC](https://confluence.example.com/pages/123), `services/user/schema.go:45`
 4. Open questions that could not be resolved go in the 'Open Questions' section. Do not guess answers.
 5. Include sharp edges: what will break first, what is annoying about this design, what we are punting.
 6. Include cost and capacity estimates with stated assumptions.

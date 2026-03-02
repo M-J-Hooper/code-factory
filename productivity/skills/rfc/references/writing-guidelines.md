@@ -140,15 +140,26 @@ Also avoid:
 
 ## Citation Format
 
-Use inline citations for traceability:
+Use inline markdown links for traceability. Keep link text short (2-5 words).
+
+| Source type | Format | Example |
+|-------------|--------|---------|
+| Confluence page | `[short title](url)` | `[Event Pipeline RFC](https://confluence.example.com/pages/123456)` |
+| Jira ticket | `[TICKET-ID](url)` | `[LOGS-4521](https://jira.example.com/browse/LOGS-4521)` |
+| GitHub PR/issue | `[repo#number](url)` | `[logs-backend#1234](https://github.com/org/logs-backend/pull/1234)` |
+| Web page | `[short title](url)` | `[Kafka partition limits](https://kafka.apache.org/documentation/#limits)` |
+| Code path | inline code | `` `services/user/models/schema.go:45-80` `` |
+| Dashboard/metric | `[dashboard name](url)` or parenthetical if no URL | `[prod-events APM](https://app.datadoghq.com/apm/...)` |
 
 ```markdown
-The current system handles approximately 50K events/second (Source: Datadog APM dashboard, prod-events service, 30-day average).
+The current system handles approximately 50K events/second ([prod-events APM dashboard](https://app.datadoghq.com/apm/service/prod-events)).
 
-Previous attempts to optimize this path reduced latency by 40% (Source: RFC-2024-event-pipeline, Section 4.2).
+Previous attempts to optimize this path reduced latency by 40% ([Event Pipeline RFC, Section 4.2](https://confluence.example.com/pages/123456)).
 
-The proposed schema follows the established pattern in the user-service (Source: `services/user/models/schema.go:45-80`).
+The proposed schema follows the established pattern in the user-service (`services/user/models/schema.go:45-80`).
 ```
+
+**Rule:** If a source has a URL, use a markdown link. Never write verbose parenthetical citations like `(Source: Confluence, "Page Title" page 123456)` when a link is available.
 
 ## Self-Review Checklist
 
