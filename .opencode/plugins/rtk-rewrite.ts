@@ -135,7 +135,12 @@ function rewrite(cmd: string): string | null {
   // --- Containers ---
   else if (/^docker\s/.test(match)) {
     if (/^docker\s+compose(\s|$)/.test(match)) {
-      return prefix + body.replace(/^docker /, "rtk docker ")
+      const sub = match.replace(/^docker\s+compose\s*/, "")
+      const allowed = ["ps", "logs", "build"]
+      if (matchesAny(sub, allowed)) {
+        return prefix + body.replace(/^docker /, "rtk docker ")
+      }
+      return null
     }
     const sub = dockerSubcmd(match)
     const allowed = ["ps", "images", "logs", "run", "build", "exec"]
@@ -173,6 +178,10 @@ function rewrite(cmd: string): string | null {
     return prefix + body.replace(/^pip /, "rtk pip ")
   } else if (/^uv\s+pip\s+(list|outdated|install|show)(\s|$)/.test(match)) {
     return prefix + body.replace(/^uv pip /, "rtk pip ")
+  } else if (/^mypy(\s|$)/.test(match)) {
+    return prefix + body.replace(/^mypy/, "rtk mypy")
+  } else if (/^python\s+-m\s+mypy(\s|$)/.test(match)) {
+    return prefix + body.replace(/^python -m mypy/, "rtk mypy")
   }
 
   // --- Go tooling ---
