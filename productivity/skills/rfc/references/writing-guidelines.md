@@ -127,6 +127,7 @@ Also avoid:
 
 | Rule | Detail |
 |------|--------|
+| No numbered headings | Do not prefix section titles with numbers (`1. Overview`, `2. Design`). Use plain titles. Numbers in headings are only acceptable when the heading describes a sequence where order matters (e.g., `Step 1: Validate`, migration phases). |
 | No em dashes | Do not use `---` or `—`. Rewrite the sentence, use a colon, semicolon, or split into two sentences. |
 | Straight quotes only | Use `"` and `'`. Do not use curly quotes like " " or ' '. |
 | No mid-sentence styling | Do not use `**bold**` or `*italic*` inside sentences. Use headings, lists, or code formatting instead. |
@@ -173,6 +174,7 @@ Before finalizing any RFC section, verify:
 - [ ] Diagrams are included where text alone would be unclear
 - [ ] A reader unfamiliar with the domain can follow the argument
 - [ ] The document stays within length guidelines
+- [ ] No numbered headings (use `## Overview`, not `## 1. Overview`) unless heading describes an ordered sequence
 - [ ] No em dashes (`---` or `—`) anywhere in the document
 - [ ] Only straight quotes (`"` and `'`), no curly quotes
 - [ ] No bold or italic formatting inside sentences

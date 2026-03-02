@@ -340,6 +340,7 @@ After the full draft, do a tightening pass:
 5. Replace vague qualifiers ("significant", "minimal", "substantial") with numbers or explicit assumptions.
 6. Verify each paragraph is under 5 sentences. Split longer ones.
 7. Apply typographic rules:
+   - No numbered headings. Use `## Overview`, not `## 1. Overview`. Numbers in headings are only acceptable for ordered sequences (steps, migration phases).
    - No em dashes. Use colons, semicolons, or split sentences.
    - Straight quotes only.
    - No bold or italic formatting inside sentences.

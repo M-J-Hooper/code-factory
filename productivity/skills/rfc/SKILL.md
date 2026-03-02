@@ -316,7 +316,7 @@ This is the core document creation phase. Dispatch a `general-purpose` agent wit
 
 **Multi-pass editorial process:**
 1. Pass 1 (Draft): Write each section per the plan, citing sources, including sharp edges and operational impact
-2. Pass 2 (Tighten): Remove banned language, motivational transitions, vague qualifiers; enforce terminology consistency
+2. Pass 2 (Tighten): Remove banned language, motivational transitions, vague qualifiers; enforce terminology consistency and typographic rules (no numbered headings, no em dashes)
 3. Pass 3 (Red Team): List strongest objections, strengthen weak sections, verify the document reads like it was written by the engineer who built the system
 
 **Interactive mode:** After the full draft is written, present a summary of each section and ask the user to review. Iterate on feedback.
