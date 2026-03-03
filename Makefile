@@ -1,4 +1,4 @@
-.PHONY: all install lint check check-frontmatter check-agents check-refs check-agent-refs check-descriptions check-structure check-versions check-opencode-sync sync-opencode help
+.PHONY: all install lint check check-frontmatter check-agents check-refs check-agent-refs check-descriptions check-structure check-versions check-opencode-sync sync-opencode check-mcp-sync sync-mcp help
 
 all: check lint ## Run all checks (frontmatter, agents, refs, structure, plugins, lint)
 
@@ -198,7 +198,13 @@ sync-opencode: ## Sync skills and agents to OpenCode config directory
 check-opencode-sync: ## Validate OpenCode sync is up-to-date
 	@./sync-opencode.sh --check
 
-check: check-frontmatter check-agents check-refs check-agent-refs check-descriptions check-structure check-versions check-opencode-sync ## Run all validation checks (frontmatter, agents, refs, structure, plugins)
+sync-mcp: ## Sync MCP servers from mcp.json to Claude Code and opencode.jsonc
+	@./sync-mcp.sh
+
+check-mcp-sync: ## Validate opencode.jsonc MCP block is up-to-date with mcp.json
+	@./sync-mcp.sh --check
+
+check: check-frontmatter check-agents check-refs check-agent-refs check-descriptions check-structure check-versions check-opencode-sync check-mcp-sync ## Run all validation checks (frontmatter, agents, refs, structure, plugins)
 	@echo "Checking plugin references..."
 	@ok=true; \
 	for source in $$(python3 -c "import json; data=json.load(open('.claude-plugin/marketplace.json')); print('\n'.join(p['source'] for p in data['plugins']))"); do \

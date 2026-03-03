@@ -47,12 +47,10 @@ fi
 echo ""
 
 SRCS=(
-    "$SCRIPT_DIR/mcp.json"
     "$SCRIPT_DIR/settings.json"
     "$SCRIPT_DIR/opencode.jsonc"
 )
 DESTS=(
-    "$HOME/.mcp.json"
     "$HOME/.claude/settings.json"
     "$HOME/.config/opencode/opencode.jsonc"
 )
@@ -83,6 +81,44 @@ for i in "${!SRCS[@]}"; do
         continue
     fi
     echo "LINK  $dest -> $src"
+done
+
+# Sync MCP servers: regenerate opencode.jsonc block + install into Claude Code
+echo ""
+echo "Syncing MCP servers..."
+"$SCRIPT_DIR/sync-mcp.sh"
+
+echo ""
+echo "Installing MCP servers into Claude Code (user scope)..."
+
+# Clean up stale ~/.mcp.json symlink from old approach
+if [[ -L "$HOME/.mcp.json" ]]; then
+    rm "$HOME/.mcp.json"
+    echo "  Removed stale ~/.mcp.json symlink"
+fi
+
+mcp_server_names=$(python3 -c "
+import json
+data = json.load(open('$SCRIPT_DIR/mcp.json'))
+for name in data.get('mcpServers', {}):
+    print(name)
+")
+
+for name in $mcp_server_names; do
+    config=$(python3 -c "
+import json
+data = json.load(open('$SCRIPT_DIR/mcp.json'))
+print(json.dumps(data['mcpServers']['$name']))
+")
+    # Remove existing (ignore errors if not present)
+    claude mcp remove "$name" 2>/dev/null || true
+    # Add with user scope
+    if claude mcp add-json -s user "$name" "$config" 2>&1; then
+        echo "  OK  $name"
+    else
+        errors+=("mcp: failed to install $name")
+        echo "  FAIL  $name"
+    fi
 done
 
 # Symlink Claude Code hooks from hooks/ into ~/.claude/hooks/

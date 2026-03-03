@@ -276,21 +276,26 @@
   // Switch agents quickly (Tab / Shift+Tab by default).
   "default_agent": "build",
 
-  // --- MCP Servers ---
+  // --- MCP Servers (generated from mcp.json) ---
   "mcp": {
+    "datadog-llmo-mcp": {
+      "type": "remote",
+      "url": "https://mcp.datadoghq.com/api/unstable/mcp-server/mcp?toolsets=llmobs"
+    },
+    "datadog-mcp-core": {
+      "type": "remote",
+      "url": "https://mcp.datadoghq.com/api/unstable/mcp-server/mcp?toolsets=core,software-delivery,error-tracking"
+    },
     "atlassian": {
       "type": "remote",
-      "url": "https://mcp.atlassian.com/v1/sse",
+      "url": "https://mcp.atlassian.com/v1/sse"
     },
-    // "datadog": {
-    //   "type": "remote",
-    //   "url": "https://mcp.datadoghq.com/api/unstable/mcp-server/mcp?toolsets=core,software-delivery"
-    // },
     "chrome-devtools": {
       "type": "local",
-      "command": ["npx", "-y", "chrome-devtools-mcp@latest", "--isolated=true"],
-    },
+      "command": ["npx", "-y", "chrome-devtools-mcp@latest", "--isolated=true"]
+    }
   },
+  // --- End MCP Servers ---
 
   // --- Permissions ---
   // OpenCode permissions support allow/ask/deny, and pattern matching where the last match wins.

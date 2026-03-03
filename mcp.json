@@ -1,12 +1,16 @@
 {
   "mcpServers": {
+    "datadog-llmo-mcp": {
+      "type": "http",
+      "url": "https://mcp.datadoghq.com/api/unstable/mcp-server/mcp?toolsets=llmobs"
+    },
+    "datadog-mcp-core": {
+      "type": "http",
+      "url": "https://mcp.datadoghq.com/api/unstable/mcp-server/mcp?toolsets=core,software-delivery,error-tracking"
+    },
     "atlassian": {
       "type": "sse",
       "url": "https://mcp.atlassian.com/v1/sse"
-    },
-    "datadog": {
-      "type": "http",
-      "url": "https://mcp.datadoghq.com/api/unstable/mcp-server/mcp?toolsets=core,software-delivery,error-tracking"
     },
     "chrome-devtools": {
       "command": "npx",
