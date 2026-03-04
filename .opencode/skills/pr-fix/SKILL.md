@@ -8,7 +8,7 @@ description: >
   "respond to pr review", "address pr feedback".
 argument-hint: "[PR number or URL, optional --reviewer <name>]"
 user-invocable: true
-allowed-tools: Bash(git:*), Bash(gh:*), Read, Write, Edit, Grep, Glob, AskUserQuestion, Task
+allowed-tools: Bash(git:*), Bash(gh:*), Bash(get_ddci_logs.sh:*), Read, Write, Edit, Grep, Glob, AskUserQuestion, Task
 ---
 
 # Fix PR Feedback
@@ -226,7 +226,32 @@ git push
 
 **If push fails due to diverged branch:** inform the user. Do NOT force-push. Let the user decide.
 
-## Step 8: Summary
+## Step 8: CI Validation Loop (Optional)
+
+After pushing, offer to watch CI and auto-fix failures:
+
+<interaction>
+AskUserQuestion(
+  header: "Watch CI?",
+  question: "Fixes pushed. Want me to watch CI and auto-fix any failures?",
+  options: [
+    "Yes — watch and fix" — Monitor CI, analyze failures, apply fixes, and loop until green (max 3 iterations),
+    "Just watch" — Monitor CI and report results without auto-fixing,
+    "No" — Skip CI monitoring
+  ]
+)
+</interaction>
+
+**If "No":** skip to Step 9.
+
+**If "Yes — watch and fix" or "Just watch":** follow the CI validation loop in [references/ci-validation-loop.md](references/ci-validation-loop.md).
+
+- **"Yes — watch and fix"**: full loop — wait for CI, analyze failures, fix, commit, push, recheck (max 3 iterations).
+- **"Just watch"**: wait for CI to complete and report results. No fixes applied.
+
+Append the CI loop report to the Step 9 summary.
+
+## Step 9: Summary
 
 Present the final report:
 
@@ -246,9 +271,14 @@ Present the final report:
 ### Files Modified
 - {list}
 
+### CI Validation
+{if CI loop ran, include the report from references/ci-validation-loop.md Phase 5}
+{if CI loop skipped, omit this section}
+
 ### Next Steps
-- {if all resolved}: Ready for re-review
+- {if all resolved and CI green}: Ready for re-review
 - {if unresolved remain}: {count} threads need follow-up
+- {if CI failures remain}: {count} CI failures need investigation
 ```
 
 **Offer to request re-review** if all threads are resolved. Determine reviewers from the `--reviewer` argument (if provided) or by deduplicating `firstComment.author.login` from addressed threads:
@@ -271,3 +301,7 @@ gh pr edit {number} --add-reviewer {reviewer1},{reviewer2}
 | Push fails | Report the error. Do NOT force-push. Let user decide. |
 | Merge conflict after edits | Report conflicting files. Let user resolve manually. |
 | Line numbers outdated | If comment is marked `outdated`, inform user the code has changed since the review. Read the file and attempt to find the relevant code by context. |
+| CI check timeout | If `gh pr checks --watch` hangs beyond 20 min, fall back to polling. Report timeout to user. |
+| CI fix loop exceeds 3 iterations | Stop. Report remaining failures with log excerpts. Let user investigate. |
+| Same CI failure recurs after fix | Mark as unfixable. Do NOT retry the same fix. Report to user. |
+| DDCI logs unavailable | Skip log analysis. Report the Mosaic URL for manual investigation. |
