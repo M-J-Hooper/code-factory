@@ -119,9 +119,43 @@ When all tasks in a milestone are complete and tests pass, the orchestrator (NOT
 - **Autonomous**: Auto-proceed to DONE if validation and quality gate pass
 
 ## DONE Phase
-- Write Outcomes & Retrospective
+
+Finalization sequence — each step depends on the previous one succeeding.
+
+### 1. Outcomes & Retrospective
+- Write Outcomes & Retrospective to FEATURE.md
+
+### 2. Final Test Suite
 - Run the full test suite one final time to confirm everything passes
-- **Interactive**: Present completion options: Create PR (recommended), Merge to base, Keep branch, or Discard work
-- **Autonomous**: Create PR automatically via `/pr` skill
-- Report outcome (PR URL, merge commit, or branch status) to user
-- Archive run state
+- If tests fail: loop back to EXECUTE to fix. Do NOT proceed with uncommitted broken code.
+
+### 3. Commit Remaining Changes (`/atcommit`)
+- Run `/atcommit` to organize any remaining uncommitted changes into atomic commits
+- This catches stragglers missed at milestone boundaries (validation fixes, retrospective updates, etc.)
+- If nothing to commit, skip to step 4
+
+### 4. Push to Remote
+- Push all commits to the remote branch: `git push`
+- If the branch has no upstream: `git push -u origin HEAD`
+- If push fails: report the error. Do NOT force-push. Let the user decide.
+
+### 5. Create Pull Request (`/pr`)
+- **Interactive**: Present completion options before creating the PR:
+  - Create PR as draft (Recommended)
+  - Create PR as non-draft (`--open`)
+  - Keep branch without PR
+  - Discard work
+- **Autonomous**: Create PR automatically as draft via `/pr` skill
+- Record the PR URL in FEATURE.md frontmatter
+
+### 6. Validate and Fix PR (`/pr-fix`)
+- Run `/pr-fix` to check for review feedback from automated reviewers (Greptile, Codex, etc.)
+- `/pr-fix` handles: fetching review threads, categorizing feedback, applying fixes, replying to threads, committing, pushing, and monitoring CI
+- **Interactive**: `/pr-fix` will ask the user how to handle disagreements and whether to watch CI
+- **Autonomous**: `/pr-fix` runs with "Fix all" and "Yes — watch and fix" defaults
+- If `/pr-fix` produces additional commits, they are automatically pushed
+- Loop `/pr-fix` up to 2 times if new automated review feedback arrives after fixes
+
+### 7. Report and Archive
+- Report final outcome to user: PR URL, commit count, CI status, review thread status
+- Archive run state (mark `current_phase: DONE` in FEATURE.md)
