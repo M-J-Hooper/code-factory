@@ -5,7 +5,7 @@ description: >
   open a PR, push and create a PR with a structured description, or mark an existing
   draft PR as ready for review.
   Triggers: "create pr", "open pr", "pull request", "gh pr create", "create pull request",
-  "mark ready", "ready for review", "pr ready", "open for review".
+  "push and create pr", "non-draft pr", "mark ready", "ready for review", "pr ready", "open for review".
 argument-hint: "[optional PR title or --base <branch> or --open or ready]"
 user-invocable: true
 allowed-tools: Bash(git:*), Bash(gh:*), Read, Grep, Glob

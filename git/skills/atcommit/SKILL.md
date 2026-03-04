@@ -41,14 +41,21 @@ Check if the changes are a correction to an existing branch commit before organi
 
 **Skip this step if** the current branch is main/master.
 
-Determine the merge base and get branch commits (up to 30):
+Determine the merge base:
 
 ```bash
 MERGE_BASE=$(git merge-base HEAD main 2>/dev/null || git merge-base HEAD master 2>/dev/null || echo "")
+```
+
+**If MERGE_BASE is empty:** skip to Step 3 (no default branch found to compare against).
+
+Get branch commits (up to 30):
+
+```bash
 git log --oneline --reverse $MERGE_BASE..HEAD -30
 ```
 
-**If no merge base or no commits ahead of base:** skip to Step 3.
+**If no commits ahead of base:** skip to Step 3.
 
 For each branch commit, get its touched files:
 

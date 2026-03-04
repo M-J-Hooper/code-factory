@@ -4,7 +4,7 @@ description: >
   Use when the user wants to start a new feature in an isolated git worktree
   before creating a branch with /branch.
   Triggers: "worktree", "new worktree", "start feature in worktree",
-  "isolated workspace", "work in a separate directory".
+  "isolated workspace", "isolated branch", "work in a separate directory".
 argument-hint: "[optional: short description for directory naming, e.g. 'user auth' or 'PROJ-1234']"
 user-invocable: true
 allowed-tools: Bash(git:*)

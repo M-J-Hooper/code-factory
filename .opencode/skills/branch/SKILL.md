@@ -45,8 +45,9 @@ Determine the branch prefix from `git config user.name` (lowercase, first token,
 
 Construct the branch name using this pattern:
 
-- If a ticket ID is present: `<prefix>/<slug>-<TICKET-ID>`
-- If no ticket ID: `<prefix>/<slug>`
+- If ticket ID and description: `<prefix>/<slug>-<TICKET-ID>`
+- If ticket ID only (no description): `<prefix>/<TICKET-ID>`
+- If description only (no ticket ID): `<prefix>/<slug>`
 
 Where:
 - `<prefix>` is the user prefix derived above
@@ -54,6 +55,7 @@ Where:
 
 Examples (assuming prefix `rodrigo`):
 - `add user authentication PROJ-1234` -> `rodrigo/add-user-authentication-PROJ-1234`
+- `PROJ-1234` -> `rodrigo/PROJ-1234`
 - `fix login timeout bug` -> `rodrigo/fix-login-timeout-bug`
 - `refactor database layer CORE-99` -> `rodrigo/refactor-database-layer-CORE-99`
 
@@ -69,7 +71,7 @@ Determine the base branch:
 **If there are uncommitted changes:** warn the user but proceed (the changes will carry over to the new branch).
 
 Run:
-1. `git fetch origin <base>` (ensure base is up to date)
+1. `git fetch origin <base>` (fetch latest)
 2. `git checkout -b <branch-name> origin/<base>`
 
 Report the created branch name and base to the user:
