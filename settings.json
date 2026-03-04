@@ -119,7 +119,7 @@
       "~/dd",
       "~/go",
       "~/Downloads",
-            "/tmp",
+      "/tmp",
       "/private/var/tmp"
     ]
   },
@@ -198,7 +198,7 @@
     }
   },
   "alwaysThinkingEnabled": true,
-  "autoUpdatesChannel": "stable",
-  "bypassPermissionsModeAccepted": true,
-  "skipDangerousModePermissionPrompt": true
+  "autoUpdatesChannel": "latest",
+  "skipDangerousModePermissionPrompt": true,
+  "bypassPermissionsModeAccepted": true
 }
