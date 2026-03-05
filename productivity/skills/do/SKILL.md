@@ -110,9 +110,7 @@ AskUserQuestion(
 
 **Skip the base branch question if `workdir_mode` is `current_branch` (no new branch is created).**
 
-```bash
-CURRENT_BRANCH=$(git symbolic-ref --short HEAD 2>/dev/null || echo "detached HEAD")
-```
+First, run `git symbolic-ref --short HEAD` to get the current branch name. Then present:
 
 ```
 AskUserQuestion(
@@ -120,7 +118,7 @@ AskUserQuestion(
   question: "Which branch should the new feature branch start from?",
   options: [
     "Default branch (Recommended)" -- The repo's default branch (usually main or master).,
-    "Current branch ($CURRENT_BRANCH)" -- Start from the currently checked out branch.
+    "Current branch (<result of git symbolic-ref --short HEAD>)" -- Start from the currently checked out branch.
   ]
 )
 ```
