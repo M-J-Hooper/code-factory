@@ -93,17 +93,17 @@ Check `$ARGUMENTS` for the `--auto` flag. If present, strip it from arguments an
 
 ### 1a: Workspace and Automation Preferences
 
-Present all three preferences upfront in a single prompt:
+**CRITICAL: Present ALL four options exactly as written. Never omit the Workspace option.**
 
 ```
 AskUserQuestion(
   header: "Feature setup",
-  question: "Before we start, how should this feature be developed?",
+  question: "How should this feature be developed?",
   options: [
-    "Worktree + branch (Recommended)" -- Isolated worktree with a feature branch. Source repo stays completely clean — no state files or code changes written there.,
-    "Branch only" -- Feature branch in the current directory. State files written in current repo.,
-    "Current branch" -- Work directly on the current branch. State files written in current repo.,
-    "Datadog workspace" -- Remote CDE on EC2. Creates workspace for the repo/branch, you SSH in and continue.
+    "Worktree + branch (Recommended)" -- Isolated worktree with a feature branch. Source repo stays completely clean.,
+    "Branch only" -- Feature branch in the current directory.,
+    "Current branch" -- Work directly on the current branch.,
+    "Workspace" -- Remote cloud dev environment. Creates a feature branch, then spins up a remote CDE on EC2. You SSH in and continue.
   ]
 )
 ```
@@ -134,7 +134,7 @@ Record choices:
 | **Worktree + branch** | Worktree only | `~/docs/plans/do/<short-name>/` | **NO** — nothing written |
 | **Branch only** | Current repo (on branch) | `~/docs/plans/do/<short-name>/` | Yes (code only, on branch) |
 | **Current branch** | Current repo | `~/docs/plans/do/<short-name>/` | Yes (code only) |
-| **Datadog workspace** | Remote workspace | Remote: managed in workspace `/do` session | **NO** — nothing written locally |
+| **Workspace** | Remote workspace | Remote: managed in workspace `/do` session | **NO** — nothing written locally |
 
 **CRITICAL:** State files always live in `~/docs/plans/do/`, never in the repo. When using worktree or workspace mode, NO code files are written in the original source directory.
 
@@ -189,7 +189,7 @@ AskUserQuestion(
 | **Worktree + branch** | `Skill(skill="worktree", args="<feature-slug>")` → `Skill(skill="branch", args="<feature-slug>")` → set `WORKDIR_PATH` to worktree path |
 | **Branch only** | `Skill(skill="branch", args="<feature-slug>")` → set `WORKDIR_PATH` to `REPO_ROOT` |
 | **Current branch** | Record current branch → set `WORKDIR_PATH` to `REPO_ROOT` |
-| **Datadog workspace** | `Skill(skill="workspace", args="create <feature-slug>")` → Report SSH instructions → **STOP** (user continues with new `/do` session inside workspace) |
+| **Workspace** | `Skill(skill="workspace", args="create <feature-slug>")` (creates branch + remote CDE) → Report SSH instructions → **STOP** (user continues with new `/do` session inside workspace) |
 
 ### 4b: Initialize State Directory
 
@@ -209,7 +209,7 @@ schema_version: 1
 short_name: <short-name>
 repo_root: <REPO_ROOT>
 worktree_path: <WORKDIR_PATH or null if same as repo_root>
-workdir_mode: <worktree|branch_only|current_branch>
+workdir_mode: <worktree|branch_only|current_branch|workspace>
 branch: <branch name from Step 4a, or current branch>
 base_ref: <base commit SHA>
 current_phase: REFINE
