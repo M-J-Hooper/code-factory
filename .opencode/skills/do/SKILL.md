@@ -219,9 +219,11 @@ AskUserQuestion(
 |--------|---------|
 | **Worktree + branch** | `git fetch origin <base_branch>` → `git worktree add --detach <path> origin/<base_branch>` → `cd <path>` → `git checkout -b <branch-name>` → set `WORKDIR_PATH` to worktree path |
 | **Branch only** | `git fetch origin <base_branch>` → `git checkout -b <branch-name> origin/<base_branch>` → set `WORKDIR_PATH` to `REPO_ROOT` |
-| **Workspace** | `git fetch origin <base_branch>` → `git checkout -b <branch-name> origin/<base_branch>` → `git push -u origin <branch-name>` → `workspaces create <name> --repo <repo> --branch <branch-name> --region eu-west-3 --instance-type aws:m6gd.4xlarge --dotfiles https://github.com/rtfpessoa/dotfiles --shell fish` → Report SSH instructions → **STOP** |
+| **Workspace** | `git fetch origin <base_branch>` → `git checkout -b <branch-name> origin/<base_branch>` → `git push -u origin <branch-name>` → `workspaces create <ws-prefix>-<feature-slug> --repo <repo> --branch <branch-name> --region eu-west-3 --instance-type aws:m6gd.4xlarge --dotfiles https://github.com/rtfpessoa/dotfiles --shell fish` → Report SSH instructions → **STOP** |
 
-Use the same branch naming convention as `/branch`: `<prefix>/<slug>` where prefix is from `git config user.name` (first token, lowercase).
+**Naming conventions:**
+- Branch names: `<prefix>/<slug>` where prefix is from `git config user.name` (first token, lowercase)
+- Workspace names: `<ws-prefix>-<slug>` where ws-prefix is from `whoami | cut -d. -f1`
 
 ### 4b: Initialize State Directory
 

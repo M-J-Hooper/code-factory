@@ -82,11 +82,16 @@ Determine workspace parameters from arguments and current context:
 REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
 REPO_NAME=$(basename "$REPO_ROOT" 2>/dev/null)
 CURRENT_BRANCH=$(git symbolic-ref --short HEAD 2>/dev/null)
+WS_PREFIX=$(whoami | cut -d. -f1)
 ```
+
+The workspace name is always prefixed with the user's first name (extracted from the OS username before the first `.`), followed by `-`. For example, if `whoami` returns `rodrigo.fernandes` and the user provides `my-feature`, the final name is `rodrigo-my-feature`.
+
+If the user-provided name already starts with the prefix, do not double it.
 
 | Parameter | Source | Default |
 |-----------|--------|---------|
-| `name` | From arguments after "create" | Ask user |
+| `name` | `$WS_PREFIX-<slug>` where slug is from arguments after "create" | Ask user for slug |
 | `--repo` | Current git repo name | Ask user if not in a repo |
 | `--branch` | New feature branch via `/branch` | Created and pushed to remote |
 | `--region` | User preference | `eu-west-3` |
@@ -99,7 +104,7 @@ If no name provided:
 ```
 AskUserQuestion(
   header: "Workspace name",
-  question: "Name for the new workspace?",
+  question: "Name for the new workspace? (will be prefixed with '$WS_PREFIX-')",
   options: []
 )
 ```
