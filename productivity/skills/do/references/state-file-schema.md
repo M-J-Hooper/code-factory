@@ -22,6 +22,7 @@ short_name: user-auth
 repo_root: /path/to/repo
 worktree_path: /path/to/worktrees/repo-user-auth  # set during EXECUTE setup (null if no worktree)
 workdir_mode: worktree  # worktree | branch_only | current_branch | workspace
+base_branch: default  # default | <branch-name>
 branch: feature/user-auth
 base_ref: abc123
 current_phase: EXECUTE

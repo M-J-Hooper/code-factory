@@ -108,6 +108,25 @@ AskUserQuestion(
 )
 ```
 
+**Skip the base branch question if `workdir_mode` is `current_branch` (no new branch is created).**
+
+```bash
+CURRENT_BRANCH=$(git symbolic-ref --short HEAD 2>/dev/null || echo "detached HEAD")
+```
+
+```
+AskUserQuestion(
+  header: "Base branch",
+  question: "Which branch should the new feature branch start from?",
+  options: [
+    "Default branch (Recommended)" -- The repo's default branch (usually main or master).,
+    "Current branch ($CURRENT_BRANCH)" -- Start from the currently checked out branch.
+  ]
+)
+```
+
+If the user types a custom branch name instead of selecting an option, use that as the base.
+
 Then ask about automation:
 
 ```
@@ -125,6 +144,7 @@ AskUserQuestion(
 
 Record choices:
 - `workdir_mode`: `worktree`, `branch_only`, `current_branch`, or `workspace`
+- `base_branch`: `default`, the current branch name, or the user-typed branch name
 - `interaction_mode`: `interactive` or `autonomous`
 
 ### 1b: Source Isolation Rule
@@ -184,12 +204,24 @@ AskUserQuestion(
 
 ### 4a: Execute Workdir Setup
 
-| Choice | Actions |
+**When `base_branch` is `default`:** use `/worktree` and `/branch` skills normally (they auto-detect main/master).
+
+| Choice | Actions (base_branch = default) |
 |--------|---------|
 | **Worktree + branch** | `Skill(skill="worktree", args="<feature-slug>")` → `Skill(skill="branch", args="<feature-slug>")` → set `WORKDIR_PATH` to worktree path |
 | **Branch only** | `Skill(skill="branch", args="<feature-slug>")` → set `WORKDIR_PATH` to `REPO_ROOT` |
 | **Current branch** | Record current branch → set `WORKDIR_PATH` to `REPO_ROOT` |
 | **Workspace** | `Skill(skill="workspace", args="create <feature-slug>")` (creates branch + remote CDE) → Report SSH instructions → **STOP** (user continues with new `/do` session inside workspace) |
+
+**When `base_branch` is NOT `default`:** use direct git commands (the `/branch` and `/worktree` skills auto-detect main, so they cannot be used with a custom base).
+
+| Choice | Actions (base_branch = custom) |
+|--------|---------|
+| **Worktree + branch** | `git fetch origin <base_branch>` → `git worktree add --detach <path> origin/<base_branch>` → `cd <path>` → `git checkout -b <branch-name>` → set `WORKDIR_PATH` to worktree path |
+| **Branch only** | `git fetch origin <base_branch>` → `git checkout -b <branch-name> origin/<base_branch>` → set `WORKDIR_PATH` to `REPO_ROOT` |
+| **Workspace** | `git fetch origin <base_branch>` → `git checkout -b <branch-name> origin/<base_branch>` → `git push -u origin <branch-name>` → `workspaces create <name> --repo <repo> --branch <branch-name> --region eu-west-3 --instance-type aws:m6gd.4xlarge --dotfiles https://github.com/rtfpessoa/dotfiles --shell fish` → Report SSH instructions → **STOP** |
+
+Use the same branch naming convention as `/branch`: `<prefix>/<slug>` where prefix is from `git config user.name` (first token, lowercase).
 
 ### 4b: Initialize State Directory
 
@@ -210,6 +242,7 @@ short_name: <short-name>
 repo_root: <REPO_ROOT>
 worktree_path: <WORKDIR_PATH or null if same as repo_root>
 workdir_mode: <worktree|branch_only|current_branch|workspace>
+base_branch: <default|branch-name>
 branch: <branch name from Step 4a, or current branch>
 base_ref: <base commit SHA>
 current_phase: REFINE
