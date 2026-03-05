@@ -125,6 +125,8 @@ git push -u origin <branch-name>
 
 ### 3c: Create Workspace
 
+Run the create command **in the background** (`run_in_background: true`) — it takes 10-20 minutes:
+
 ```bash
 workspaces create <name> \
   --repo <repo> \
@@ -137,16 +139,18 @@ workspaces create <name> \
 
 Omit `--repo` if not in a git repo and user doesn't specify one.
 
-Creation is async. The CLI shows progress. Wait for it to complete.
+**Do NOT wait for the command to finish.** Report immediately after launching.
 
 ### 3d: Report
 
 ```
-Workspace "<name>" created on branch "<branch-name>".
+Workspace "<name>" is being created on branch "<branch-name>" (takes ~10-20 min).
 
-SSH:     ssh workspace-<name>
-IDE:     workspaces connect <name> --editor intellij
-Delete:  workspaces delete <name>
+Once ready:
+  SSH:     ssh workspace-<name>
+  IDE:     workspaces connect <name> --editor intellij
+  Status:  workspaces list
+  Delete:  workspaces delete <name>
 
 The workspace will be garbage collected after 20 days of inactivity
 and has a hard TTL of 6 months.
