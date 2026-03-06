@@ -42,8 +42,21 @@ Every feature goes through the full workflow. A config change, a single-function
 ## Interaction Modes
 
 **Interactive Mode (default):**
-- User reviews and approves outputs at each phase transition
-- User can provide feedback, request changes, or adjust direction
+- User reviews and explicitly approves outputs at EVERY phase transition before the orchestrator proceeds
+- Guaranteed checkpoints where the orchestrator MUST stop and wait for user confirmation:
+
+| After Phase | Checkpoint | What the user reviews |
+|-------------|-----------|----------------------|
+| REFINE | Refined spec approval | Problem statement, chosen approach, scope, acceptance criteria |
+| RESEARCH | Research findings approval | Codebase map, research brief, assumptions, risks |
+| PLAN_DRAFT | Plan approval | Milestones, task breakdown, validation strategy |
+| PLAN_REVIEW | Implementation approval | Review feedback, final plan readiness |
+| EXECUTE (per batch) | Batch progress approval | Completed tasks, test status, discoveries |
+| VALIDATE | PR readiness approval | Validation results, quality scorecard |
+| DONE | Completion options | PR creation, merge, keep branch, or discard |
+
+- User can provide feedback, request changes, or adjust direction at any checkpoint
+- The orchestrator MUST NOT proceed to the next phase until the user explicitly approves
 
 **Autonomous Mode (selected in Step 1 or via `--auto` flag):**
 - Orchestrator makes best decisions based on research
@@ -364,7 +377,7 @@ GROUNDING RULES:
 - Each agent must stay in its designated role — refuse work outside its responsibility
 
 INTERACTION MODE RULES:
-- If interactive: Present findings and ask for user approval at each phase transition
+- If interactive: Present a summary of outputs and STOP at every phase transition checkpoint. Use AskUserQuestion with concrete options (approve, adjust, refine further). Do NOT proceed to the next phase until the user explicitly approves. This applies to EVERY phase: REFINE, RESEARCH, PLAN_DRAFT, PLAN_REVIEW, EXECUTE batches, VALIDATE, and DONE.
 - If autonomous: Make best decisions based on research, proceed without asking
 - Both modes: Always stop and ask if you encounter a blocker or ambiguity you cannot resolve
 </workflow_rules>

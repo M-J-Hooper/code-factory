@@ -8,7 +8,7 @@ Reference for detailed phase behaviors. Loaded by the orchestrator when executin
 - Well-specified descriptions pass through quickly; vague ones get iterative refinement
 - Refiner proposes 2-3 approaches with trade-offs and gets user preference before finalizing
 - Refiner asks one question at a time (prefer multiple choice) to reduce cognitive load
-- **Interactive**: Asks clarifying questions, proposes approaches, confirms refined spec with user
+- **Interactive**: Asks clarifying questions, proposes approaches. After refiner completes, orchestrator presents the refined spec summary and WAITS for explicit user approval before proceeding to RESEARCH. User can approve, adjust, or request further refinement.
 - **Autonomous**: Synthesizes from context, selects best approach, logs decisions in Decisions Made
 
 ## RESEARCH Phase
