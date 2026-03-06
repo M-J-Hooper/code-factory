@@ -19,6 +19,7 @@ Claude Code and OpenCode plugin marketplace. Two plugins — **productivity** an
 Makefile                          # all, check, lint, and install targets
 init.sh                           # Bootstrap script
 sync-opencode.sh                  # Regenerates .opencode/ from plugin sources
+rules/                            # Claude Code rules linked into ~/.claude/rules/ by init.sh
 hooks/                            # Claude Code hook scripts linked by init.sh
 .githooks/                        # Git hooks linked into .git/hooks by init.sh
 .opencode/                        # Generated OpenCode assets (do not edit directly)

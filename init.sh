@@ -177,6 +177,30 @@ for hook_src in "$SCRIPT_DIR/hooks"/*; do
     fi
 done
 
+# Symlink Claude Code rules from rules/ into ~/.claude/rules/
+echo ""
+echo "Linking Claude Code rules..."
+RULES_DIR="$HOME/.claude/rules"
+mkdir -p "$RULES_DIR"
+for rule_src in "$SCRIPT_DIR/rules"/*.md; do
+    [[ -f "$rule_src" ]] || continue
+    rule_name=$(basename "$rule_src")
+    rule_dest="$RULES_DIR/$rule_name"
+    if [[ -L "$rule_dest" ]]; then
+        rm "$rule_dest"
+    elif [[ -e "$rule_dest" ]]; then
+        errors+=("$rule_src -> $rule_dest: destination already exists as a regular file")
+        echo "  FAIL  $rule_dest already exists as a regular file, cannot link"
+        continue
+    fi
+    if ! ln -s "$rule_src" "$rule_dest"; then
+        errors+=("$rule_src -> $rule_dest: ln -s failed")
+        echo "  FAIL  could not link $rule_dest -> $rule_src"
+    else
+        echo "  LINK  $rule_dest -> $rule_src"
+    fi
+done
+
 # Generate OpenCode assets in the repo
 echo ""
 echo "Syncing skills, agents, and commands..."
@@ -198,6 +222,24 @@ if [[ -f "$MANIFEST" ]]; then
     while IFS= read -r line; do
         old_manifest+=("$line")
     done < "$MANIFEST"
+fi
+
+# Symlink each rule file
+RULES_SRC_DIR="$SCRIPT_DIR/rules"
+if [[ -d "$RULES_SRC_DIR" ]]; then
+    mkdir -p "$GLOBAL_DIR/rules"
+    for rule_src in "$RULES_SRC_DIR"/*.md; do
+        [[ -f "$rule_src" ]] || continue
+        rule_name=$(basename "$rule_src")
+        rule_dest="$GLOBAL_DIR/rules/$rule_name"
+        if ! ln -sf "$rule_src" "$rule_dest"; then
+            errors+=("$rule_src -> $rule_dest: ln -sf failed")
+            echo "  FAIL  rules/$rule_name"
+        else
+            new_manifest+=("$rule_dest")
+            echo "  LINK  rules/$rule_name"
+        fi
+    done
 fi
 
 # Symlink each skill directory

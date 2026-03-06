@@ -5,6 +5,9 @@
   "disabled_providers": ["opencode", "gitlab", "gemini"],
   "share": "disabled",
 
+  // Global rules loaded as additional instructions (symlinked by init.sh).
+  "instructions": ["rules/*.md"],
+
   // Keep long sessions usable during large refactors.
   "compaction": { "auto": true, "prune": true },
 
