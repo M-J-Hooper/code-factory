@@ -273,7 +273,7 @@ AskUserQuestion(
 )
 </interaction>
 
-If triggering: post `@greptileai review` and `@codex` comments now per [references/automated-review-loop.md](references/automated-review-loop.md) Phase 1. **Do NOT wait for responses** — bots review in background while CI runs.
+If triggering: post `@greptileai review` and `@codex` comments now per [references/automated-review-loop.md](references/automated-review-loop.md) Phase 1. **Do NOT wait here** — bots review in background while CI runs in 8b. Step 8c will poll and wait for their responses.
 
 ### 8b: CI Validation Loop
 
@@ -302,9 +302,9 @@ Follow the CI validation loop in [references/ci-validation-loop.md](references/c
 
 ### 8c: Process Automated Review Feedback
 
-If bot reviews were triggered in 8a, collect their responses now. By this point bots have had the full CI wait time to complete.
+If bot reviews were triggered in 8a, **you MUST wait for their responses before reporting results**. Do NOT assume reviews are already complete — CI may have finished quickly (or was already green), leaving insufficient time for bots to respond.
 
-Follow [references/automated-review-loop.md](references/automated-review-loop.md) starting from **Phase 2** (Phase 1 trigger already done in 8a).
+Follow [references/automated-review-loop.md](references/automated-review-loop.md) starting from **Phase 2** (Phase 1 trigger already done in 8a). Phase 2 polls for responses with a 15-minute timeout per reviewer — this polling is mandatory, not optional.
 
 - **"Yes — review and fix"**: wait for responses, fix actionable feedback, commit, push, re-trigger (max 3 iterations).
 - **"Just trigger"**: wait for responses and report. No fixes applied.
