@@ -66,7 +66,7 @@ Parse the response into a structured list. For each thread, extract:
 
 **If `--reviewer` specified:** filter threads to only those where `firstComment.author.login` matches.
 
-**If no unresolved threads:** inform the user all review threads are resolved. Stop.
+**If no unresolved threads:** inform the user all review threads are resolved. Skip to Step 8 (CI validation and automated reviews always run).
 
 ## Step 3: Categorize and Prioritize
 
@@ -235,7 +235,9 @@ git push
 
 ## Step 8: CI Validation + Automated Reviews (Parallel)
 
-After pushing, trigger bot reviews immediately and monitor CI in parallel. Bot reviews don't depend on CI — start them early so they complete during CI.
+**This step ALWAYS runs** — even when no unresolved review threads were found in Step 2. CI validation and automated reviews are mandatory parts of the pr-fix workflow. Do NOT skip this step.
+
+After pushing (or if no push was needed because there were no threads to fix), trigger bot reviews and monitor CI. Bot reviews don't depend on CI — start them early so they complete during CI.
 
 ### 8a: Trigger Automated Reviews (if stale)
 
@@ -282,7 +284,7 @@ If triggering: post `@greptileai review` and `@codex` comments now per [referenc
 <interaction>
 AskUserQuestion(
   header: "Watch CI?",
-  question: "Fixes pushed. Want me to watch CI and auto-fix any failures?",
+  question: "Want me to watch CI and auto-fix any failures?",
   options: [
     "Yes — watch and fix" — Monitor CI, analyze failures, apply fixes, and loop until green (max 3 iterations),
     "Just watch" — Monitor CI and report results without auto-fixing,
@@ -356,7 +358,7 @@ gh pr edit {number} --add-reviewer {reviewer1},{reviewer2}
 |-------|--------|
 | `gh` not authenticated | Inform user to run `gh auth login`. Stop. |
 | PR not found | Verify the PR number and repo. Report error. Stop. |
-| No unresolved threads | Inform user all feedback is addressed. Stop. |
+| No unresolved threads | Inform user all feedback is addressed. Skip to Step 8 — CI validation and automated reviews still run. |
 | GraphQL query fails | Fall back to REST: `gh api repos/{owner}/{repo}/pulls/{number}/comments`. Lose thread resolution data but can still categorize and fix. |
 | Thread resolution fails | Report the error. The reply was still posted. Continue with remaining threads. |
 | Reply fails | Report the error. Log the intended response. Continue with remaining threads. |
