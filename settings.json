@@ -150,8 +150,7 @@
     "writing@datadog-claude-plugins": true,
     "common-mistakes@mat-brown-contrib": true,
     "learning-skills@mrlee-plugins": true,
-    "permissions-setup@mrlee-plugins": true,
-    "dd@datadog-claude-plugins-dev": false
+    "permissions-setup@mrlee-plugins": true
   },
   "extraKnownMarketplaces": {
     "claude-plugins-official": {
@@ -182,12 +181,6 @@
       "source": {
         "source": "github",
         "repo": "DataDog/mrlee-plugins"
-      }
-    },
-    "datadog-claude-plugins-dev": {
-      "source": {
-        "source": "directory",
-        "path": "~/dd/claude-marketplace/dev"
       }
     }
   },
