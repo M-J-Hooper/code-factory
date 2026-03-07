@@ -89,6 +89,22 @@ Skill names affect discoverability:
 | Descriptive over abstract | `condition-based-waiting` not `async-helpers` | Communicates the technique |
 | Kebab-case | `skill-workbench` not `SkillWorkbench` | Required by spec |
 
+## Countering Under-Triggering
+
+Claude tends to under-trigger — it often doesn't use a skill even when it would be helpful. To counter this, make descriptions slightly "pushy": include contexts where the skill should be used even if the user doesn't name it explicitly.
+
+```yaml
+# Weak — only triggers on exact matches
+description: >
+  Use when the user asks to create a dashboard.
+
+# Stronger — covers adjacent intents that should also trigger
+description: >
+  Use when the user wants to create a dashboard, visualize data,
+  display metrics, or build any kind of data display — even if they
+  don't explicitly ask for a "dashboard."
+```
+
 ## Testing Discoverability
 
 ### Trigger Testing

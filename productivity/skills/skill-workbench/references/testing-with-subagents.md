@@ -91,6 +91,18 @@ Task subagent:
 
 **Structured grading (optional):** For quantitative comparison, dispatch the `skill-grader` agent (see `productivity/agents/skill-grader.md`) to evaluate assertions against each run's outputs. For blind qualitative comparison, use the `skill-comparator` agent (see `productivity/agents/skill-comparator.md`).
 
+### Timing Data Capture
+
+When a Task subagent completes, its notification includes `total_tokens` and `duration_ms`. Save these immediately to `timing.json` in each run directory — this data is not persisted elsewhere and cannot be recovered after the fact:
+
+```json
+{
+  "total_tokens": 84852,
+  "duration_ms": 23332,
+  "total_duration_seconds": 23.3
+}
+```
+
 ### GREEN: Write Minimal Skill
 
 Write the skill addressing only the specific failures documented during RED. Then:
@@ -108,6 +120,22 @@ When agents find new rationalizations despite having the skill:
 3. Update rationalization tables
 4. Add red flag warnings
 5. Re-test until bulletproof
+
+### Read Transcripts, Not Just Outputs
+
+After runs complete, read the full execution transcripts — not the final outputs alone:
+
+- **Identify wasted effort:** If the skill makes the agent spend 5 steps on something that could be 1, trim those instructions.
+- **Spot repeated patterns:** If multiple test runs independently wrote similar helper scripts or took the same multi-step approach, the skill should bundle that script in `scripts/`.
+- **Generalize from feedback:** Avoid fiddly changes that address specific test cases. The skill will be used across many different prompts. Changes that work only for your test examples will break other cases. When a stubborn issue resists direct fixes, try different metaphors or recommend different working patterns.
+
+### Stopping Criteria
+
+Stop iterating when:
+
+- The user says they're satisfied
+- All test feedback is empty (everything looks good)
+- Iterations aren't producing meaningful progress (scores plateau)
 
 ## Pressure Types
 

@@ -58,6 +58,18 @@ description: >
   Triggers: "review code", "check quality", "pre-merge review".
 ```
 
+## Writing Style by Skill Type
+
+Match writing style to skill type — the wrong style reduces effectiveness:
+
+| Skill Type | Style | Why |
+|------------|-------|-----|
+| **Discipline-enforcing** | Authority language ("NEVER", "YOU MUST"), rationalization tables, red flags. | Eliminates decision fatigue. Compliance requires bright-line rules. |
+| **Technique/workflow** | Explain the **why** behind instructions. If you write ALWAYS/NEVER for a judgment call, reframe with reasoning instead. | LLMs follow instructions better when they understand the purpose. Rigid structure on judgment calls reduces output quality. |
+| **Reference/pattern** | Clear, factual prose. No persuasion techniques. | Authority language is noise in reference material. |
+
+**Yellow flag:** If you find yourself writing heavy-handed MUSTs for a non-discipline skill, stop and explain the reasoning instead. "Do X because Y" is more effective than "YOU MUST DO X" for technique and workflow skills.
+
 ## Content Guidelines
 
 ### Do
@@ -80,6 +92,7 @@ description: >
 | Deeply nested references | Claude may not find them | Keep references one level deep from SKILL.md |
 | Time-sensitive information | Becomes stale | Use "old patterns" sections for deprecated approaches |
 | Excessive options without defaults | Decision paralysis | Provide recommended defaults |
+| Overfitting to test cases | Skill used across many prompts — fiddly fixes for specific examples break other cases | Generalize from test feedback. Try different metaphors or patterns when a fix resists. |
 
 ## Validation Loops
 

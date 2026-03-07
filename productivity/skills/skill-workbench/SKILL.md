@@ -100,6 +100,8 @@ Route to the appropriate mode:
 
 ### 2a: Gather Requirements
 
+**Check conversation history first.** The current conversation may already contain a workflow the user wants to capture (e.g., "turn this into a skill"). Extract answers from the conversation: tools used, sequence of steps, corrections the user made, input/output formats observed. Have the user confirm before proceeding.
+
 Determine from arguments and conversation:
 
 | Requirement | How to resolve |
@@ -149,12 +151,13 @@ Write `{plugin}/skills/{name}/SKILL.md` using the template from [new-skill-templ
 
 **Supporting files** (optional): create in `references/` or `scripts/` subdirectories for templates, examples, or reference docs. Keep references one level deep from SKILL.md. Reference them explicitly so Claude knows when to load them.
 
-**For discipline-enforcing skills**, apply techniques from [persuasion-principles.md](references/persuasion-principles.md):
+**Match writing style to skill type:**
 
-- Use bright-line rules with authority language ("NEVER", "YOU MUST")
-- Add rationalization tables countering specific excuses
-- Include red flag lists for self-checking
-- Close loopholes explicitly ("Delete means delete. Not 'save for reference.'")
+| Skill Type | Style | Rationale |
+|------------|-------|-----------|
+| **Discipline-enforcing** | Authority language ("NEVER", "YOU MUST"), rationalization tables, red flag lists, loophole closures. See [persuasion-principles.md](references/persuasion-principles.md). | Compliance-carrying skills need bright-line rules. |
+| **Technique/workflow** | Explain the **why** behind each instruction. If you find yourself writing ALWAYS/NEVER in all caps for a non-discipline skill, reframe with reasoning instead. | LLMs follow instructions better when they understand the purpose. Heavy-handed MUSTs on judgment calls reduce quality. |
+| **Reference/pattern** | Clear, factual prose. No persuasion techniques needed. | Authority language is noise in reference material. |
 
 ### 2d: Test the Skill
 
@@ -174,6 +177,12 @@ Follow the RED-GREEN-REFACTOR cycle from [testing-with-subagents.md](references/
 1. **RED**: Launch a Task subagent with a test scenario WITHOUT the skill. Document what went wrong (rationalizations, incorrect technique, missed info).
 2. **GREEN**: Re-run the same scenario WITH the skill loaded. Verify the skill fixes the documented failures.
 3. **REFACTOR**: If the agent found loopholes or the skill had gaps, fix and re-test.
+
+**Capture timing data**: When a Task subagent completes, its notification includes `total_tokens` and `duration_ms`. Save these to `timing.json` in each run directory — this data is not persisted elsewhere.
+
+**Read full transcripts**: After runs complete, read execution transcripts (not outputs alone) to identify where the agent got confused, wasted time, or took unproductive paths.
+
+**Stopping criteria**: Stop iterating when the user is satisfied, all feedback is empty, or iterations aren't producing meaningful progress.
 
 ### 2e: Optimize Description
 
@@ -269,6 +278,12 @@ For each skill in scope, read it and evaluate against these dimensions:
 | **Inconsistency** | Missing announce line, unnumbered steps, no error handling section. |
 | **Description quality** | Workflow summary in description (should be triggers only). Missing trigger phrases. See [claude-search-optimization.md](references/claude-search-optimization.md). |
 | **File organization** | All content inline when reference files would save tokens. Nested references deeper than one level. See [progressive-disclosure.md](references/progressive-disclosure.md). |
+| **Writing style mismatch** | Heavy authority language (MUST/NEVER) on judgment calls in technique/workflow skills. Missing "why" explanations for non-obvious instructions. See [best-practices.md](references/best-practices.md). |
+
+**If test transcripts exist** (from prior runs or this session), read full transcripts — not outputs alone:
+
+- Identify where the agent wastes time or takes unproductive paths (trim those skill sections).
+- Look for repeated work across test runs: if multiple runs independently wrote similar helper scripts or took the same multi-step approach, the skill should bundle that script in `scripts/`.
 
 Run a filler word scan on each file in scope:
 
@@ -285,6 +300,8 @@ Apply changes directly. Prioritize:
 1. **Critical**: broken cross-references, missing error handling, incorrect instructions
 2. **Functional**: vague instructions, missing edge cases, inconsistent patterns, description quality
 3. **Polish**: filler word removal, table formatting, redundant content, token optimization
+
+**Generalize, don't overfit.** When fixing issues found in test runs, avoid fiddly changes that only address specific test cases. The skill will be used across many prompts — changes that work only for your test examples are useless. If a stubborn issue resists direct fixes, try different metaphors, reframe instructions, or recommend different working patterns.
 
 **For skills:**
 
