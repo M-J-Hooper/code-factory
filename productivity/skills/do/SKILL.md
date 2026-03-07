@@ -385,7 +385,7 @@ PER-TASK SEQUENCE (same whether running one or multiple milestones):
   - Never make subagents read plan files — provide full text directly in the prompt
   - Include scene-setting context: milestone position, previously completed tasks summary, upcoming tasks, relevant discoveries, architectural context
   - Place longform context (research, plans, specs) at the TOP in XML-tagged blocks, task directive at the BOTTOM
-- After each implementer completes, run TWO sequential reviews:
+- After each implementer completes, run TWO sequential reviews (THREE for high-risk tasks):
   1. Spec compliance review — fresh reviewer verifies nothing missing, nothing extra, nothing misunderstood
      - Reviewer acknowledges what was built correctly before listing issues
      - Includes structured severity assessment for orchestrator decision-making
@@ -393,6 +393,11 @@ PER-TASK SEQUENCE (same whether running one or multiple milestones):
      - Reviewer receives plan context to check implementation alignment with planned approach
      - Reports strengths before issues; flags plan deviations with justified/problematic assessment
      - If deviations found → handle per STRUCTURED DEVIATION HANDLING below
+  3. Red-team review (HIGH-RISK TASKS ONLY) — adversarial reviewer tries to break the implementation
+     - Only dispatched for tasks marked `Risk: High` in the plan
+     - Focuses on failure modes, security vulnerabilities, edge cases, race conditions
+     - Receives relevant red-team findings from PLAN_REVIEW to focus on known risk areas
+     - Critical findings → implementer fixes (max 2 cycles). High/Medium → logged as tracked risks.
 - If either reviewer finds issues: implementer fixes → reviewer re-reviews → repeat until approved
 - Append TASK_COMPLETE to SESSION.log with token/duration/review outcomes after both reviews pass
 - After each BATCH completes: report progress (tasks completed, test status, discoveries, token usage, duration), then collect feedback (interactive) or log summary (autonomous)
@@ -415,6 +420,16 @@ STRUCTURED DEVIATION HANDLING:
   - MAJOR (wrong approach, missing phase, scope change, fundamental rethink): Both modes → stop the batch, log with evidence in SESSION.log (DEVIATION_MAJOR), present issue to user, recommend re-planning (return to PLAN_DRAFT).
 - After resolving a deviation, re-read the latest PLAN.md before resuming
 - Log all deviations in SESSION.log and in Surprises & Discoveries of FEATURE.md
+
+RED-TEAM ADVERSARIAL REVIEW:
+- PLAN_REVIEW: after the reviewer approves, ALWAYS dispatch the red-teamer in plan mode to adversarially challenge assumptions, find failure modes, security vectors, and recovery gaps
+  - Critical findings → loop back to PLAN_DRAFT
+  - High/Medium findings → logged as tracked risks for EXECUTE awareness
+- EXECUTE: after code quality review passes, dispatch the red-teamer in task mode ONLY for tasks marked `Risk: High` in the plan
+  - Focuses on input edge cases, security vulnerabilities, race conditions, failure modes
+  - Receives relevant plan-level red-team findings to focus on known risk areas
+  - Critical findings → implementer fixes (max 2 cycles). High/Medium → logged, don't block.
+- The red-teamer is read-only — it never modifies code or plan files
 
 BOUNDED ITERATIONS — diminishing returns after 2 fix cycles:
 - Review fix loops (spec or code quality): max 2 cycles per stage. After 2, escalate to user (interactive) or log caveats and proceed (autonomous)
@@ -529,10 +544,17 @@ REFINE -> RESEARCH -> PLAN_DRAFT -> PLAN_REVIEW -> EXECUTE -> VALIDATE -> DONE
                         |           check      |
                         |              |       |
                         |              v       |
-                        +--- (changes requested)
+                        |           reviewer   |
+                        |              |       |
+                        |              v       |
+                        |          red-team    |
+                        |          (always)    |
+                        |              |       |
+                        |              v       |
+                        +--- (critical findings or changes requested)
 ```
 
-Per-task loop within EXECUTE: Dispatch implementer → Shift-left checks (lint/format/typecheck) → Spec review (max 2 fix cycles) → Code quality review (max 2 fix cycles) → Log to SESSION.log → Next task.
+Per-task loop within EXECUTE: Dispatch implementer → Shift-left checks (lint/format/typecheck) → Spec review (max 2 fix cycles) → Code quality review (max 2 fix cycles) → Red-team review (Risk: High tasks only, max 2 fix cycles) → Log to SESSION.log → Next task.
 
 Milestone parallelism: when multiple milestones are ready and have no file overlap per File Impact Map,
 dispatch one implementer per milestone in a single message for parallel execution.

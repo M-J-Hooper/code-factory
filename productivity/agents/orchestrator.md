@@ -577,18 +577,73 @@ AskUserQuestion(
    - Log feedback in REVIEW.md
    - Transition back to PLAN_DRAFT
 
-5. If plan approved by reviewer:
+5. If plan approved by reviewer, spawn `red-teamer` in plan mode:
+   ```
+   Task(
+     subagent_type = "productivity:red-teamer",
+     description = "Red-team plan for: <feature>",
+     prompt = "
+     <plan_content>
+     <full PLAN.md content>
+     </plan_content>
+
+     <research_context>
+     <full RESEARCH.md content>
+     </research_context>
+
+     <feature_spec>
+     <acceptance criteria from FEATURE.md>
+     </feature_spec>
+
+     <mode>plan</mode>
+
+     <role>
+     You are an adversarial red-team reviewer. Find ways this plan will fail —
+     flawed assumptions, missing failure modes, security attack vectors, and recovery gaps.
+     </role>
+
+     <task>
+     Red-team the plan above. Follow your plan mode review sequence:
+     1. Challenge every assumption — check evidence strength in research context
+     2. Enumerate failure modes per milestone (external deps, internal assumptions, data edge cases)
+     3. Identify security attack vectors
+     4. Check for missing recovery paths
+     5. Assess blast radius of shared code changes
+
+     Focus on the 2-5 findings most likely to cause real problems during execution.
+     Do not duplicate the reviewer's work (coverage, paths, dependencies) — focus on adversarial scenarios.
+     </task>
+
+     <constraints>
+     - Work from: <workdir_path>
+     - Every finding must cite a plan section, file path, or research finding
+     - Prioritize: few high-impact findings beat many low-impact ones
+     - Only Critical findings should block execution — High and Medium are tracked as risks
+     </constraints>"
+   )
+   ```
+
+6. Process red-team findings:
+   - Append findings to `REVIEW.md` under a `## Red Team Findings` section
+   - **Critical findings**: loop back to PLAN_DRAFT — these must be addressed before execution
+   - **High findings (interactive)**: present to user and ask whether to address now or track as risks
+   - **High findings (autonomous)**: log in Decisions Made as tracked risks, proceed
+   - **Medium findings**: log in FEATURE.md Surprises and Discoveries as risks to watch during EXECUTE
+
+7. If no Critical findings remain:
 
 **User Checkpoint (if interactive mode):**
 
-First, output the full review feedback to the user — what the reviewer approved, any changes made during review, and the final plan state. Then ask:
+First, output the full review feedback AND red-team findings to the user —
+what the reviewer approved, red-team risks identified, and the final plan state. Then ask:
 ```
 AskUserQuestion(
-  header: "Plan Approved by Reviewer",
-  question: "The plan has passed review. Ready to start implementation?",
+  header: "Plan Approved — Red Team Complete",
+  question: "The plan passed review and red-team analysis. <N> risks identified (0 critical). Ready to start implementation?",
   options: [
     "Start implementation" -- Proceed to EXECUTE phase,
-    "Review changes first" -- Show what the reviewer suggested,
+    "Address high-risk findings first" -- Fix high-severity red-team findings before executing,
+    "Review findings" -- Show the full red-team report,
     "Hold for now" -- Save state and pause
   ]
 )
@@ -596,7 +651,7 @@ AskUserQuestion(
 
 **Autonomous mode:** If no critical issues, mark approved and proceed. If critical issues exist, loop back to PLAN_DRAFT.
 
-6. Mark `approved: true` in frontmatter and transition to EXECUTE
+8. Mark `approved: true` in frontmatter and transition to EXECUTE
 
 **Exit criteria:** Plan marked approved, execution commands identified
 
@@ -869,17 +924,79 @@ Task(
 
 **If code quality reviewer recommends plan updates:** Log the recommendation in the Decisions Made section of FEATURE.md. If the deviation affects downstream tasks, update PLAN.md before proceeding.
 
+**Step 3.5: Red Team Review (HIGH-RISK TASKS ONLY)**
+
+After code quality review passes, check the task's risk level from the plan.
+**Only dispatch the red-teamer for tasks marked `Risk: High`.**
+Skip this step entirely for Low and Medium risk tasks.
+
+```
+Task(
+  subagent_type = "productivity:red-teamer",
+  description = "Red-team T-XXX: <task name>",
+  prompt = "
+  <task_spec>
+  <full text of the task>
+  </task_spec>
+
+  <implementer_report>
+  <the implementer's completion report — changes made, self-review>
+  </implementer_report>
+
+  <red_team_plan_findings>
+  <relevant red-team findings from PLAN_REVIEW that apply to this task's area —
+   helps the red-teamer focus on previously identified risk areas>
+  </red_team_plan_findings>
+
+  <mode>task</mode>
+
+  <role>
+  You are an adversarial red-team reviewer. Find ways to break this implementation —
+  input edge cases, security vulnerabilities, failure modes, race conditions.
+  Spec compliance and code quality were already verified — focus on what those reviews miss.
+  </role>
+
+  <task>
+  Red-team this high-risk task's implementation. Follow your task mode review sequence:
+  1. Read all modified files and git diff
+  2. Mental input fuzzing — null, empty, huge, unicode, concurrent, malformed
+  3. Error path testing — caught? consistent state? information disclosure?
+  4. Security probing — injection, auth bypass, race conditions, resource exhaustion
+  5. Integration breaking — callers updated? backwards compatibility?
+  6. Suggest adversarial test cases the implementer should add
+
+  Focus on the highest-impact vulnerabilities. Be specific with file:line references.
+  </task>
+
+  <constraints>
+  - Work from: <workdir_path>
+  - Every finding must cite a file:line reference
+  - Report: RED_TEAM_PASS or RED_TEAM_ISSUES with specific findings and severity
+  - Do not duplicate spec compliance or code quality review findings
+  - Only Critical findings require fixes — High/Medium are logged
+  </constraints>"
+)
+```
+
+**If red-teamer finds Critical issues:** Resume the implementer subagent to fix them.
+Then re-run the red-team review. **Max 2 fix cycles.**
+After 2 cycles, escalate to user (interactive) or log remaining issues as caveats (autonomous).
+
+**If red-teamer finds only High/Medium:** Log findings in Surprises and Discoveries section of FEATURE.md.
+The implementer does NOT need to fix these — they are tracked risks.
+
 **Step 4: Update State and Log**
 
-After both reviews pass:
+After all reviews pass (two reviews for normal tasks, three for high-risk):
 - Mark task `[x]` with commit SHA in Progress
 - Record any review findings in Surprises and Discoveries
 - Update FEATURE.md state file (in `~/docs/plans/do/<short-name>/`)
 - Append `TASK_COMPLETE` entry to SESSION.log with token/duration/review outcomes:
   ```
-  [<timestamp>] TASK_COMPLETE: T-XXX | tokens: <N>k | duration: <N>s | spec: <COMPLIANT|ISSUES (N fix cycles)> | quality: <APPROVED|ISSUES (N fix cycles)>
+  [<timestamp>] TASK_COMPLETE: T-XXX | tokens: <N>k | duration: <N>s | spec: <COMPLIANT|ISSUES (N fix cycles)> | quality: <APPROVED|ISSUES (N fix cycles)> | red-team: <PASS|ISSUES (N fix cycles)|SKIPPED>
   ```
-  Token and duration values = sum of implementer + spec reviewer + code quality reviewer for this task.
+  Token and duration values = sum of all agents for this task (implementer + spec reviewer + code quality reviewer + red-teamer if applicable).
+  Red-team is `SKIPPED` for non-high-risk tasks.
 - Check if the current batch is complete → if yes, proceed to **Batch Report**
 - Otherwise, proceed to the next task in the batch
 

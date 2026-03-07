@@ -17,6 +17,7 @@ Execute round:
      - Shift-left (lint/format/typecheck) per task
      - Spec review (max 2 fix cycles) per task
      - Code quality review (max 2 fix cycles) per task
+     - Red-team review (HIGH-RISK TASKS ONLY, max 2 fix cycles) per task
      - Append TASK_COMPLETE to SESSION.log with tokens/duration
   4. At MILESTONE BOUNDARY: Run /atcommit, append MILESTONE_COMPLETE to SESSION.log
 
@@ -69,7 +70,7 @@ Tests pass -> /atcommit (remaining) -> git push -> /pr (create PR) -> /pr-fix (v
 
 ## PLAN_REVIEW Phase
 
-**Two-step review: consistency check → substantive review.**
+**Three-step review: consistency check → substantive review → red-team.**
 
 1. Spawn `consistency-checker` to fix internal inconsistencies in PLAN.md before substantive review:
    - Iteratively scans for contradictions, mismatched task IDs, file path inconsistencies, count mismatches, terminology drift, dangling references
@@ -84,7 +85,18 @@ Tests pass -> /atcommit (remaining) -> git push -> /pr (create PR) -> /pr-fix (v
 3. Spawn `reviewer` for substantive critique (coverage, path verification, research cross-check, dependency analysis, safety, executability)
 - Output: Review report, required changes
 - May loop back to PLAN_DRAFT
-- **Interactive**: Present review findings, ask user for final approval before execution
+
+4. If reviewer approves, spawn `red-teamer` in plan mode — adversarial challenge of plan assumptions:
+   - Attacks assumptions (checks evidence strength in RESEARCH.md)
+   - Enumerates failure modes per milestone (external deps, internal assumptions, data edge cases)
+   - Identifies security attack vectors and missing recovery paths
+   - Assesses blast radius of shared code changes
+   - Output: Red Team Plan Review with Critical / High / Medium findings
+   - **Critical findings** → loop back to PLAN_DRAFT (must address before execution)
+   - **High findings (interactive)** → present to user, ask whether to address or track as risks
+   - **High findings (autonomous)** → log as tracked risks, proceed
+   - **Medium findings** → logged as risks to watch during EXECUTE
+- **Interactive**: Present review + red-team findings, ask user for final approval before execution
 - **Autonomous**: Auto-approve if no critical issues, loop back for required changes only
 
 ## EXECUTE Phase
@@ -145,7 +157,12 @@ Log parallel milestones in SESSION.log: `MILESTONE_START: M-002 (Title) [paralle
    reports strengths first, then assesses code quality, architecture, plan alignment, patterns, testing
 7. If critical issues → implementer fixes → re-review (max 2 fix cycles, then escalate)
 8. If plan deviations found → handle per **Structured Deviation Handling** below
-9. Mark task complete, update state, append `TASK_COMPLETE` to SESSION.log with token/duration metrics
+9. **Red-team review (HIGH-RISK TASKS ONLY)** — only for tasks marked `Risk: High` in the plan.
+   Adversarially probes for input edge cases, security vulnerabilities, race conditions, failure modes.
+   Receives relevant plan-level red-team findings to focus on known risk areas.
+   Critical findings → implementer fixes (max 2 cycles). High/Medium → logged as tracked risks.
+   Skipped entirely for Low and Medium risk tasks.
+10. Mark task complete, update state, append `TASK_COMPLETE` to SESSION.log with token/duration metrics
 
 **Token and Timing Tracking:**
 
