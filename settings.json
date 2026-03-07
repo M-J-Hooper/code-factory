@@ -34,6 +34,7 @@
       "Skill(skill-workbench)",
       "Skill(review)",
       "Skill(tour)",
+      "Skill(performance-feedback)",
       "Skill(commit)",
       "Skill(atcommit)",
       "Skill(fixup)",

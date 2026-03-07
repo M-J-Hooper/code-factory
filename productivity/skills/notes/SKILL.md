@@ -14,7 +14,7 @@ description: >
   "X's github", "X's email", "set X's birthday", "update X's role", "what team is X on".
   Does NOT handle: daily work journal entries (use `/daily`),
   monthly brag document or automated accomplishment collection (use `/brag`),
-  feedback about a person's performance for review cycles.
+  feedback about a person's performance for review cycles (use `/performance-feedback`).
 argument-hint: "[create | lookup | edit] [description]"
 user-invocable: true
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash(date:*), Bash(mkdir:*), Bash(ls:*), AskUserQuestion
