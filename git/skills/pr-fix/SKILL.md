@@ -6,7 +6,7 @@ description: >
   Triggers: "fix pr feedback", "address pr comments", "resolve pr reviews", "pr fix",
   "address review feedback", "fix review comments", "handle pr feedback",
   "respond to pr review", "address pr feedback", "pr fix --auto".
-argument-hint: "[PR number or URL, optional --reviewer <name>, optional --auto]"
+argument-hint: "[PR number, URL, or comment URL, optional --reviewer <name>, optional --auto]"
 user-invocable: true
 allowed-tools: Bash(git:*), Bash(gh:*), Bash(get_ddci_logs.sh:*), Read, Write, Edit, Grep, Glob, AskUserQuestion, Task
 ---
@@ -23,6 +23,7 @@ Parse `$ARGUMENTS` for:
 |-------|---------|---------|
 | PR number | Digits | `42`, `332190` |
 | PR URL | `github.com/.*/pull/\d+` | `https://github.com/org/repo/pull/42` |
+| Comment URL | `github.com/.*/pull/\d+#discussion_r\d+` | `https://github.com/org/repo/pull/42#discussion_r123` |
 | Reviewer filter | `--reviewer <name>` | `--reviewer alice` |
 | Autonomous mode | `--auto` | `--auto` |
 
@@ -47,26 +48,40 @@ gh pr view --json number -q '.number' 2>/dev/null
 
 ## Step 2: Fetch Unresolved Review Threads
 
-Fetch all unresolved review threads using the GraphQL API. See [references/graphql-queries.md](references/graphql-queries.md) for the full query.
+Fetch actionable review threads using the `get-pr-comments.sh` script. The script handles GraphQL pagination, structured output, and large-output fallback automatically.
 
 ```bash
-gh api graphql -F owner='{owner}' -F repo='{repo}' -F pr={number} -f query='...'
+${CLAUDE_PLUGIN_ROOT}/skills/pr-fix/get-pr-comments.sh -a {number}
 ```
 
-Parse the response into a structured list. For each thread, extract:
+For comment URLs, pass the full URL instead of the PR number:
 
-| Field | Source |
-|-------|--------|
-| `threadId` | `reviewThreads.nodes[].id` (GraphQL node ID for mutations) |
-| `isResolved` | `reviewThreads.nodes[].isResolved` |
-| `path` | `reviewThreads.nodes[].path` |
-| `line` | `reviewThreads.nodes[].line` |
-| `comments` | Array of `{ databaseId, body, author.login, outdated }` |
-| `firstComment` | First comment in the thread (the review comment) |
+```bash
+${CLAUDE_PLUGIN_ROOT}/skills/pr-fix/get-pr-comments.sh -a "https://github.com/org/repo/pull/42#discussion_r123"
+```
 
-**If `--reviewer` specified:** filter threads to only those where `firstComment.author.login` matches.
+**If output exceeds 25KB:** the script writes to `/tmp/pr-comments-{owner}-{repo}-{pr}.json` and prints a message to stderr. Use the Read tool to load the data from that path.
 
-**If no unresolved threads:** inform the user all review threads are resolved. Skip to Step 8 (CI validation and automated reviews always run).
+The script returns a JSON array of threads. Each thread contains:
+
+| Field | Usage |
+|-------|-------|
+| `thread_id` | GraphQL node ID — pass to `resolveReviewThread` mutation |
+| `first_comment_id` | REST API comment ID — pass to reply endpoint |
+| `resolved` | Always `false` when using `-a` flag |
+| `outdated` | Always `false` when using `-a` flag |
+| `path` | File path relative to repo root |
+| `line` | End line number in the diff |
+| `start_line` | Start line for multi-line comments (null = single line) |
+| `comments[]` | Array of `{ comment_id, body, author, outdated, path, line, html_url }` |
+
+**If `--reviewer` specified:** filter the output:
+
+```bash
+echo "$THREADS" | jq '[.[] | select(.comments[0].author == "{reviewer}")]'
+```
+
+**If no threads returned:** all review threads are resolved. Skip to Step 8 (CI validation and automated reviews always run).
 
 ## Step 3: Categorize and Prioritize
 
@@ -78,7 +93,7 @@ Classify each thread into one of four categories:
 | **Code change** | Imperative language ("change X", "add Y", "remove Z"), bug report, missing handling | Edit the code as requested |
 | **Question** | Ends with `?`, asks "why", requests clarification | Respond with explanation |
 | **Disagreement** | Reviewer challenges a design decision, requests a revert or alternative approach | **NEVER auto-resolve.** Present to user for decision. |
-| **Outdated** | Thread `isOutdated` is true or all comments are `outdated` | Read current code at `path`. If the concern is already addressed, resolve with a note. If not, reclassify as Code change or Question. |
+| **Outdated** | Thread `outdated` is true or all comments have `outdated: true` | Read current code at `path`. If the concern is already addressed, resolve with a note. If not, reclassify as Code change or Question. |
 
 Assign priority:
 
@@ -148,7 +163,7 @@ For threads with `` ```suggestion `` blocks:
 
 1. Extract the suggested code from between `` ```suggestion `` and `` ``` `` markers. If a comment contains multiple suggestion blocks, apply the first one. If ambiguous, ask the user.
 2. Read the file at `path`.
-3. Replace the lines at `line` (or `startLine..line` for multi-line) with the suggested code.
+3. Replace the lines at `line` (or `start_line..line` for multi-line) with the suggested code.
 4. Use the Edit tool to apply the change.
 
 ### Applying Code Changes
@@ -172,10 +187,10 @@ For threads requiring explanations:
 
 For each addressed thread, reply directly to the review comment and resolve the thread.
 
-**Reply** using the REST API (replies to the specific thread, not a generic PR comment). Use a HEREDOC for the body to handle special characters:
+**Reply** using the REST API (replies to the specific thread, not a generic PR comment). Use the thread's `first_comment_id` and a HEREDOC for the body:
 
 ```bash
-gh api repos/{owner}/{repo}/pulls/comments/{databaseId}/replies \
+gh api repos/{owner}/{repo}/pulls/comments/{first_comment_id}/replies \
   -X POST -f body="$(cat <<'EOF'
 {response text}
 EOF
@@ -195,10 +210,10 @@ Response format by category:
 
 **Bot attribution:** When replying to automated reviewer comments (Greptile, Codex, etc.), prefix every reply with `*Automated response from Claude:*` to distinguish from human responses.
 
-**Resolve** the thread using GraphQL mutation (see [references/graphql-queries.md](references/graphql-queries.md)):
+**Resolve** the thread using GraphQL mutation with the thread's `thread_id` (see [references/graphql-queries.md](references/graphql-queries.md)):
 
 ```bash
-gh api graphql -f query='mutation { resolveReviewThread(input: { threadId: "{threadId}" }) { thread { isResolved } } }'
+gh api graphql -f query='mutation { resolveReviewThread(input: { threadId: "{thread_id}" }) { thread { isResolved } } }'
 ```
 
 **Do NOT resolve:**
@@ -346,7 +361,7 @@ Present the final report:
 - {if CI failures remain}: {count} CI failures need investigation
 ```
 
-**Offer to request re-review** if all threads are resolved. Determine reviewers from the `--reviewer` argument (if provided) or by deduplicating `firstComment.author.login` from addressed threads:
+**Offer to request re-review** if all threads are resolved. Determine reviewers from the `--reviewer` argument (if provided) or by deduplicating `comments[0].author` from addressed threads:
 
 ```bash
 gh pr edit {number} --add-reviewer {reviewer1},{reviewer2}
@@ -359,7 +374,8 @@ gh pr edit {number} --add-reviewer {reviewer1},{reviewer2}
 | `gh` not authenticated | Inform user to run `gh auth login`. Stop. |
 | PR not found | Verify the PR number and repo. Report error. Stop. |
 | No unresolved threads | Inform user all feedback is addressed. Skip to Step 8 — CI validation and automated reviews still run. |
-| GraphQL query fails | Fall back to REST: `gh api repos/{owner}/{repo}/pulls/{number}/comments`. Lose thread resolution data but can still categorize and fix. |
+| `get-pr-comments.sh` fails | Fall back to REST: `gh api repos/{owner}/{repo}/pulls/{number}/comments`. Lose thread resolution data but can still categorize and fix. |
+| Large output (>25KB) | Script auto-writes to `/tmp/pr-comments-{owner}-{repo}-{pr}.json`. Use the Read tool on that path. |
 | Thread resolution fails | Report the error. The reply was still posted. Continue with remaining threads. |
 | Reply fails | Report the error. Log the intended response. Continue with remaining threads. |
 | Edit fails (file not found) | The file may have been renamed or deleted. Report to user. Skip thread. |

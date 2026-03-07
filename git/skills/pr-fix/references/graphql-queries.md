@@ -1,68 +1,8 @@
-# GraphQL Queries and Mutations for PR Review Threads
+# GraphQL Mutations for PR Review Threads
 
-Reference for the `pr-fix` skill. Contains all GraphQL operations needed to fetch, reply to, and resolve PR review threads.
+Reference for the `pr-fix` skill. Contains GraphQL mutations for resolving threads and REST commands for replying.
 
-## Fetch Unresolved Review Threads
-
-Returns all review threads with comments, resolution status, file path, and line numbers.
-
-```bash
-gh api graphql -F owner='{owner}' -F repo='{repo}' -F pr={number} -f query='
-query($owner: String!, $repo: String!, $pr: Int!) {
-  repository(owner: $owner, name: $repo) {
-    pullRequest(number: $pr) {
-      title
-      number
-      url
-      reviewThreads(first: 100) {
-        nodes {
-          id
-          isResolved
-          isOutdated
-          path
-          line
-          startLine
-          diffSide
-          comments(first: 50) {
-            nodes {
-              id
-              databaseId
-              body
-              author { login }
-              outdated
-              createdAt
-            }
-          }
-        }
-      }
-    }
-  }
-}
-'
-```
-
-### Parsing the Response
-
-Filter for unresolved threads:
-
-```bash
-# Pipe the response through jq to get only unresolved threads
-... | jq '.data.repository.pullRequest.reviewThreads.nodes | map(select(.isResolved == false))'
-```
-
-Key fields:
-
-| Field | Type | Usage |
-|-------|------|-------|
-| `id` | String | GraphQL node ID — pass to `resolveReviewThread` mutation |
-| `isResolved` | Boolean | Filter for unresolved threads |
-| `isOutdated` | Boolean | Code has changed since the review comment was posted |
-| `path` | String | File path relative to repo root |
-| `line` | Int | End line number in the diff |
-| `startLine` | Int \| null | Start line for multi-line comments (null = single line) |
-| `comments.nodes[0].databaseId` | Int | REST API comment ID — pass to reply endpoint |
-| `comments.nodes[0].body` | String | The review comment text |
-| `comments.nodes[0].author.login` | String | GitHub username of the commenter |
+**Fetching threads** is handled by `get-pr-comments.sh` (see Step 2 in SKILL.md). The script returns structured JSON with `thread_id` (GraphQL node ID) and `first_comment_id` (REST API ID) ready for the mutations below.
 
 ## Resolve a Thread
 
@@ -83,7 +23,7 @@ mutation {
 '
 ```
 
-Replace `{threadId}` with the actual `id` value from the thread.
+Replace `{threadId}` with the `thread_id` field from the script output.
 
 **Permissions required:** Repository Contents: Read and Write.
 
@@ -118,7 +58,7 @@ gh api repos/{owner}/{repo}/pulls/comments/{databaseId}/replies \
 
 Replace:
 - `{owner}/{repo}` — the repository (e.g., `DataDog/dd-source`)
-- `{databaseId}` — the `databaseId` of the first comment in the thread
+- `{databaseId}` — the `first_comment_id` from the script output
 - `{response text}` — the reply body (supports GitHub-flavored markdown)
 
 ## Request Re-Review
