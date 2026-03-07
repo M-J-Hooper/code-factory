@@ -2,6 +2,38 @@
 
 Reference for detailed phase behaviors. Loaded by the orchestrator when executing phases.
 
+## EXECUTE Batch Loop
+
+```
+Plan Critical Review -> Pre-flight (build + test baseline) -> Execute Batch (3 tasks) -> Batch Report -> Feedback -> Next Batch
+                                                                    |                                        ^
+                                                                    v                                        |
+                                                              Per-task loop:                           (loop batches)
+                                                              Dispatch implementer -> Shift-left (lint/format/typecheck)
+                                                                    -> Spec review (max 2 fix cycles)
+                                                                    -> Code quality review (max 2 fix cycles)
+                                                                    -> Next task
+                                                              At MILESTONE BOUNDARY:
+                                                              Run /atcommit -> groups changes by concept -> 3-5 atomic commits
+
+STOP on: missing deps, test failures, unclear instructions, repeated failures, plan-invalidating discoveries
+RE-PLAN on: fundamental plan changes needed
+```
+
+## DONE Finalization
+
+```
+Tests pass -> /atcommit (remaining) -> git push -> /pr (create PR) -> /pr-fix (validate + fix)
+                                                                           |
+                                                                           v
+                                                                  New feedback? --yes--> /pr-fix (max 2 loops)
+                                                                           |
+                                                                           no
+                                                                           |
+                                                                           v
+                                                                     Report + Archive
+```
+
 ## REFINE Phase
 - Spawn `refiner` to analyze, clarify, and explore approaches for the feature
 - Output: Refined specification with problem statement, chosen approach, scope, behavior, acceptance criteria
@@ -64,12 +96,13 @@ The orchestrator reads the plan once, extracts all tasks with full text, then ex
 Per-task sequence within each batch:
 1. **Dispatch fresh implementer** with full task text + scene-setting context inlined (milestone position, prior task summary, upcoming tasks, relevant discoveries, architectural context)
 2. Implementer asks questions → answers provided → implements → self-reviews → reports (NO commit)
-3. **Spec compliance review** — fresh reviewer acknowledges strengths, then verifies implementation matches spec (nothing missing, nothing extra, nothing misunderstood)
-4. If issues → implementer fixes → re-review (loop until compliant)
-5. **Code quality review** — fresh reviewer receives plan context, reports strengths first, then assesses code quality, architecture, plan alignment, patterns, testing
-6. If critical issues → implementer fixes → re-review (loop until approved)
-7. If plan deviations found → orchestrator updates PLAN.md if warranted
-8. Mark task complete, update state, proceed to next task in batch (do NOT commit yet)
+3. **Shift-left validation** (deterministic — orchestrator runs directly, no subagent): lint + format + type-check. Auto-fix formatting. Return to implementer if lint/type errors persist. Only proceed to reviews after shift-left passes.
+4. **Spec compliance review** — fresh reviewer acknowledges strengths, then verifies implementation matches spec (nothing missing, nothing extra, nothing misunderstood)
+5. If issues → implementer fixes → re-review (max 2 fix cycles, then escalate)
+6. **Code quality review** — fresh reviewer receives plan context, reports strengths first, then assesses code quality, architecture, plan alignment, patterns, testing
+7. If critical issues → implementer fixes → re-review (max 2 fix cycles, then escalate)
+8. If plan deviations found → orchestrator updates PLAN.md if warranted
+9. Mark task complete, update state, proceed to next task in batch (do NOT commit yet)
 
 After each batch:
 - Report: tasks completed, test status, discoveries

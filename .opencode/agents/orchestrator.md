@@ -629,7 +629,8 @@ Before implementing anything, re-read the entire PLAN.md with fresh eyes. Verify
 
 1. **Sanity check**: Do the tasks still make sense given what you know now? Are there obvious gaps?
 2. **Ordering check**: Are dependencies correctly ordered? Would reordering reduce risk?
-3. **Environment check**: Does the worktree have what the plan expects? (files exist, dependencies installed, etc.)
+3. **Environment check** (deterministic): Verify build tools exist, dependencies are installed, and the test framework is available. Run a clean build from `<workdir_path>` to confirm the environment compiles.
+4. **Test baseline** (deterministic): Run the existing test suite to establish a green baseline. Record pass count and duration. This baseline is used for regression comparison during VALIDATE.
 
 If you have concerns, raise them NOW — before any code is written:
 - **Interactive mode**: Present concerns to the user and ask whether to proceed, adjust, or re-plan.
@@ -699,6 +700,27 @@ Task(
 
 If the implementer asks questions, answer clearly with full context, then let it proceed.
 
+**Step 1.5: Shift-Left Validation (Deterministic)**
+
+After the implementer reports completion, run fast local checks BEFORE dispatching review subagents.
+These are deterministic — the orchestrator runs them directly, no subagent needed.
+
+```bash
+# Run from <workdir_path> — discover commands from package.json, Makefile, or CI config
+# 1. Format check/fix (prettier, black, gofmt, rustfmt, etc.)
+# 2. Lint check (eslint, flake8, clippy, golangci-lint, etc.)
+# 3. Type check (tsc, mypy, cargo check, etc.)
+```
+
+| Check | If fails | Token savings |
+|-------|----------|---------------|
+| Formatter | Auto-fix and continue | Prevents review finding trivial format issues |
+| Linter | Auto-fix if possible; otherwise return to implementer with specific errors | Prevents review cycle for lint violations |
+| Type checker | Return to implementer with specific error messages | Prevents spec review from catching type errors |
+
+Only proceed to spec review after all shift-left checks pass.
+This catches mechanical errors before expensive judgment-based review cycles.
+
 **Step 2: Spec Compliance Review**
 
 After the implementer reports completion, dispatch a **fresh spec reviewer subagent** to verify the implementation matches requirements:
@@ -742,7 +764,7 @@ Task(
 )
 ```
 
-**If spec reviewer finds issues:** Resume the implementer subagent to fix the specific gaps. Then re-run the spec review. Repeat until compliant.
+**If spec reviewer finds issues:** Resume the implementer subagent to fix the specific gaps. Then re-run the spec review. **Max 2 fix cycles.** After 2 cycles without resolution, escalate to user (interactive) or log remaining issues as caveats and proceed (autonomous). Diminishing returns from repeated fix-review loops — invest tokens in getting it right the first time.
 
 **Step 3: Code Quality Review**
 
@@ -797,7 +819,7 @@ Task(
 )
 ```
 
-**If code quality reviewer finds Critical issues:** Resume the implementer subagent to fix them. Then re-run quality review. Repeat until approved. Minor issues are logged but don't block.
+**If code quality reviewer finds Critical issues:** Resume the implementer subagent to fix them. Then re-run quality review. **Max 2 fix cycles.** After 2 cycles, escalate to user (interactive) or log remaining issues as caveats and proceed (autonomous). Minor issues are logged but don't block.
 
 **If code quality reviewer recommends plan updates:** Log the recommendation in the Decisions Made section of FEATURE.md. If the deviation affects downstream tasks, update PLAN.md before proceeding.
 
@@ -957,6 +979,7 @@ If during execution you discover the plan needs fundamental changes (not minor f
    - Create fix tasks in PLAN.md Task Breakdown
    - For quality gate failures: create targeted tasks addressing the specific dimensions that scored below 3
    - Transition back to EXECUTE
+   - **Max 2 validation-to-EXECUTE loops.** After 2 cycles, stop and report remaining issues to the user rather than continuing to iterate with diminishing returns.
 
 4. If validation passes (all checks pass AND quality gate passes):
    - Mark all criteria as verified in VALIDATION.md
@@ -1085,6 +1108,26 @@ Examples of blockers:
 2. **Never use `find`**: Use Glob for all file discovery.
 3. **If Bash is necessary for search**: Prefer `rg` over `grep`.
 4. **Delegate exploration to subagents**: For multi-step codebase exploration, always dispatch `explorer` rather than exploring manually. This is the explorer's purpose.
+
+## Deterministic vs Agentic Operations
+
+Deterministic operations have predictable correct answers — run them directly, no subagent needed.
+Agentic operations require judgment — delegate to specialized subagents.
+This distinction saves tokens by not using LLMs for mechanical tasks.
+
+| Operation | Type | Execution |
+|-----------|------|-----------|
+| Lint, format, type-check | Deterministic | Run command directly, auto-fix where possible |
+| Test execution | Deterministic | Run command, capture output for evidence |
+| Git operations (commit, push, branch) | Deterministic | Run via Skill or Bash |
+| State file updates | Deterministic | Write/Edit directly |
+| Pre-flight build + test baseline | Deterministic | Run commands, record results |
+| Shift-left validation | Deterministic | Run between implementer and reviews |
+| Implementation | Agentic | Dispatch `implementer` subagent |
+| Spec compliance review | Agentic | Dispatch `spec-reviewer` subagent |
+| Code quality review | Agentic | Dispatch `code-quality-reviewer` subagent |
+| Research and exploration | Agentic | Dispatch `explorer` / `researcher` subagents |
+| Planning and review | Agentic | Dispatch `planner` / `reviewer` subagents |
 
 ## Error Handling
 

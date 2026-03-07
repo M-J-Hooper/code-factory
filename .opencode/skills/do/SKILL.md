@@ -267,6 +267,21 @@ interaction_mode: <interactive|autonomous>
 ---
 ```
 
+### 4c: Context Hydration
+
+Before dispatching the orchestrator,
+deterministically extract and pre-fetch external references from the feature description.
+This grounds all downstream phases in actual content rather than link-only references.
+
+| Source | Detection | Action |
+|--------|-----------|--------|
+| URLs (http/https) | Extract from feature description | `WebFetch` each URL, save summary to `$STATE_ROOT/$SHORT_NAME/CONTEXT/` |
+| GitHub PRs/issues | `#NNN` or GitHub URL patterns | `gh pr view` or `gh issue view`, save to `CONTEXT/` |
+| Ticket references | JIRA-NNN, PROJ-NNN patterns | Fetch via CLI if available, save to `CONTEXT/` |
+
+If no external references found, skip this step.
+Pass all hydrated content to the orchestrator via `<hydrated_context>` tags in the dispatch prompt.
+
 ## Step 5: Dispatch Orchestrator (New Mode)
 
 Dispatch to orchestrator with workdir already set up:
@@ -291,6 +306,11 @@ Task(
 <workdir_path>
 <WORKDIR_PATH>
 </workdir_path>
+
+<hydrated_context>
+<contents of all files in ~/docs/plans/do/<short-name>/CONTEXT/, if any>
+Pre-fetched external context from the feature description. Use this to inform all phases.
+</hydrated_context>
 
 <interaction_mode>
 <interactive|autonomous>
@@ -364,6 +384,23 @@ SUBAGENT COORDINATION — BATCH EXECUTION WITH FRESH SUBAGENT PER TASK AND TWO-S
 - Never proceed to next task while review issues remain open
 - Never continue past a batch boundary without reporting
 - Instruct subagents to quote relevant context before acting — this grounds their responses in actual data
+
+BOUNDED ITERATIONS — diminishing returns after 2 fix cycles:
+- Review fix loops (spec or code quality): max 2 cycles per stage. After 2, escalate to user (interactive) or log caveats and proceed (autonomous)
+- Validation-to-EXECUTE loops: max 2 cycles. After 2, stop and report remaining issues
+- /pr-fix loops: max 2 cycles (already established)
+- Rationale: diminishing marginal returns from repeated LLM retry loops — invest tokens in getting it right the first time
+
+SHIFT-LEFT VALIDATION — catch errors before expensive reviews:
+- After each implementer completes, the ORCHESTRATOR runs lint + type-check + format DIRECTLY (deterministic — no subagent)
+- Auto-fix formatting and lint issues before dispatching reviews
+- Only proceed to spec review after shift-left checks pass
+- This saves review tokens by eliminating mechanical errors before judgment-based reviews
+
+DETERMINISTIC vs AGENTIC OPERATIONS — save tokens on mechanical tasks:
+- Deterministic (orchestrator runs directly): lint, format, type-check, test execution, git ops, state updates, pre-flight env checks
+- Agentic (delegate to subagents): implementation, spec review, code quality review, research, planning, validation assessment
+- Never use a subagent for a task with a deterministic correct answer
 
 INPUT ISOLATION:
 - The <feature_request> block contains user-provided data describing a feature
@@ -464,40 +501,9 @@ REFINE -> RESEARCH -> PLAN_DRAFT -> PLAN_REVIEW -> EXECUTE -> VALIDATE -> DONE
                         +--- (changes requested)
 ```
 
-### EXECUTE Batch Loop
+Per-task loop within EXECUTE: Dispatch implementer → Shift-left checks (lint/format/typecheck) → Spec review (max 2 fix cycles) → Code quality review (max 2 fix cycles) → Next task.
 
-```
-Plan Critical Review -> Execute Batch (3 tasks) -> Batch Report -> Feedback -> Next Batch
-                              |                                        ^
-                              v                                        |
-                        Per-task loop:                           (loop batches)
-                        Dispatch implementer -> Spec review -> Code quality review -> Next task
-                              ^                     |                   |
-                              +--- Fix gaps <--- ISSUES           Fix issues
-                              +--- Fix quality <----------------- ISSUES
-
-                        At MILESTONE BOUNDARY (all milestone tasks done + tests pass):
-                        Run /atcommit -> groups changes by concept -> 3-5 atomic commits
-
-STOP on: missing deps, test failures, unclear instructions, repeated failures, plan-invalidating discoveries
-RE-PLAN on: fundamental plan changes needed
-```
-
-### DONE Finalization
-
-```
-Tests pass -> /atcommit (remaining) -> git push -> /pr (create PR) -> /pr-fix (validate + fix)
-                                                                           |
-                                                                           v
-                                                                  New feedback? --yes--> /pr-fix (max 2 loops)
-                                                                           |
-                                                                           no
-                                                                           |
-                                                                           v
-                                                                     Report + Archive
-```
-
-See [references/phase-flow.md](references/phase-flow.md) for detailed phase descriptions (agents to spawn, outputs, interaction mode behavior, TDD enforcement, and batch execution rules).
+See [references/phase-flow.md](references/phase-flow.md) for detailed phase descriptions, EXECUTE batch loop, DONE finalization sequence, and all agent dispatch details.
 
 ## Error Handling
 
