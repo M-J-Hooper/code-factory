@@ -138,6 +138,7 @@ If changes affect functionality, configuration, or behavior:
 
 - Commit secrets, tokens, or credentials.
 - Force-push to `main`.
+- Push with `git push` directly — always use `./push.sh`.
 - Delete existing skills or plugins without explicit approval.
 - Skip validation (`make all`).
 - Modify files in `~/.claude/plugins/cache/`. This directory is a read-only deployment artifact managed by Claude Code's plugin system. Always make changes in the source repo — they propagate to the cache on the next plugin update.
