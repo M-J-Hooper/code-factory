@@ -13,6 +13,7 @@ rtfpessoa's personal [Claude Code](https://docs.anthropic.com/en/docs/claude-cod
 | `/doc` | productivity | Create/update/improve/audit Markdown docs |
 | `/workspace` | productivity | Manage Datadog remote development workspaces |
 | `/reflect` | productivity | Capture session learnings into knowledge files |
+| `/brag` | productivity | Update brag document with recent accomplishments |
 | `/skill-workbench` | productivity | Create or improve skills and agents |
 | `/review` | productivity | Review a pull request with structured findings |
 | `/tour` | productivity | Guided code walkthroughs (interactive or written) |
@@ -40,6 +41,7 @@ rtfpessoa's personal [Claude Code](https://docs.anthropic.com/en/docs/claude-cod
 - `/tour` -- Codebase tours in interactive or written modes.
 - `/workspace` -- Datadog workspace lifecycle management (`create`, `list`, `delete`, `ssh`, `connect`, `validate`).
 - `/reflect` -- Session learning extraction with confidence-based auto-apply/queue behavior.
+- `/brag` -- Brag document management: auto-collects work from GitHub, Jira, Confluence, and git; asks interactive questions for undiscoverable work; maintains monthly docs at `~/log/YYYY-MM/brag.md`.
 - `/skill-workbench` -- Skill and agent creation/improvement toolkit.
 
 **Agents:**
