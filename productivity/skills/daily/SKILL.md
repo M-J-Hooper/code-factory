@@ -68,10 +68,18 @@ When the user mentions someone by first name, nickname, or partial name,
 resolve it to their full name using the People directory in the vault.
 Run `ls ~/docs/People/` to get the list of known people.
 
-- **Unique match**: "Alvaro" matches "Alvaro Mongil" — use the full name exactly as it appears
+Match the input against existing directories using this priority order:
+
+| Priority | Rule | Example |
+|----------|------|---------|
+| 1 | **Exact match** — input matches a directory name exactly | "Nick Nakas" → `Nick Nakas/` |
+| 2 | **First-name match** — input matches the first name of exactly one person | "Nick" → `Nick Nakas/` |
+| 3 | **Accent-insensitive match** — strip accents before comparing | "Alvaro" → `Álvaro Mongil/`, "Felicite" → `Félicité Lordon/` |
+| 4 | **Substring match** — input is a clear substring of exactly one name | "Mongil" → `Álvaro Mongil/` |
+
+- **Unique match at any priority**: use the full name exactly as it appears
   (preserving accents/diacritics) and add their name tag to frontmatter.
-- **Multiple matches**: If "Alex" could match "Alex Chen" and "Alex Kim",
-  use AskUserQuestion to clarify which person.
+- **Multiple matches**: use AskUserQuestion to present candidates and let the user pick.
 - **No match**: Bootstrap a new People entry.
   Create `~/docs/People/<Full Name>/<Full Name>.md` with minimal frontmatter
   and an Overview section capturing what you know from context.

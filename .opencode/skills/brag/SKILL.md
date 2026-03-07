@@ -174,6 +174,35 @@ Only extract items with enough context to be meaningful in a brag doc.
 "4x 1:1s" is too generic — skip it.
 "Architecture review — decided to go with option B for the caching layer" is worth capturing.
 
+### 2g: Google Drive Documents
+
+Scan `~/google-drive/` for files created or modified within the date range.
+These are Google Workspace stub files — filenames and dates are usable, but contents are not readable.
+
+```bash
+find ~/google-drive/ -maxdepth 1 \( -name "*.gdoc" -o -name "*.gslides" -o -name "*.gsheet" -o -name "*.pptx" \) \
+  -newer <temp_start> ! -newer <temp_end> 2>/dev/null
+```
+
+Classify by filename pattern:
+
+| Pattern | Brag Section |
+|---------|-------------|
+| `[Interview] *.gdoc` | Interviewing (count by name, don't list each) |
+| `*.gslides` or `*.pptx` (not `Untitled`) | Docs & Talks |
+| Filename contains "RFC" | Docs & Talks |
+| `Notas -` or `Notes -` prefix | Skip — meeting scratch notes, not brag-worthy |
+| `Untitled *` | Skip |
+| `*.gsheet`, `*.gdraw` | Skip unless title suggests a significant artifact |
+| Promo docs, career docs | Skip — these are inputs, not outputs |
+| Other `.gdoc` with descriptive title | Uncategorized (let user decide) |
+
+For interview files, aggregate into a count:
+"Conducted N interviews: Name1, Name2, ..." → Interviewing section.
+
+For presentations and RFCs, use the filename as the entry title.
+These files can't be read, so ask the user for context if the filename alone is ambiguous.
+
 ## Step 3: Deduplicate and Update Document
 
 ### 3a: Deduplicate
@@ -197,6 +226,9 @@ Assign each new item to a document section:
 | PR review given (own team) | Direct Impact |
 | Confluence page created | Docs & Talks |
 | Significant commit (not part of a PR) | Direct Impact |
+| Google Drive presentation (`.gslides`, `.pptx`) | Docs & Talks |
+| Google Drive RFC document | Docs & Talks |
+| Google Drive interview files | Interviewing |
 
 Items that don't clearly fit go in `## Uncategorized` for manual sorting.
 
@@ -304,4 +336,6 @@ Present a summary:
 | Monthly doc has unexpected format | Append new items at the end rather than inserting into sections |
 | State file corrupted | Back up to `~/log/.brag-state.json.bak`, recreate from defaults |
 | No new items found anywhere | Report "no new items found" and proceed directly to interactive questions |
+| `~/google-drive/` directory doesn't exist | Skip Google Drive collection, warn user, continue with other sources |
+| Google Drive files have no useful modification dates | Skip, warn user that Google Drive sync may not be running |
 | `~/log` directory not writable | Report error and exit |

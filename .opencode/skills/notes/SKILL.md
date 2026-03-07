@@ -3,11 +3,15 @@ name: notes
 description: >
   Use when the user asks to create, look up, or edit a note in Obsidian —
   especially people-related notes like 1:1s, meeting notes, career plans, promotion docs, or per-person achievements.
+  Also use for quick person-attribute lookups and updates:
+  "what's Nick's github", "Sarah's email", "set birthday to March 15",
+  "update role to SE2", "who is X", "what team is Michelle on".
   Triggers: "note about", "log a meeting", "record a 1:1", "1:1 with Sarah",
   "update career plan for Alex", "promotion doc for Sam", "track a win for Jamie",
   "add to my notes", "write down", "log that", "record that",
   "find my notes about", "look up notes on", "meeting notes for",
-  "what did I write about", "search my notes".
+  "what did I write about", "search my notes",
+  "X's github", "X's email", "set X's birthday", "update X's role", "what team is X on".
   Does NOT handle: daily work journal entries (use `/daily`),
   monthly brag document or automated accomplishment collection (use `/brag`),
   feedback about a person's performance for review cycles.
@@ -86,6 +90,7 @@ Use this decision tree:
 
 | Signal | Category | Target Path |
 |--------|----------|-------------|
+| Person + specific attribute query ("github", "email", "team", "role", "birthday") | `person-attribute` | `People/<Person>/<Person>.md` (frontmatter) |
 | Person + "1:1" / "one on one" / "one-on-one" | `1-1` | `1-1s/<Person>/TODAY.md` |
 | "meeting" + multiple people or a topic | `meeting` | `Meetings/TODAY-<slug>.md` |
 | Career goals / growth plan / development for a person | `career-growth` | `People/<Person>/<Person> - Career Plan.md` |
@@ -102,8 +107,16 @@ Slug = lowercase letters and hyphens, max ~5 words derived from the topic.
 When the user mentions someone by first name, nickname, or partial name:
 
 1. Run `ls ~/docs/People/` to get the list of known people.
-2. **Unique match**: use the full name exactly as it appears (preserving accents/diacritics).
-3. **Multiple matches**: use AskUserQuestion to clarify which person.
+2. Match the input against existing directories using this priority order:
+
+| Priority | Rule | Example |
+|----------|------|---------|
+| 1 | **Exact match** — input matches a directory name exactly | "Nick Nakas" → `Nick Nakas/` |
+| 2 | **First-name match** — input matches the first name of exactly one person | "Nick" → `Nick Nakas/` |
+| 3 | **Accent-insensitive match** — strip accents before comparing | "Alvaro" → `Álvaro Mongil/`, "Felicite" → `Félicité Lordon/` |
+| 4 | **Substring match** — input is a clear substring of exactly one name | "Mongil" → `Álvaro Mongil/` |
+
+3. **Multiple matches at any priority**: use AskUserQuestion to present candidates and let the user pick.
 4. **No match**: bootstrap a new People entry.
    Create `~/docs/People/<Full Name>/<Full Name>.md` with:
 
@@ -131,7 +144,48 @@ Use full names wrapped in Obsidian wikilinks (`[[Full Name]]`) in note content f
 
 Parse the request to determine the operation: **CREATE**, **LOOKUP**, or **EDIT**.
 
-If unclear, default to CREATE for new content and LOOKUP for questions about existing notes.
+If the category is `person-attribute`, route to the dedicated person-attribute handlers below.
+Otherwise, default to CREATE for new content and LOOKUP for questions about existing notes.
+
+### Person-Attribute LOOKUP
+
+For queries like "what's Nick's github?", "Sarah's email", "what team is Michelle on?":
+
+1. Resolve the person name (Step 3).
+2. Read the person's overview file (`People/<Person>/<Person>.md`).
+3. Check YAML frontmatter first for the requested attribute.
+4. If not in frontmatter, search the markdown body for the information.
+5. Return the answer concisely.
+
+### Person-Attribute EDIT
+
+For updates like "set Nick's birthday to March 15", "update Michelle's role to SE2":
+
+1. Resolve the person name (Step 3).
+2. Read the person's overview file.
+3. **Field name consistency** — before creating a new frontmatter field,
+   scan existing People files to find if a field for this concept already exists:
+
+```
+Grep ~/docs/People/ for the concept (e.g., "birthday", "birth", "dob" for birthday)
+```
+
+| Situation | Action |
+|-----------|--------|
+| Existing field name found across People files | Reuse that exact field name (preserving casing, hyphens, underscores) |
+| No existing field for this concept | Choose a concise field name matching existing style: lowercase, no underscores for single words, underscores for multi-word (e.g., `github`, `email`, `role`, `team`, `start_date`) |
+
+4. **Determine where the attribute belongs:**
+
+| Frontmatter (structured, queryable) | Body (narrative, contextual) |
+|--------------------------------------|------------------------------|
+| `role`, `team`, `github`, `email`, `slack`, `birthday`, `location`, `timezone`, `start_date`, `phone` | Overview descriptions, key traits, notable work, relationships, contextual notes |
+
+5. Apply the update. Update `date_modified` to TODAY.
+6. Confirm the change, showing the field name used.
+
+**Date format**: use `YYYY-MM-DD` to match `date_created`/`date_modified` convention.
+If the user gives a partial date like "March 15" without a year, store as `MM-DD` (e.g., `03-15`).
 
 ### CREATE
 
@@ -163,8 +217,9 @@ If unclear, default to CREATE for new content and LOOKUP for questions about exi
 
 1. Run LOOKUP to find the file.
 2. Apply the requested changes (preserve all existing content not being changed).
-3. Update `date_modified` in frontmatter to TODAY.
-4. Confirm the path and changes to the user.
+3. Keep frontmatter fields in their existing order; add new fields after the last custom field.
+4. Update `date_modified` in frontmatter to TODAY.
+5. Confirm the path and changes to the user.
 
 ## Step 5: Update People Backlinks
 
