@@ -15,23 +15,16 @@ Announce: "I'm using the /reflect skill to capture session learnings and update 
 
 ## Overview
 
-Extracts actionable knowledge from the current session — conventions, corrections, patterns, and gotchas — and updates the repo's knowledge files. Uses confidence-based routing: high-confidence learnings are auto-applied, medium-confidence ones are queued for human review.
+Extracts actionable knowledge from the current session — conventions, corrections, patterns, and gotchas —
+and updates the repo's knowledge files.
+Uses confidence-based routing: high-confidence learnings are auto-applied,
+medium-confidence ones are queued for human review.
 
-### Knowledge File Targets
+## Reference Documents
 
-| File | Scope | What belongs |
-|------|-------|-------------|
-| `AGENTS.md` | Repo-wide, all agents | Conventions, workflow rules, structural patterns |
-| `MEMORY.md` | Personal, per-project | Debugging insights, tool tips, personal preferences |
-| `CLAUDE.md` | Project-wide, all agents | Boundary rules, project-specific instructions (rare) |
-
-### Confidence Thresholds
-
-| Level | Score | Criteria | Action |
-|-------|-------|----------|--------|
-| High | ≥ 0.8 | User corrections, explicit conventions, repeated patterns | Auto-apply |
-| Medium | 0.5–0.79 | Implicit preferences, single-occurrence patterns | Queue for review |
-| Low | < 0.5 | One-off context, ambiguous signals | Discard |
+| Reference | When to load |
+|-----------|-------------|
+| [extraction-rules.md](references/extraction-rules.md) | Signal definitions, confidence thresholds, target selection, deduplication rules. Shared with `memory-extractor` agent. |
 
 ## Step 1: Determine Mode
 
@@ -58,53 +51,29 @@ Read all three knowledge files to understand current content.
 
 ### 2A.2: Analyze Session
 
-Review the conversation history for learning signals. Look for:
+Read [extraction-rules.md](references/extraction-rules.md) for the full signal definitions, confidence ranges, and deduplication rules.
 
-**Correction signals** (confidence ≥ 0.85):
-- User says "no", "wrong", "instead use", "actually", "don't do that"
-- User corrects agent behavior or output
-- User repeats an instruction the agent missed
-
-**Convention signals** (confidence ≥ 0.8):
-- User says "always", "never", "make sure to", "remember to"
-- Explicit rules stated during the session
-- Workflow requirements discovered
-
-**Pattern signals** (confidence 0.6–0.8):
-- Same approach used 3+ times
-- User consistently prefers one approach over another
-- Recurring code patterns or tool usage
-
-**Gotcha signals** (confidence 0.5–0.7):
-- Unexpected errors and their solutions
-- Non-obvious requirements discovered during work
-- Tool quirks or workarounds found
-
-**Discovery signals** (confidence 0.5–0.7):
-- "Found that...", "turns out...", "the trick is..."
-- New tool usage or flag discovery
-- Performance insights
+Review the conversation history for learning signals: corrections, conventions, patterns, gotchas, and discoveries.
+Score each learning using the confidence thresholds from the reference.
 
 ### 2A.3: Deduplicate
 
-For each extracted learning, search the knowledge files using Grep:
-- If the learning (or its semantic equivalent) already exists → skip
-- If it refines an existing entry → note for update (not addition)
+For each extracted learning, search the knowledge files using Grep per the deduplication rules in extraction-rules.md.
 
 ### 2A.4: Route by Confidence
 
-**High confidence (≥ 0.8):**
+Route each learning using the confidence thresholds from extraction-rules.md.
+Use the target file selection rules from the same reference.
 
-Apply directly to the target knowledge file:
+**High confidence (≥ 0.8) — auto-apply:**
+
 1. Identify the correct section in the target file (or create a new section if needed)
 2. Append the learning as a concise imperative bullet point
 3. Use the Edit tool — never restructure or reorganize the file
-4. Format all written Markdown with semantic line breaks: one sentence per line, break after clause-separating punctuation. Target 120 characters per line.
+4. Follow the writing rules from extraction-rules.md
 5. Report: "Auto-applied: [learning] → [file]:[section]"
 
-**Medium confidence (0.5–0.79):**
-
-Queue for human review:
+**Medium confidence (0.5–0.79) — queue for review:**
 1. Append to `$PENDING_FILE` in this format:
 
 ```markdown
