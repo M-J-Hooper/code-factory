@@ -12,7 +12,7 @@ Reference for the /do skill's state file format. Load when creating or parsing s
   REVIEW.md               # Review feedback (written after PLAN_REVIEW)
   VALIDATION.md           # Validation results with evidence (written after VALIDATE)
   SESSION.log             # Append-only activity log (written from EXECUTE onward)
-  HANDOFF.md              # Workspace handoff for complex features (written in DONE, optional)
+  HANDOFF.md              # Workspace handoff (written in DONE phase for workspace mode, optional)
 ```
 
 ## FEATURE.md (main state file)
@@ -33,6 +33,7 @@ milestone_current: M-002
 last_checkpoint: 2025-02-12T10:30:00Z
 last_commit: def456
 interaction_mode: interactive  # or "autonomous"
+analysis_only: false  # true when task is research/analysis, no code changes
 ambiguity_score: 0.15  # weighted ambiguity from refiner (0.0-1.0, gate: <= 0.2)
 token_budget_usd: null  # optional, set via --budget flag (null = unlimited)
 ---
@@ -228,6 +229,14 @@ Entry types:
 | `STAGNATION` | Fix cycle max reached — classification and recovery action taken |
 | `EVOLUTIONARY_LOOP` | Acceptance criteria found to be wrong — looping back to REFINE with evidence |
 | `SESSION_COMPLETE` | All phases done (includes grand totals) |
+
+Example entries for advanced entry types:
+
+```
+[2025-02-12T10:00:00Z] DRIFT_CHECK: M-001 | planned_files: 5 | actual_files: 7 | unplanned: 2 (config.ts, utils.ts) | test_ratio: 0.4
+[2025-02-12T10:01:00Z] STAGNATION: T-003 | classification: complexity_underestimate | action: split_task
+[2025-02-12T10:02:00Z] EVOLUTIONARY_LOOP: criteria F2 wrong — spec says 404 but system correctly returns 204 for empty | action: loop_to_REFINE
+```
 
 Token and duration values are per-agent cumulative (implementer + spec reviewer + code quality reviewer summed for each task).
 

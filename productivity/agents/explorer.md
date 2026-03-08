@@ -72,6 +72,15 @@ For each pattern relevant to the feature, document:
 
 (Show 2-3 patterns. If variations exist, show each with its location.)
 
+### Build Environment
+- Language: <detected language and version>
+- Test: `<test command>` (<framework>)
+- Lint: `<lint command>` (<tool>)
+- Build: `<build command>` (<tool>)
+- Type check: `<typecheck command>` (<tool>)
+- Format: `<format command>` (<tool>)
+(Detect from package.json scripts, Makefile targets, pyproject.toml, Cargo.toml, go.mod, CI config)
+
 ### Dependencies
 - Internal module dependencies
 - External library usage

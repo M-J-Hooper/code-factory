@@ -106,16 +106,16 @@ REPO_ROOT=$(git rev-parse --show-toplevel)
 
 Check `$ARGUMENTS` for the `--auto` flag. If present, strip it from arguments and pre-select autonomous mode below.
 
-### 1b: Budget Configuration (Optional)
+### 1a: Parse Flags
 
-Check arguments for `--budget <USD>`. If present:
-1. Strip `--budget <value>` from arguments
-2. Store in FEATURE.md frontmatter as `token_budget_usd: <value>`
-3. The orchestrator tracks cumulative token cost and pauses when approaching the budget
+Parse `$ARGUMENTS` for flags before any preferences:
+- `--auto` → strip from arguments, pre-select autonomous mode
+- `--budget <USD>` → strip from arguments, validate positive number, store as `token_budget_usd`
 
+If `--budget` value is not a positive number, warn and ignore.
 If not present, `token_budget_usd` remains null (unlimited).
 
-### 1a: Workspace and Automation Preferences
+### 1b: Workspace and Automation Preferences
 
 **CRITICAL: Present ALL four options exactly as written. Never omit the Workspace option.**
 
@@ -157,7 +157,7 @@ Record choices:
 - `base_branch`: `default`, the current branch name, or the user-typed branch name
 - `interaction_mode`: `interactive` or `autonomous`
 
-### 1b: Source Isolation Rule
+### 1c: Source Isolation Rule
 
 | Workdir Mode | Where code changes go | Where state files go | Source repo touched? |
 |--------------|----------------------|---------------------|---------------------|
@@ -208,6 +208,8 @@ Include age in the run list. When listing runs, add a "Clean up stale/abandoned 
    - Route to **New Mode** (Step 4)
 
 3. **Feature description, active runs exist** — `$ARGUMENTS` is a feature description and active runs exist:
+   - **Autonomous mode**: Auto-select "Start new feature" (the query is clearly a new feature description).
+   - **Interactive mode**:
 ```
 AskUserQuestion(
   header: "Active runs found",
@@ -260,26 +262,7 @@ STATE_ROOT=~/docs/plans/do
 mkdir -p "$STATE_ROOT/$SHORT_NAME"
 ```
 
-Create the initial state file at `$STATE_ROOT/$SHORT_NAME/FEATURE.md`:
-
-```yaml
----
-schema_version: 1
-short_name: <short-name>
-repo_root: <REPO_ROOT>
-worktree_path: <WORKDIR_PATH or null if same as repo_root>
-workdir_mode: <worktree|branch_only|current_branch|workspace>
-base_branch: <default|branch-name>
-branch: <branch name from Step 4a, or current branch>
-base_ref: <base commit SHA>
-current_phase: REFINE
-phase_status: not_started
-milestone_current: null
-last_checkpoint: <ISO timestamp>
-last_commit: null
-interaction_mode: <interactive|autonomous>
----
-```
+Create the initial state file at `$STATE_ROOT/$SHORT_NAME/FEATURE.md` using the FEATURE.md schema from [references/state-file-schema.md](references/state-file-schema.md), with `current_phase: REFINE` and `phase_status: not_started`.
 
 ### 4c: Context Hydration
 
@@ -289,7 +272,8 @@ This grounds all downstream phases in actual content rather than link-only refer
 
 | Source | Detection | Action |
 |--------|-----------|--------|
-| URLs (http/https) | Extract from feature description | `WebFetch` each URL, save summary to `$STATE_ROOT/$SHORT_NAME/CONTEXT/` |
+| GitHub repos | `github.com/<owner>/<repo>` (no `/pull/`, `/issues/`, etc.) | `git clone --depth 1` to `/tmp/<repo>`, set as analysis target |
+| URLs (http/https) | Extract from feature description (non-repo URLs) | `WebFetch` each URL, save summary to `$STATE_ROOT/$SHORT_NAME/CONTEXT/` |
 | GitHub PRs/issues | `#NNN` or GitHub URL patterns | `gh pr view` or `gh issue view`, save to `CONTEXT/` |
 | Ticket references | JIRA-NNN, PROJ-NNN patterns | Fetch via CLI if available, save to `CONTEXT/` |
 
@@ -363,7 +347,41 @@ This brainstorm feeds into a /do workflow — the sharpened problem will inform 
 
 ## Step 5: Dispatch Orchestrator (New Mode)
 
-Dispatch to orchestrator with workdir already set up:
+**If `analysis_only` is true** (detected in Step 3 rule 0), use the analysis-only dispatch:
+
+```
+Task(
+  subagent_type = "productivity:orchestrator",
+  description = "Analyze: <short description>",
+  prompt = "
+<feature_request>
+<the user's feature description>
+</feature_request>
+
+<state_path>
+~/docs/plans/do/<short-name>/FEATURE.md
+</state_path>
+
+<repo_root>
+<REPO_ROOT>
+</repo_root>
+
+<hydrated_context>
+<contents of all files in ~/docs/plans/do/<short-name>/CONTEXT/, if any>
+</hydrated_context>
+
+<task>
+This is an analysis-only task.
+Route through: REFINE -> RESEARCH -> EXECUTE (write analysis document) -> DONE
+Skip PLAN_DRAFT, PLAN_REVIEW, and VALIDATE.
+The EXECUTE phase writes the output document, not code.
+No git workflow, no commits, no PR.
+</task>
+"
+)
+```
+
+**Otherwise**, dispatch the full workflow orchestrator:
 
 ```
 Task(
@@ -464,11 +482,16 @@ Task(
 <output of: git status --porcelain from workdir>
 </resume_context>
 
+<phase_artifacts>
+RESEARCH.md: <first 20 lines or "## Problem Statement" section, if file exists>
+PLAN.md: <milestones list + current task progress, if file exists>
+</phase_artifacts>
+
 <task>
 Resume an interrupted feature development workflow.
 Work from <WORKDIR_PATH>. State files are in ~/docs/plans/do/<short-name>/ (outside the repo).
-Read FEATURE.md and phase artifacts (RESEARCH.md, PLAN.md, etc.) to understand context and progress.
-The resume_context above provides recent activity, commits since base, and uncommitted changes.
+The phase_artifacts above provide compressed context from prior phases.
+Read full phase artifacts from disk only if more detail is needed.
 Reconcile git state (branch, working tree), then continue from the current phase and task.
 </task>
 "

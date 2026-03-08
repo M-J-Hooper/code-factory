@@ -253,9 +253,14 @@ If user selects "Adjust specification" or "Refine further", incorporate feedback
 
 **Autonomous mode:** The refiner classifies the description's completeness. If well-specified (4+ dimensions clear), it synthesizes directly without asking questions. If vague, it uses codebase context to make reasonable assumptions, logs them in Decisions Made, and proceeds.
 
+**Ambiguity score gate:** After the refiner completes, read `ambiguity_score` from FEATURE.md frontmatter.
+If score > 0.2, do NOT proceed — send the spec back to the refiner for more clarification.
+Only transition to RESEARCH when ambiguity_score ≤ 0.2.
+
 **Exit criteria:**
 - Refined specification exists with: problem statement, chosen approach, desired outcome, scope, behavior spec, and acceptance criteria
 - Approach has been explored (2-3 alternatives considered) and user preference confirmed (interactive) or best approach selected with rationale logged (autonomous)
+- Ambiguity score ≤ 0.2 (gate enforced)
 - User has explicitly approved the specification (interactive) or refiner classified it as sufficiently detailed (autonomous)
 
 **Transition:** Update `current_phase: RESEARCH`, `phase_status: not_started`
@@ -296,10 +301,11 @@ If user selects "Adjust specification" or "Refine further", incorporate feedback
      3. Key Types/Functions — types and functions that will be used or extended
      4. Integration Points — where to add new code, which patterns to follow
      5. Conventions — naming, file organization, testing patterns in this codebase
-     6. Dependencies — internal module and external library dependencies
-     7. Risk Areas — complex, fragile, or heavily-coupled code requiring careful changes
-     8. Findings (facts only) — each with `file:symbol` citation
-     9. Open Questions — things you could not determine
+     6. Build Environment — language, test/lint/build/typecheck/format commands (detect from package.json, Makefile, pyproject.toml, Cargo.toml, go.mod, CI config)
+     7. Dependencies — internal module and external library dependencies
+     8. Risk Areas — complex, fragile, or heavily-coupled code requiring careful changes
+     9. Findings (facts only) — each with `file:symbol` citation
+     10. Open Questions — things you could not determine
      </task>
 
      <constraints>
@@ -546,7 +552,10 @@ AskUserQuestion(
    - Log feedback in REVIEW.md
    - Transition back to PLAN_DRAFT
 
-5. If plan approved by reviewer, spawn `red-teamer` in plan mode:
+5. If plan approved by reviewer, spawn `red-teamer` in plan mode.
+   **Optimization**: Dispatch reviewer and red-teamer in parallel (step 2 and 5) when possible — the red-teamer does not depend on reviewer output. Both read the same PLAN.md and RESEARCH.md. If the reviewer requires changes, discard the red-team results and loop back to PLAN_DRAFT. Otherwise merge both sets of findings.
+
+   Red-teamer dispatch:
    ```
    Task(
      subagent_type = "productivity:red-teamer",
@@ -700,7 +709,15 @@ Select the model for each implementer dispatch based on task complexity from the
 | Risk: High, 4+ files, novel patterns, security | (default — opus) | Complex reasoning required |
 
 Override the implementer's default model by setting `model` in the Task call when routing to sonnet.
-Apply the same routing to reviewers: low-risk tasks get sonnet reviewers, medium/high get opus.
+
+**Reviewer model routing** (apply the same cost-aware routing):
+
+| Task Risk | Implementer | Spec Reviewer | Quality Reviewer |
+|-----------|-------------|---------------|-----------------|
+| Low | sonnet | sonnet | sonnet |
+| Medium | opus | sonnet | opus |
+| High | opus | opus | opus |
+
 When in doubt, use the agent's default model.
 
 **Step 1.5: Shift-Left Validation (Deterministic)**

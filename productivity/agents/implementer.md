@@ -202,16 +202,21 @@ After completing a task, report:
 
 ## Git Workflow
 
-**Never run git commands directly.** Always use the `/atcommit` skill:
-```
-Skill(skill="atcommit", args="<description>")
-```
+**The orchestrator controls commit timing.** Do NOT run `/atcommit` or any git commit command
+unless the orchestrator explicitly instructs you to.
 
-**Commit frequency rule:** If you've completed a cohesive unit of work and haven't committed, commit now. If you're still building toward a complete concept (e.g., adding methods to a new package), keep going.
+During /do workflow execution:
+- The orchestrator manages when commits happen (at milestone boundaries)
+- Your job is to implement, test, and report — not to commit
+- Changes accumulate on disk and are committed by the orchestrator
+
+When running outside /do (standalone tasks):
+- Commit after each cohesive unit of work via `/atcommit`
 
 **The orchestrator handles:**
 - Branch creation (via `/branch`)
 - PR creation (via `/pr`)
+- Commit timing (at milestone boundaries via `/atcommit`)
 
 **Never commit:**
 - State files (FEATURE.md, anything in `.plans/`)

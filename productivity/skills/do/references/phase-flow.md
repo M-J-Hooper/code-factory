@@ -70,7 +70,7 @@ Tests pass -> /atcommit (remaining) -> git push -> /pr (create PR) -> /pr-fix (v
 
 ## PLAN_REVIEW Phase
 
-**Three-step review: consistency check → substantive review → red-team.**
+**Three-step review: consistency check → parallel substantive review + red-team.**
 
 1. Spawn `consistency-checker` to fix internal inconsistencies in PLAN.md before substantive review:
    - Iteratively scans for contradictions, mismatched task IDs, file path inconsistencies, count mismatches, terminology drift, dangling references
@@ -82,17 +82,20 @@ Tests pass -> /atcommit (remaining) -> git push -> /pr (create PR) -> /pr-fix (v
 
 2. Re-read PLAN.md after consistency checker completes (it may have been edited).
 
-3. Spawn `reviewer` for substantive critique (coverage, path verification, research cross-check, dependency analysis, safety, executability)
-- Output: Review report, required changes
-- May loop back to PLAN_DRAFT
+3. Spawn `reviewer` AND `red-teamer` **in parallel** (both in a single message):
+   - Both read the same PLAN.md and RESEARCH.md — they are independent
+   - `reviewer`: substantive critique (coverage, path verification, research cross-check, dependency analysis, safety, executability)
+     - Output: Review report, required changes
+   - `red-teamer` in plan mode: adversarial challenge of plan assumptions
+     - Attacks assumptions (checks evidence strength in RESEARCH.md)
+     - Enumerates failure modes per milestone (external deps, internal assumptions, data edge cases)
+     - Identifies security attack vectors and missing recovery paths
+     - Assesses blast radius of shared code changes
+     - Output: Red Team Plan Review with Critical / High / Medium findings
 
-4. If reviewer approves, spawn `red-teamer` in plan mode — adversarial challenge of plan assumptions:
-   - Attacks assumptions (checks evidence strength in RESEARCH.md)
-   - Enumerates failure modes per milestone (external deps, internal assumptions, data edge cases)
-   - Identifies security attack vectors and missing recovery paths
-   - Assesses blast radius of shared code changes
-   - Output: Red Team Plan Review with Critical / High / Medium findings
-   - **Critical findings** → loop back to PLAN_DRAFT (must address before execution)
+4. After both complete, merge findings:
+   - If reviewer has required changes → loop back to PLAN_DRAFT
+   - **Critical red-team findings** → loop back to PLAN_DRAFT (must address before execution)
    - **High findings (interactive)** → present to user, ask whether to address or track as risks
    - **High findings (autonomous)** → log as tracked risks, proceed
    - **Medium findings** → logged as risks to watch during EXECUTE
@@ -228,6 +231,19 @@ When a task introduces or changes behavior, follow this exact sequence — no ex
 **Milestone boundary commits:**
 When all tasks in a milestone are complete and tests pass, the orchestrator (NOT the implementer) runs `/atcommit` to organize all accumulated changes into atomic commits. `/atcommit` analyzes file dependencies and groups changes by concept (e.g., a complete package with tests, an integration layer, configuration + wiring). This produces 3-5 well-organized commits for a typical feature instead of one commit per task.
 
+**Drift Measurement** (deterministic — at each milestone boundary after committing):
+
+Compare plan vs reality:
+
+| Check | Detection | Threshold | Action |
+|-------|-----------|-----------|--------|
+| Unplanned files | `git diff --name-only <base_ref>..HEAD` vs File Impact Map | >20% unplanned | Log warning, review with user |
+| Test ratio | New test files / New source files | <0.3 | Log warning, may need more tests |
+| Scope drift | Count of tasks marked "Extra" in spec reviews | >2 per milestone | Log DEVIATION_MINOR |
+| New public APIs | Grep for exported functions not in plan | Any unplanned | Log for review |
+
+Log: `[<timestamp>] DRIFT_CHECK: M-XXX | planned_files: N | actual_files: N | unplanned: N (<list>) | test_ratio: N`
+
 **Never:**
 - Dispatch multiple implementer subagents in parallel (causes conflicts)
 - Skip either review stage (spec compliance OR code quality)
@@ -301,3 +317,8 @@ Skip if the feature is purely internal (no user-facing changes).
 - Extracts reusable learnings (conventions, corrections, gotchas) into knowledge files
 - Runs after archival — cheap post-session knowledge capture
 - Dispatch with `run_in_background: true` — this is a non-blocking post-session task that should not delay completion reporting
+
+**Early learning extraction** (in addition to DONE):
+- At DEVIATION_MAJOR events — significant discoveries worth capturing immediately
+- At session suspension (user says "stop here" during EXECUTE) — partial learnings are better than lost learnings
+- At VALIDATE failures that loop back to EXECUTE — captures what went wrong

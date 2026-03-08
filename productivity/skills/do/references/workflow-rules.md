@@ -52,6 +52,24 @@ For best results with /do, set effort level to High:
 
 High effort enables full reasoning across all phases, reducing rework from shallow analysis.
 
+## Budget Awareness
+
+If `token_budget_usd` is set in FEATURE.md frontmatter:
+- Track cumulative token cost after each TASK_COMPLETE
+- Warn at 80% of budget, pause at 100%
+- Interactive: ask user whether to continue, increase budget, or stop
+- Autonomous: stop and report "Budget limit reached"
+
+## Service Degradation
+
+| Service | If Unavailable | Action |
+|---------|---------------|--------|
+| Confluence MCP | Search returns error | Continue with web-only research, log warning |
+| Context7/DeepWiki | Not configured | Fall back to WebSearch for library docs |
+| Git remote | Push fails | Save state, warn user, do not block DONE |
+| CI | Timeout or unavailable | Proceed to PR, note CI pending in PR description |
+| WebSearch/WebFetch | Network error | Proceed with codebase-only research, flag gaps |
+
 ## Context Management
 
 /do is a long-running workflow that dispatches many subagents.
@@ -60,6 +78,10 @@ The orchestrator manages its own context through subagent isolation —
 each subagent gets a fresh context with only the data it needs.
 If the orchestrator hits context limits, it uses state files as external memory
 and can re-load context from disk after compaction.
+
+At each MILESTONE_COMPLETE, the orchestrator should assess context usage.
+If approaching limits: write full state to disk, rely on auto-compact,
+then re-read FEATURE.md + PLAN.md + SESSION.log tail to restore.
 
 ## Interaction Mode Rules
 
