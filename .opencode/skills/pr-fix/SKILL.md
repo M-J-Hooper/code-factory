@@ -249,9 +249,14 @@ git push
 
 **If push fails due to diverged branch:** inform the user. Do NOT force-push. Let the user decide.
 
-## Step 8: CI Validation + Automated Reviews (Parallel)
+## Step 8: CI Validation + Automated Reviews
 
-**This step ALWAYS runs** — even when no unresolved review threads were found in Step 2. CI validation and automated reviews are mandatory parts of the pr-fix workflow. Do NOT skip this step.
+**This step ALWAYS runs** — even when no unresolved review threads were found in Step 2.
+
+**Sequencing rule:** Steps 8a → 8b → 8c execute in order. Each substep has its own prompt.
+Do NOT combine them into a single question.
+Do NOT skip 8b or 8c after completing 8a.
+Do NOT write a summary or "Next Steps" until ALL three substeps have completed.
 
 After pushing (or if no push was needed because there were no threads to fix), trigger bot reviews and monitor CI. Bot reviews don't depend on CI — start them early so they complete during CI.
 
@@ -291,6 +296,8 @@ AskUserQuestion(
 
 If triggering: post `@greptileai review` and `@codex` comments now per [references/automated-review-loop.md](references/automated-review-loop.md) Phase 1. **Do NOT wait here** — bots review in background while CI runs in 8b. Step 8c will poll and wait for their responses.
 
+**After 8a completes → proceed to 8b.** Do not skip, summarize, or exit.
+
 ### 8b: CI Validation Loop
 
 **If `--auto` mode:** Proceed with "Yes — watch and fix" (no prompt).
@@ -316,6 +323,8 @@ Follow the CI validation loop in [references/ci-validation-loop.md](references/c
 - **"Yes — watch and fix"**: full loop — wait for CI, analyze failures, fix, commit, push, recheck (max 3 iterations).
 - **"Just watch"**: wait for CI to complete and report results. No fixes applied.
 
+**After 8b completes → proceed to 8c if reviews were triggered in 8a.** Do not skip, summarize, or exit.
+
 ### 8c: Process Automated Review Feedback
 
 If bot reviews were triggered in 8a, **you MUST wait for their responses before reporting results**. Do NOT assume reviews are already complete — CI may have finished quickly (or was already green), leaving insufficient time for bots to respond.
@@ -327,6 +336,8 @@ Follow [references/automated-review-loop.md](references/automated-review-loop.md
 - **If reviews were not triggered in 8a:** skip this substep.
 
 Append both the CI loop and review loop reports to the Step 9 summary.
+
+**After 8c completes → proceed to Step 9.** The summary is the ONLY place to report final status and next steps.
 
 ## Step 9: Summary
 
