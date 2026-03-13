@@ -208,6 +208,10 @@ rewrite_body() {
     sed "${sed_i[@]}" 's/subagent_type=\([A-Za-z0-9_-]*\)/subagent=\1/g' "$file"
     # MCP tool name references: mcp__<server>__<tool> -> <server>_<tool>
     sed "${sed_i[@]}" 's/mcp__\([^_]*\)__/\1_/g' "$file"
+    # CLAUDE_PLUGIN_ROOT paths: ${CLAUDE_PLUGIN_ROOT}/skills/<name>/<rest> -> ./<rest>
+    # Handles both ${CLAUDE_PLUGIN_ROOT} and $CLAUDE_PLUGIN_ROOT forms
+    sed "${sed_i[@]}" 's|\${CLAUDE_PLUGIN_ROOT}/skills/[^/]*/|./|g' "$file"
+    sed "${sed_i[@]}" 's|\$CLAUDE_PLUGIN_ROOT/skills/[^/]*/|./|g' "$file"
 }
 
 # ---------------------------------------------------------------------------
@@ -246,10 +250,10 @@ main() {
         # --- Skills ---
         if [[ -d "$plugin_dir/skills" ]]; then
             while IFS= read -r skill_path; do
-                local skill_name
+                local skill_name skill_src_dir
                 skill_name=$(basename "$(dirname "$skill_path")")
-                mkdir -p "$SKILLS_DIR/$skill_name"
-                cp "$skill_path" "$SKILLS_DIR/$skill_name/SKILL.md"
+                skill_src_dir=$(dirname "$skill_path")
+                cp -R "$skill_src_dir" "$SKILLS_DIR/$skill_name"
                 rewrite_body "$SKILLS_DIR/$skill_name/SKILL.md"
 
                 skill_count=$((skill_count + 1))

@@ -51,13 +51,13 @@ gh pr view --json number -q '.number' 2>/dev/null
 Fetch actionable review threads using the `get-pr-comments.sh` script. The script handles GraphQL pagination, structured output, and large-output fallback automatically.
 
 ```bash
-${CLAUDE_PLUGIN_ROOT}/skills/pr-fix/get-pr-comments.sh -a {number}
+./get-pr-comments.sh -a {number}
 ```
 
 For comment URLs, pass the full URL instead of the PR number:
 
 ```bash
-${CLAUDE_PLUGIN_ROOT}/skills/pr-fix/get-pr-comments.sh -a "https://github.com/org/repo/pull/42#discussion_r123"
+./get-pr-comments.sh -a "https://github.com/org/repo/pull/42#discussion_r123"
 ```
 
 **If output exceeds 25KB:** the script writes to `/tmp/pr-comments-{owner}-{repo}-{pr}.json` and prints a message to stderr. Use the Read tool to load the data from that path.

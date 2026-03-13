@@ -7,7 +7,7 @@ description: >
   "fix merge", "resolve merge", "help with conflicts", "conflict markers".
 argument-hint: "[optional: specific file to resolve]"
 user-invocable: true
-allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/skills/fix-conflicts/scripts/*), Bash(git add:*), Bash(git rm:*), Bash(git show:*), Bash(git blame:*), Bash(git status:*), Bash(git diff:*), Bash(git log:*), Read, Edit, Grep, Glob, AskUserQuestion
+allowed-tools: Bash(./scripts/*), Bash(git add:*), Bash(git rm:*), Bash(git show:*), Bash(git blame:*), Bash(git status:*), Bash(git diff:*), Bash(git log:*), Read, Edit, Grep, Glob, AskUserQuestion
 ---
 
 # Fix Conflicts
@@ -19,7 +19,7 @@ Announce: "I'm using the fix-conflicts skill to resolve merge conflicts."
 Run the conflict state detector:
 
 ```bash
-${CLAUDE_PLUGIN_ROOT}/skills/fix-conflicts/scripts/get-conflict-state.sh
+./scripts/get-conflict-state.sh
 ```
 
 The output shows the operation type (merge, rebase, revert, cherry-pick), conflicted files with their conflict types, and branch context.
@@ -36,10 +36,10 @@ Then gather history context to understand what each side intended:
 
 ```bash
 # Local commits that touched conflicted files
-${CLAUDE_PLUGIN_ROOT}/skills/fix-conflicts/scripts/get-conflict-history.sh local
+./scripts/get-conflict-history.sh local
 
 # Remote commits that touched conflicted files
-${CLAUDE_PLUGIN_ROOT}/skills/fix-conflicts/scripts/get-conflict-history.sh remote
+./scripts/get-conflict-history.sh remote
 ```
 
 For each conflict, determine:
