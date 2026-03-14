@@ -498,6 +498,14 @@ After the agent returns, report status as in Execute Mode. If the plan is now co
 
 ## Error Handling
 
-- **Plan file not found**: List discovered plans and ask user to select or provide a valid path
-- **Agent failure**: Report what happened, suggest checking the plan's Progress section for partial work, and offer to resume
-- **No task description**: Prompt for one before dispatching
+| Error | Action |
+|-------|--------|
+| Plan file not found | List discovered plans and ask user to select or provide a valid path |
+| Agent failure (timeout or crash) | Report what happened. Check the plan's Progress section for partial work. Offer to resume. |
+| No task description | Prompt for one before dispatching |
+| Plan YAML frontmatter unparseable | Report the parse error with the first 5 lines. Ask user to fix manually or recreate. |
+| Plan modified externally during execution | Re-read the plan before each milestone. If Progress items changed, reconcile by keeping the union of both. |
+| Plan path contains special characters | Reject paths with spaces or non-ASCII. Suggest a slug-safe alternative. |
+| Worktree creation fails | Fall back to "New branch in current directory" option. Report the worktree error. |
+| Context window exhaustion mid-execution | The execplan agent commits frequently. Resume from the last completed Progress item. |
+| No matching worktree or branch on resume | Present the Execute Mode workspace question. If the branch exists on remote, check it out. |

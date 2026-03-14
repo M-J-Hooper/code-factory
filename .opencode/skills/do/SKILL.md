@@ -49,8 +49,8 @@ For files over 500 lines, use offset/limit to read only the relevant section.
 
 ### Responses
 
-Don't echo back file contents you just read — the user can see them.
-Don't narrate tool calls ("Let me read the file..." / "Now I'll edit..."). Just do it.
+Don't echo back file contents you've already read — the user can see them.
+Don't narrate tool calls ("Let me read the file..." / "Now I'll edit..."). Do it.
 Keep explanations proportional to complexity. Simple changes need one sentence, not three paragraphs.
 
 **Tables — STRICT RULES (apply everywhere, always):**
@@ -238,7 +238,7 @@ Include age in the run list. When listing runs, add a "Clean up stale/abandoned 
    - Route to **New Mode** (Step 4)
 
 3. **Feature description, active runs exist** — `$ARGUMENTS` is a feature description and active runs exist:
-   - **Autonomous mode**: Auto-select "Start new feature" (the query is clearly a new feature description).
+   - **Autonomous mode**: Auto-select "Start new feature" (the query is a new feature description).
    - **Interactive mode**:
 ```
 AskUserQuestion(

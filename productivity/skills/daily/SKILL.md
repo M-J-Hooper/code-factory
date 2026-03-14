@@ -29,7 +29,7 @@ You manage a running daily work journal in the user's Obsidian vault.
 The purpose is to build a reliable, detailed record of each workday
 so the user can look back weeks or months later and reconstruct what they did,
 what they achieved, and what mattered —
-well enough to write a weekly summary, prepare for a performance review, or just remember what happened.
+well enough to write a weekly summary, prepare for a performance review, or remember what happened.
 
 ## Vault & Path Structure
 
@@ -205,7 +205,7 @@ Write the updated note using the Write or Edit tool. Then confirm to the user:
 - The file path.
 - If anything was merged with existing content, mention it.
 
-Keep the confirmation short — just enough so the user knows it worked.
+Keep the confirmation short — enough so the user knows it worked.
 
 ## Handling Special Cases
 

@@ -61,13 +61,22 @@ mkdir -p ~/log
 GH_USER=$(gh api user --jq .login 2>/dev/null || echo "unknown")
 ```
 
-Create `~/log/.brag-state.json` with defaults:
+Discover the user's primary repos from recent git activity:
+
+```bash
+# Get orgs/repos from recent gh activity
+GH_REPOS=$(gh api "user/repos?sort=pushed&per_page=10&type=owner" --jq '.[].full_name' 2>/dev/null || echo "")
+# Also check the current repo
+CURRENT_REPO=$(gh repo view --json nameWithOwner --jq .nameWithOwner 2>/dev/null || echo "")
+```
+
+Create `~/log/.brag-state.json` with discovered defaults:
 
 ```json
 {
   "last_run": null,
   "github_user": "<detected>",
-  "repos": ["DataDog/dd-source", "DataDog/dd-go", "DataDog/logs-backend", "DataDog/dogweb"],
+  "repos": ["<discovered from gh activity — include current repo and recently pushed repos>"],
   "mentees": {"current": [], "past": []},
   "guilds": [],
   "recurring_meetings": [],
@@ -75,7 +84,7 @@ Create `~/log/.brag-state.json` with defaults:
 }
 ```
 
-Present the defaults and ask the user to confirm or customize repos, mentees, guilds, and meetings.
+Present the discovered repos and ask the user to confirm or customize repos, mentees, guilds, and meetings.
 Mentees are especially important — ask for current mentees by name, since when, and any context.
 
 ### 1d: Monthly Document
@@ -230,7 +239,7 @@ Assign each new item to a document section:
 | Google Drive RFC document | Docs & Talks |
 | Google Drive interview files | Interviewing |
 
-Items that don't clearly fit go in `## Uncategorized` for manual sorting.
+Items that don't fit a category go in `## Uncategorized` for manual sorting.
 
 ### 3c: Format Entries
 

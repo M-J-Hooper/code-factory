@@ -97,7 +97,9 @@ Pass the full content to the brainstormer agent for continuation.
 
 ## Step 4: Dispatch Brainstormer
 
-Dispatch the brainstormer agent to drive the conversation:
+Dispatch the brainstormer agent to drive the conversation.
+The brainstormer is a problem-focused thinking partner that sharpens vague ideas into clear problem statements through iterative diagnostic questions.
+It asks one question at a time, pushes back on solution-shaped thinking, and updates the brainstorm file after each exchange.
 
 ```
 Task(
@@ -136,7 +138,7 @@ After the brainstormer agent completes, read the brainstorm file and report:
 |-------|-------|
 | **File** | `~/docs/brainstorms/<slug>.md` |
 | **Status** | `draft` / `developing` / `sharp` / `parked` |
-| **Problem sharp?** | Yes/No (apply the Sharp Problem Test) |
+| **Problem sharp?** | Yes/No — apply the Sharp Problem Test: Can you state WHO has the problem, WHAT the problem is, and WHY it matters in one sentence each? If any answer is vague ("users", "it's slow", "it would be nice"), the problem is not sharp yet. |
 | **Next steps** | Suggested actions based on status |
 
 Suggested next steps by status:

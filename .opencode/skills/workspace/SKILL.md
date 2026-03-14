@@ -109,6 +109,26 @@ AskUserQuestion(
 )
 ```
 
+After deriving the final workspace name, check for conflicts:
+
+```bash
+workspaces list 2>/dev/null | grep -q "<final-name>"
+```
+
+If a workspace with that name already exists, ask the user:
+
+```
+AskUserQuestion(
+  header: "Name conflict",
+  question: "Workspace '<final-name>' already exists. What would you like to do?",
+  options: [
+    "Use a different name" -- I'll pick a new name,
+    "Delete and recreate" -- Delete the existing workspace first,
+    "Connect to existing" -- SSH or connect IDE to the existing workspace
+  ]
+)
+```
+
 ### 3b: Create Feature Branch
 
 Create a feature branch and push it to remote so the workspace can check it out:
@@ -140,6 +160,7 @@ workspaces create <name> \
 Omit `--repo` if not in a git repo and user doesn't specify one.
 
 **Do NOT wait for the command to finish.** Report immediately after launching.
+The background task will notify when complete — do not poll or sleep.
 
 ### 3d: Report Creation Status
 

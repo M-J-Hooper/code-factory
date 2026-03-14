@@ -59,6 +59,8 @@ Determine the review complexity tier from the PR details fetched in Step 3:
 
 **Critical path detection:** Auto-escalate to at least Medium tier if any changed file path contains: `auth`, `security`, `permission`, `payment`, `billing`, `migration`, `schema`, `validator`, `sanitiz`, `crypto`, `secret`, `credential`. Also escalate if the PR title or labels mention security fixes, breaking changes, or data integrity.
 
+**Multiple critical paths:** When changed files match multiple critical path patterns (e.g., both `auth` and `payment`), escalate to the deepest tier any single match triggers. Review each critical domain as a separate concern — a PR touching auth AND billing needs both analyzed independently.
+
 ## Step 4: Build Review
 
 Analyze the diff and construct the review using the format below. Scale analysis depth to the complexity tier from Step 3b: Simple PRs focus on correctness and security; Medium PRs cover all categories; Complex PRs add architecture analysis and data flow tracing.
@@ -187,7 +189,7 @@ When reviewing, evaluate against:
 
 | Category | Look For |
 |----------|----------|
-| **Correctness** | Logic errors, nil/null risks, off-by-one, missing error handling, race conditions |
+| **Correctness** | Logic errors, nil/null risks, off-by-one, missing error handling, race conditions (e.g., shared mutable state without locks, concurrent map access, check-then-act without atomicity) |
 | **Security** | Hardcoded secrets, injection vectors (SQL/XSS), insecure deserialization, overly permissive access |
 | **Design** | Over-engineering, missing abstractions, pattern inconsistency, poor separation of concerns |
 | **Testing** | Missing coverage, untested edge cases, weak assertions, brittle tests |
