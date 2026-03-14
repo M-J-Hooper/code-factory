@@ -13,7 +13,7 @@ allowed-tools: Bash(git:*), Read, Grep, Glob
 
 # Atomic Commits
 
-Announce: "I'm using the atomic-commits skill to validate and organize changes into self-contained commits."
+Announce: "I'm using the atcommit skill to validate and organize changes into self-contained commits."
 
 Every commit must build and function correctly when checked out in isolation. This means dependency closure — no commit may reference symbols introduced in later commits.
 

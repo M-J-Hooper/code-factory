@@ -19,6 +19,8 @@ rtfpessoa's personal [Claude Code](https://docs.anthropic.com/en/docs/claude-cod
 | `/notes` | productivity | Obsidian notes: 1:1s, meetings, career plans, promotions |
 | `/performance-feedback` | productivity | Write evidence-backed performance reviews |
 | `/brainstorm` | productivity | Brainstorm and sharpen ideas into clear problem statements |
+| `/datadog` | productivity | Query Datadog products (logs, metrics, APM, monitors) via pup CLI |
+| `/code-simplify` | productivity | Simplify and refactor code for clarity without changing behavior |
 | `/skill-workbench` | productivity | Create or improve skills and agents |
 | `/review` | productivity | Review a pull request with structured findings |
 | `/tour` | productivity | Guided code walkthroughs (interactive or written) |
@@ -52,6 +54,8 @@ rtfpessoa's personal [Claude Code](https://docs.anthropic.com/en/docs/claude-cod
 - `/notes` -- Obsidian notes management: 1:1 records, meeting notes, per-person career plans, promotion proposals, achievements tracking, and general notes. Shares `~/docs/People/` directory with `/daily` for graph integration.
 - `/performance-feedback` -- Evidence-backed performance review writer: gathers data from 1:1 notes, achievements, daily logs, brag docs, GitHub PRs, Jira tickets, and Confluence pages for a specific person over a review period, then synthesizes into structured feedback by dimension (impact, technical quality, collaboration, growth, communication).
 - `/brainstorm` -- Problem-focused brainstorming: sharpens vague ideas into clear problem statements through iterative diagnostic questions. Saves brainstorms to `~/docs/brainstorms/`. Integrated with `/do` as an optional pre-refinement step.
+- `/datadog` -- Datadog product query via pup CLI: APM, logs, metrics, monitors, error tracking, RUM, infrastructure, security signals, incidents, SLOs, synthetics, CI/CD, and 30+ other API domains.
+- `/code-simplify` -- Code simplification across any scope (file, directory, package, branch diff, staged changes, or entire repo). Preserves behavior while improving clarity and maintainability.
 - `/skill-workbench` -- Skill and agent creation/improvement toolkit.
 
 **Agents:**
@@ -72,6 +76,7 @@ rtfpessoa's personal [Claude Code](https://docs.anthropic.com/en/docs/claude-cod
 - `skill-comparator` -- Blind A/B output comparator for skill evaluations.
 - `brainstormer` -- Problem-focused thinking partner for brainstorming sessions.
 - `red-teamer` -- Adversarial reviewer finding failure modes, flawed assumptions, and edge cases.
+- `code-simplifier` -- Single-file code simplification agent for clarity, consistency, and maintainability.
 - `memory-extractor` -- Extracts reusable learnings from session transcripts.
 
 ### git
