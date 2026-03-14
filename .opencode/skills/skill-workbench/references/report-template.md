@@ -23,5 +23,5 @@ Use this template for the Step 5 report in `/skill-workbench`. Omit sections wit
 - **{plugin}**: {old} -> {new}
 
 ### Suggested Follow-ups
-- {anything that needs deeper work via /execplan}
+- {anything that needs deeper work via /do}
 ```

@@ -1,6 +1,6 @@
 # Creating New Skills and Plugins
 
-Reference for creating new skills or plugins during `/skill-workbench` sessions. For significant new features, suggest running `/execplan` instead.
+Reference for creating new skills or plugins during `/skill-workbench` sessions. For significant new features, suggest running `/do` instead.
 
 ## New Skill Checklist
 

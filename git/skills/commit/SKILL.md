@@ -25,7 +25,7 @@ Run in parallel:
 **If no staged and no unstaged changes:** inform the user there is nothing to commit and stop.
 
 **Automatic exclusions:** When staging files, always exclude:
-- `.plans/` directory and `*.plan.md` files (working documents for /do and /execplan)
+- `.plans/` directory and `*.plan.md` files (working documents for /do)
 
 **If there are unstaged changes but nothing staged:**
 

@@ -33,7 +33,7 @@ git branch --show-current  # check for ticket IDs like JIRA-1234
 Categorize every changed file into: **staged**, **unstaged**, **untracked**.
 
 **Automatic exclusions:** When staging files, always exclude:
-- `.plans/` directory and `*.plan.md` files (working documents for /do and /execplan)
+- `.plans/` directory and `*.plan.md` files (working documents for /do)
 
 ## Step 2: Fixup Detection
 

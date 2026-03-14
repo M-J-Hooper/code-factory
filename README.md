@@ -9,7 +9,7 @@ rtfpessoa's personal [Claude Code](https://docs.anthropic.com/en/docs/claude-cod
 | `/do` | productivity | Orchestrate feature delivery with phase/state tracking |
 | `/rfc` | productivity | Write RFCs and design docs with iterative research |
 | `/debug` | productivity | Systematic debugging with root-cause-first workflow |
-| `/execplan` | productivity | Author/review/execute/resume execution plans |
+
 | `/doc` | productivity | Create/update/improve/audit Markdown docs |
 | `/workspace` | productivity | Manage Datadog remote development workspaces |
 | `/reflect` | productivity | Capture session learnings into knowledge files |
@@ -43,7 +43,7 @@ rtfpessoa's personal [Claude Code](https://docs.anthropic.com/en/docs/claude-cod
 - `/rfc` -- RFC authoring workflow with refinement, research, exploration, consistency check, and write phases.
 - `/debug` -- Root-cause-first debugging protocol (`REPRODUCE -> INVESTIGATE -> FIX -> VERIFY`) with persistent state.
 - `/doc` -- Documentation lifecycle management (create, update, improve, maintain, audit, sync, status) with templates.
-- `/execplan` -- Manage ExecPlans in four modes: author, review, execute, and resume.
+
 - `/review` -- Structured PR review across correctness, security, design, testing, and style.
 - `/tour` -- Codebase tours in interactive or written modes.
 - `/workspace` -- Datadog workspace lifecycle management (`create`, `list`, `delete`, `ssh`, `connect`, `validate`).
@@ -71,7 +71,7 @@ rtfpessoa's personal [Claude Code](https://docs.anthropic.com/en/docs/claude-cod
 - `spec-reviewer` -- Verifies implementation matches spec exactly.
 - `code-quality-reviewer` -- Evaluates maintainability/testing/convention quality.
 - `validator` -- Runs checks and validates acceptance criteria with evidence.
-- `execplan` -- Specialized ExecPlan author/reviewer/executor persona.
+
 - `skill-grader` -- Scores evaluation runs with pass/fail evidence.
 - `skill-comparator` -- Blind A/B output comparator for skill evaluations.
 - `brainstormer` -- Problem-focused thinking partner for brainstorming sessions.
