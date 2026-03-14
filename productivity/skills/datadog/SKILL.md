@@ -1,18 +1,14 @@
 ---
 name: datadog
 description: >
-  Use when the user needs to query, investigate, or interact with any Datadog product.
-  This includes APM traces, logs, metrics, monitors, error tracking, RUM, network monitoring,
-  infrastructure hosts, Kubernetes data, security signals, incidents, SLOs, dashboards,
-  synthetics, CI/CD visibility, service catalog, events, cost analysis, cloud integrations,
-  fleet automation, and any other Datadog API domain. Also use when the user mentions
-  "Datadog", "pup", service performance, observability data, production monitoring,
-  alerting, or when they want to look up anything that Datadog tracks.
+  Use when the user needs to query, investigate, or interact with any Datadog product
+  via the pup CLI. Covers APM, traces, logs, metrics, monitors, error tracking, RUM,
+  network, infrastructure, security, incidents, SLOs, synthetics, CI/CD, service catalog,
+  dashboards, cost, cloud integrations, fleet, and 30+ other API domains.
   Triggers: "check logs", "query metrics", "APM traces", "error tracking", "monitors",
   "Datadog", "pup", "service health", "latency", "error rate", "RUM sessions",
-  "network flows", "security signals", "incidents", "SLOs", "dashboards", "synthetics",
-  "infrastructure", "hosts", "Kubernetes", "CI/CD pipeline", "audit logs", "cost",
-  "fleet", "on-call", "service catalog", "observability".
+  "network flows", "security signals", "incidents", "SLOs", "synthetics",
+  "infrastructure", "hosts", "Kubernetes", "CI/CD pipeline", "observability".
 argument-hint: "[query or product domain]"
 user-invocable: true
 allowed-tools: Bash(pup:*), Bash(jq:*)
@@ -24,216 +20,134 @@ Announce: "I'm using the /datadog skill to query Datadog via the pup CLI."
 
 ## Step 1: Verify Authentication
 
-Before any query, verify pup is authenticated:
-
 ```bash
-pup auth status
+pup auth status --agent
 ```
 
-If not authenticated, instruct the user to run `pup auth login` and wait for them to complete it.
-Do not proceed until authentication is confirmed.
+If not authenticated, instruct the user to run `pup auth login` and wait for confirmation.
 
-## Step 2: Classify Intent
+For multi-org setups, use `--org <name>` on all commands to target the correct organization.
+
+## Step 2: Discover Commands
+
+pup is self-documenting. When unsure about a domain's subcommands or flags:
+
+```bash
+pup <domain> --help --agent
+```
+
+This returns structured JSON with every subcommand, flag, type, and default.
+Use this as the primary reference — the patterns below cover common workflows,
+but `pup --help` is the authoritative source for any domain.
+
+## Step 3: Classify Intent and Execute
 
 Determine which pup domain the user's request maps to.
-Many requests span multiple domains — start with the most specific one and chain queries as needed.
+Many requests span multiple domains — start with the most specific, then chain.
 
-| User Intent | Primary Domain | Secondary |
-|-|-|
+| User Intent | Primary | Chain With |
+|-|-|-|
 | Service performance, latency, throughput | `apm` | `traces`, `metrics` |
 | Application errors, exceptions, stack traces | `error-tracking` | `logs`, `traces` |
-| Log search, log patterns, log volume | `logs` | `metrics` (for log-based metrics) |
-| Custom metrics, system metrics, graphing | `metrics` | `dashboards` |
-| Alert status, monitor health, notifications | `monitors` | `downtime`, `slos` |
-| APM spans, distributed traces, flame graphs | `traces` | `apm` |
-| Frontend performance, user sessions, page loads | `rum` | `synthetics` |
-| Network traffic, DNS, TCP, device monitoring | `network` | `infrastructure` |
-| Host inventory, containers, processes | `infrastructure` | `fleet`, `tags` |
-| Security findings, threat detection, compliance | `security` | `audit-logs` |
-| Incident management, postmortems | `incidents` | `cases`, `on-call` |
+| Log search, patterns, volume | `logs` | `metrics` |
+| Custom or system metrics | `metrics` | `dashboards` |
+| Alert status, monitor health | `monitors` | `downtime`, `slos` |
+| Distributed traces, spans | `traces` | `apm` |
+| Frontend performance, user sessions | `rum` | `synthetics` |
+| Network traffic, device monitoring | `network` | `infrastructure` |
+| Host inventory, containers | `infrastructure` | `fleet`, `tags` |
+| Security findings, threat detection | `security` | `audit-logs` |
+| Incident management | `incidents` | `cases`, `on-call` |
 | SLO status, error budgets | `slos` | `monitors` |
-| Synthetic tests, uptime checks | `synthetics` | `monitors` |
-| CI/CD pipelines, test results, flaky tests | `cicd` | `code-coverage` |
-| Service ownership, metadata, dependencies | `service-catalog` | `apm`, `scorecards` |
-| Dashboard management | `dashboards` | `notebooks` |
-| Cost analysis, billing, usage | `cost` | `usage` |
-| Cloud integrations (AWS, GCP, Azure) | `cloud` | `infrastructure` |
-| Fleet automation, agent management | `fleet` | `infrastructure` |
-| Event stream, audit trail | `events` | `audit-logs` |
-| On-call schedules, team management | `on-call` | `incidents` |
-| Change tracking, deployment events | `change-requests` | `events` |
-| Observability pipelines | `obs-pipelines` | `logs` |
-| AI investigations | `investigations` | `logs`, `traces` |
+| Synthetic tests, uptime | `synthetics` | `monitors` |
+| CI/CD pipelines, flaky tests | `cicd` | `code-coverage` |
+| Service ownership, metadata | `service-catalog` | `scorecards` |
+| Cost analysis, billing | `cost` | `usage` |
+| Cloud integrations | `cloud` | `infrastructure` |
 
-## Step 3: Execute Query
+For ready-to-use command patterns per domain, see [references/query-patterns.md](references/query-patterns.md).
 
-Always use `--agent` flag — pup auto-detects AI assistants but being explicit avoids edge cases.
-Always use JSON output (the default) for structured parsing.
+### Global Flags
 
-### Query Syntax Reference
+| Flag | Purpose |
+|-|-|
+| `--agent` | Always include. Enables structured output for AI assistants. |
+| `--from <range>` | Time range. Always specify explicitly. Formats: `1h`, `30m`, `7d`, `2hours`. |
+| `--limit <n>` | Result cap. Start small (10-50), increase only if needed. |
+| `--output table` | Human-readable display. Default is JSON (better for parsing). |
+| `--read-only` | Block all write operations. Use when investigating to prevent accidental changes. |
+| `--org <name>` | Target a specific org in multi-org setups. |
 
-**Logs**: `status:error`, `service:web-app`, `@attr:val`, `host:i-*`, `"exact phrase"`, `AND/OR/NOT` operators, `-status:info` (negation), wildcards with `*`.
+### Query Syntax
 
-**Metrics**: `<aggregation>:<metric_name>{<filter>} by {<group>}`.
+**Logs**: `status:error service:web-app @attr:val host:i-* "exact phrase"`.
+Operators: `AND`, `OR`, `NOT`, `-field:val` (negation), `*` (wildcard).
+
+**Metrics**: `<agg>:<metric>{<filter>} by {<group>}`.
 Example: `avg:system.cpu.user{env:prod} by {host}`.
 Aggregations: `avg`, `sum`, `min`, `max`, `count`.
 
-**APM/Traces**: `service:<name> resource_name:<path> @duration:>5000000000 status:error operation_name:<op>`.
-Durations are always in **nanoseconds**: 1 second = 1,000,000,000 ns, 5ms = 5,000,000 ns.
+**Traces**: `service:<name> resource_name:<path> @duration:>5s status:error`.
+Duration supports shorthand (`5s`, `500ms`) and raw nanoseconds (`5000000000`).
 
-**RUM**: `@type:error @session.type:user @view.url_path:/checkout @action.type:click service:<app-name>`.
+**RUM**: `@type:error @session.type:user @view.url_path:/path service:<app>`.
 
-**Security**: `@workflow.rule.type:log_detection source:cloudtrail @network.client.ip:10.0.0.0/8 status:critical`.
+**Monitors**: `--name` for substring, `--tags` for tag filter, `--query` for full-text search.
 
-**Events**: `sources:nagios,pagerduty status:error priority:normal tags:env:prod`.
+## Step 4: Investigation Workflows
 
-**Monitors**: Use `--name` for substring search, `--tags` for tag filtering (comma-separated). Use `--query` with `pup monitors search` for full-text search.
+When diagnosing issues, follow a structured flow rather than ad-hoc queries.
 
-### Time Ranges
+### Service Degradation
 
-Always specify `--from` explicitly. Relative formats: `5s`, `30m`, `1h`, `4h`, `1d`, `7d`, `30d`.
-Start narrow (1h) and widen only if needed — large ranges are slow and expensive.
+1. `pup monitors list --tags "service:<name>"` — check alerting monitors
+2. `pup metrics query --query "avg:<key_metric>{service:<name>}" --from 1h` — identify anomaly timing
+3. `pup traces search --query "service:<name> @duration:>1s" --from 1h --limit 10` — find slow traces
+4. `pup logs search --query "service:<name> status:error" --from 1h --limit 20` — correlate with errors
+5. `pup apm dependencies --service <name>` — check downstream dependencies
 
-### Common Query Patterns
+### Error Spike
 
-**Investigate a service:**
-```bash
-pup apm services --agent
-pup traces search --query "service:<name>" --from 1h --limit 10 --agent
-pup logs search --query "service:<name> status:error" --from 1h --limit 20 --agent
-pup error-tracking issues --query "service:<name>" --from 1d --agent
-```
+1. `pup logs aggregate --query "service:<name>" --compute count --group-by status --from 4h` — quantify the spike
+2. `pup error-tracking issues --query "service:<name>" --from 1d` — group by error type
+3. `pup traces search --query "service:<name> status:error" --from 1h --limit 10` — get trace-level detail
+4. `pup events search --from 4h` — check for deploy or change events correlating with the spike
 
-**Check monitor health:**
-```bash
-pup monitors list --tags "service:<name>" --agent
-pup monitors search --query "<monitor-name>" --agent
-```
+### Infrastructure Issue
 
-**Metrics investigation:**
-```bash
-pup metrics search --query "<metric-name>" --agent
-pup metrics query --query "avg:<metric>{env:prod} by {host}" --from 1h --agent
-```
+1. `pup infrastructure hosts --filter "service:<name>"` — identify affected hosts
+2. `pup metrics query --query "avg:system.cpu.user{host:<name>}" --from 1h` — check resource utilization
+3. `pup network flows --from 1h` — check network health
+4. `pup fleet agents` — verify agent status
 
-**Log analysis (prefer aggregation over raw search):**
-```bash
-pup logs aggregate --query "service:<name> status:error" --compute count --from 1h --agent
-pup logs search --query "service:<name> status:error" --from 1h --limit 20 --agent
-```
+After each query, summarize findings in plain language, identify patterns, and suggest next queries.
+Chain narrow queries: aggregate first to find patterns, then search for specific examples.
 
-**Infrastructure:**
-```bash
-pup infrastructure hosts --filter "availability-zone:us-east-1a" --agent
-pup tags list --agent
-```
+## Step 5: Critical Gotchas
 
-**Incidents and on-call:**
-```bash
-pup incidents list --agent
-pup on-call teams --agent
-```
+These are the mistakes that waste the most time. pup's own `--help` covers general usage;
+this section covers what agents specifically get wrong.
 
-**CI/CD visibility:**
-```bash
-pup cicd pipelines --from 1d --agent
-pup cicd flaky-tests --from 7d --agent
-pup cicd tests --from 1d --agent
-```
-
-**SLOs:**
-```bash
-pup slos list --agent
-pup slos status --id <slo-id> --agent
-```
-
-**Security:**
-```bash
-pup security signals --query "status:critical" --from 1d --agent
-pup security findings --from 1d --agent
-```
-
-**Service catalog:**
-```bash
-pup service-catalog list --agent
-pup service-catalog get --service <name> --agent
-```
-
-**Network monitoring:**
-```bash
-pup network flows --from 1h --agent
-pup network devices --agent
-```
-
-**RUM:**
-```bash
-pup rum events --query "@type:error" --from 1h --agent
-pup rum sessions --from 1h --agent
-```
-
-**Synthetics:**
-```bash
-pup synthetics tests --agent
-pup synthetics suites --agent
-```
-
-**Cost and usage:**
-```bash
-pup cost attribution --from 30d --agent
-pup usage summary --from 30d --agent
-```
-
-**Dashboards:**
-```bash
-pup dashboards list --agent
-pup dashboards get --id <dashboard-id> --agent
-```
-
-## Step 4: Interpret and Follow Up
-
-After each query:
-
-1. **Summarize findings** in plain language — surface the signal, not the raw JSON.
-2. **Identify patterns** — recurring errors, latency spikes, anomalies.
-3. **Suggest next queries** — if logs show errors, offer to check traces for the same timeframe. If a monitor is alerting, offer to check the underlying metric.
-4. **Cross-reference domains** — chain queries across domains to build a complete picture.
-
-When the user is investigating an issue, follow a natural diagnostic flow:
-monitors → metrics → traces → logs → error-tracking (narrowing from broad to specific).
-
-## Best Practices
-
-- Always specify `--from` to set a time range; most commands default to 1h but be explicit.
-- Start with narrow time ranges (1h) then widen if needed.
-- Filter by service first when investigating: `--query='service:<name>'`.
-- Use `--limit` to control result size; default varies by command (50-200).
-- For monitors, use `--tags` to filter rather than listing all and parsing locally.
-- Use `pup logs aggregate` for counts and distributions instead of fetching all logs and counting locally.
-- Chain narrow queries: first aggregate to find patterns, then search for specific examples.
-- Use `pup monitors search` for full-text search, `pup monitors list` for tag/name filtering.
-
-## Anti-Patterns
-
-These are common mistakes that waste time or produce wrong results:
-
-- Do not omit `--from` on time-series queries — you will get unexpected time ranges or errors.
-- Do not use `--limit=1000` as a first step — start small and refine.
-- Do not list all monitors/logs without filters in large orgs (>10k monitors).
-- APM durations are in **nanoseconds**, not seconds or milliseconds.
-- Do not fetch raw logs to count them — use `pup logs aggregate --compute=count`.
-- Do not use `--from=30d` unless you specifically need a month of data.
-- Do not retry failed requests without checking the error: 401 means re-authenticate, 403 means missing permissions.
-- Do not use `pup metrics query` without specifying an aggregation.
-- Do not pipe large JSON through multiple jq transforms — use query filters at the API level.
+| Gotcha | Detail |
+|-|-|
+| Missing `--from` | Most commands default to 1h but some don't. Always specify `--from` explicitly. |
+| Huge result sets | Never start with `--limit=1000`. Start with 10-50, refine query, then increase. |
+| Counting via raw fetch | Do not fetch all logs and count them locally. Use `pup logs aggregate --compute count`. |
+| Duration units | APM durations in raw form are **nanoseconds**: 1s = 1,000,000,000 ns. Prefer shorthand: `@duration:>5s`. |
+| Missing aggregation | `pup metrics query` requires an aggregation prefix: `avg:`, `sum:`, `max:`, `min:`, `count:`. |
+| Auth errors | 401 = re-authenticate (`pup auth login`). 403 = missing permissions. Do not blindly retry. |
+| Wide time ranges | `--from=30d` is slow. Start narrow (1h), widen only if needed. |
+| Large org listings | Do not list all monitors or logs unfiltered in large orgs. Always add `--tags` or `--query` filters. |
 
 ## Error Handling
 
 | Error | Action |
 |-|-|
-| `pup` not found | Tell user to install: check internal docs for installation instructions |
-| 401 Unauthorized | Run `pup auth login` to re-authenticate |
-| 403 Forbidden | User lacks permissions for this API; suggest checking role assignments |
-| 429 Rate Limited | Wait and retry with a narrower query or smaller `--limit` |
-| Empty results | Widen time range, check query syntax, verify service/tag names exist |
-| Timeout on large queries | Narrow the time range or add more filters |
-| Auth session expired | Run `pup auth refresh` or `pup auth login` |
+| `pup` not found | Tell user to install pup (check internal Datadog docs) |
+| 401 Unauthorized | `pup auth login` to re-authenticate |
+| 403 Forbidden | User lacks API permissions; check role assignments |
+| 429 Rate Limited | Narrow query scope: smaller `--limit`, tighter time range, add filters |
+| Empty results | Widen time range, verify service/tag names with `pup service-catalog list` |
+| Timeout | Narrow `--from` range or add more query filters |
+| Auth expired | `pup auth refresh` or `pup auth login` |
+| Unknown domain | Run `pup --help` to list all available domains |
