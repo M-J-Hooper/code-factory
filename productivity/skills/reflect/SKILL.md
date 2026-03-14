@@ -39,13 +39,17 @@ Parse `$ARGUMENTS` to select mode:
 
 ### 2A.1: Locate Knowledge Files
 
+```bash
+REPO_ROOT=$(git rev-parse --show-toplevel)
+AGENTS_MD=$REPO_ROOT/AGENTS.md
+CLAUDE_MD=$REPO_ROOT/CLAUDE.md
+# Resolve project memory directory (Claude Code encodes repo path as slash-to-dash)
+PROJECT_DIR=$(ls -d ~/.claude/projects/*"$(basename "$REPO_ROOT")"* 2>/dev/null | head -1)
+MEMORY_MD=$PROJECT_DIR/memory/MEMORY.md
+PENDING_FILE=$PROJECT_DIR/pending-learnings.md
 ```
-REPO_ROOT = git rev-parse --show-toplevel
-AGENTS_MD = $REPO_ROOT/AGENTS.md
-CLAUDE_MD = $REPO_ROOT/CLAUDE.md
-MEMORY_MD = ~/.claude/projects/<project>/memory/MEMORY.md
-PENDING_FILE = ~/.claude/projects/<project>/pending-learnings.md
-```
+
+If `PROJECT_DIR` is empty, fall back to searching `~/.claude/projects/` for a directory containing `memory/MEMORY.md`.
 
 Read all three knowledge files to understand current content.
 

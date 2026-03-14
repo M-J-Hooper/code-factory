@@ -69,6 +69,7 @@ rtfpessoa's personal [Claude Code](https://docs.anthropic.com/en/docs/claude-cod
 - `skill-grader` -- Scores evaluation runs with pass/fail evidence.
 - `skill-comparator` -- Blind A/B output comparator for skill evaluations.
 - `brainstormer` -- Problem-focused thinking partner for brainstorming sessions.
+- `red-teamer` -- Adversarial reviewer finding failure modes, flawed assumptions, and edge cases.
 - `memory-extractor` -- Extracts reusable learnings from session transcripts.
 
 ### git

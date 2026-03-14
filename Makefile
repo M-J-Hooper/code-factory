@@ -71,7 +71,7 @@ check-frontmatter: ## Validate SKILL.md files have required YAML frontmatter fie
 check-agents: ## Validate agent files have required YAML frontmatter fields
 	@echo "Checking agent frontmatter..."
 	@ok=true; \
-	agents=$$(find . -path '*/agents/*.md' -not -path './.git/*' -not -path './.plans/*' | sort); \
+	agents=$$(find . -path '*/agents/*.md' -not -path '*/agents/references/*' -not -path './.git/*' -not -path './.plans/*' | sort); \
 	if [ -z "$$agents" ]; then \
 		echo "  SKIP  no agent files found"; \
 	else \
@@ -126,7 +126,7 @@ check-descriptions: ## Validate skill descriptions start with "Use when" (conven
 check-agent-refs: ## Validate skill references in agent files resolve to real skills
 	@echo "Checking agent skill cross-references..."
 	@ok=true; \
-	agents=$$(find . -path '*/agents/*.md' -not -path './.git/*' -not -path './.plans/*' | sort); \
+	agents=$$(find . -path '*/agents/*.md' -not -path '*/agents/references/*' -not -path './.git/*' -not -path './.plans/*' | sort); \
 	if [ -z "$$agents" ]; then \
 		echo "  SKIP  no agent files found"; \
 	else \

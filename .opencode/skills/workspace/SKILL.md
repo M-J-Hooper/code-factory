@@ -269,6 +269,7 @@ Default editor is `intellij` if not specified.
 | SSH connection refused | Run `workspaces ssh-config <name>` to fix SSH config |
 | Workspace not found | Run `workspaces list` to show available workspaces |
 | Create fails | Check Appgate VPN, GitHub auth, and instance type availability |
+| SSH agent forwarding fails | Verify ssh-agent is running and keys are added (`ssh-add -l`). Suggest `eval $(ssh-agent) && ssh-add`. |
 | Missing `workspace-` prefix in SSH | Use `ssh workspace-<name>`, not `ssh <name>` |
 
 ## Reference

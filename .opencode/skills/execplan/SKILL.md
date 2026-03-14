@@ -49,14 +49,7 @@ Determine mode from `$ARGUMENTS` and discovered plans.
 
 **Anti-Pattern: "This Is Too Simple To Need A Plan"**
 
-Every task goes through the authoring process. A config change, a single-function utility, a "quick fix" — all of them. "Simple" tasks are where unexamined assumptions cause the most wasted work. The plan can be short for truly simple tasks, but you MUST NOT skip it.
-
-| Rationalization | Reality |
-|----------------|---------|
-| "This is just a one-line change" | One-line changes have the highest ratio of unexamined assumptions to effort. |
-| "I already know how to build this" | Knowledge of HOW doesn't replace a documented approach for reproducibility. |
-| "The user said 'just do it'" | That's about speed, not about skipping design. Author a concise plan quickly. |
-| "This will be faster without the plan" | Skipping plans causes rework. A brief plan for simple tasks costs little. |
+Every task goes through the authoring process. A config change, a single-function utility, a "quick fix" — all of them. "Simple" tasks are where unexamined assumptions cause the most wasted work. The plan can be short, but you MUST NOT skip it.
 
 **Classification rules — apply in this order:**
 
@@ -178,13 +171,7 @@ Author a new ExecPlan for the following task.
 )
 ```
 
-After the agent returns, report:
-```
-ExecPlan authored: .plans/<slug>.plan.md
-
-To review: /execplan review .plans/<slug>.plan.md
-To execute: /execplan .plans/<slug>.plan.md
-```
+After the agent returns, report the plan path and suggest `/execplan review` or `/execplan <path>` as next steps.
 
 ### Review Mode
 
@@ -267,12 +254,7 @@ Revise the following ExecPlan based on review feedback from the user.
 
 After the revise agent returns:
 - If the user chose "Update and execute", proceed to **Execute Mode** with the updated plan.
-- If the user chose "Update only", report:
-  ```
-  ExecPlan updated: <plan_path>
-
-  To execute: /execplan <plan_path>
-  ```
+- If the user chose "Update only", report the updated plan path and suggest `/execplan <path>` to execute later.
 
 **If the user chose "Execute as-is":**
 

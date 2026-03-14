@@ -76,7 +76,7 @@ Store `PERIOD_START` and `PERIOD_END` for all queries.
 
 Use the same 4-level name resolution as `/notes` and `/daily`:
 
-1. Run `ls ~/docs/People/` to get the list of known people.
+1. Use `Glob(pattern="*/", path="~/docs/People")` to get the list of known people.
 2. Match the input against existing directories:
 
 | Priority | Rule | Example |

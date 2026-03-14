@@ -163,7 +163,7 @@ git status
 
 **If conflict markers remain:** go back to Step 3 for the affected files.
 
-**If the project has a type checker or linter available:** run it to catch semantic conflicts (code that merges cleanly but is logically broken — e.g., a function signature changed on one side while the other side calls it with old arguments).
+**Detect and run type checker or linter** to catch semantic conflicts (code that merges cleanly but is logically broken — e.g., a function signature changed on one side while the other side calls it with old arguments). Detection: check for `tsconfig.json` (→ `npx tsc --noEmit`), `mypy.ini`/`pyproject.toml` with mypy config (→ `mypy`), `Cargo.toml` (→ `cargo check`), or a `lint` target in the Makefile (→ `make lint`). If none found, skip.
 
 ## Step 6: Report Results
 

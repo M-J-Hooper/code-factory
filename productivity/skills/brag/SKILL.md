@@ -161,10 +161,7 @@ git log --author="$(git config user.email)" \
 
 Scan the Obsidian daily journal (written by `/daily`) for entries in the date range.
 
-```bash
-# Find daily notes within range
-find ~/docs/Daily/ -name "*.md" -newer <temp_start> ! -newer <temp_end> 2>/dev/null
-```
+Use `Glob(pattern="*.md", path="~/docs/Daily/")` to list daily notes, then filter by date range from filenames (format: `YYYY-MM-DD.md`).
 
 For each daily note file in range, Read the file and extract items from these sections:
 

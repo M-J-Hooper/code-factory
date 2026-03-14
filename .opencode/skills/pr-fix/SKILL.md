@@ -211,11 +211,7 @@ Response format by category:
 
 **Bot attribution:** When replying to automated reviewer comments (Greptile, Codex, etc.), prefix every reply with `*Automated response from Claude:*` to distinguish from human responses.
 
-**Resolve** the thread using GraphQL mutation with the thread's `thread_id` (see [references/graphql-queries.md](references/graphql-queries.md)):
-
-```bash
-gh api graphql -f query='mutation { resolveReviewThread(input: { threadId: "{thread_id}" }) { thread { isResolved } } }'
-```
+**Resolve** the thread using the GraphQL mutation from [references/graphql-queries.md](references/graphql-queries.md), passing the thread's `thread_id`.
 
 **Do NOT resolve:**
 - Threads where the user chose "Discuss further"

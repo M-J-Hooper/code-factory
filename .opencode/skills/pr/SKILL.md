@@ -310,4 +310,5 @@ This step runs when the mode is **Ready** (user invoked `/pr ready`).
 - **PR already exists**: if `gh pr create` fails because a PR already exists for this branch, report the existing PR URL using `gh pr view --web` or `gh pr view --json url`. Let the user decide whether to update it.
 - **Mark ready fails**: if `gh pr ready` fails, report the error. Common causes: PR not found, PR already merged, insufficient permissions.
 - **No PR for current branch** (Ready mode): inform the user no PR exists and suggest creating one with `/pr`.
+- **Push succeeds but `gh pr create` fails**: check repository permissions (fork vs direct access). Verify `gh auth status`. Report error.
 - **Network or API failure**: report the error from `gh`. Let the user retry.

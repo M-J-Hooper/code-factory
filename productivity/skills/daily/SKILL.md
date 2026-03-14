@@ -69,7 +69,7 @@ But push back on entries that would be meaningless in retrospect.
 
 When the user mentions someone by first name, nickname, or partial name,
 resolve it to their full name using the People directory in the vault.
-Run `ls ~/docs/People/` to get the list of known people.
+Use `Glob(pattern="*/", path="~/docs/People")` to get the list of known people.
 
 Match the input against existing directories using this priority order:
 

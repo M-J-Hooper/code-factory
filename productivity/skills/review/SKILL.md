@@ -211,4 +211,5 @@ When reviewing, evaluate against:
 |-------|--------|
 | `gh` not installed/authenticated | Inform user to run `gh auth login`. Stop. |
 | PR not found | Report error. List recent PRs with `gh pr list --limit 5`. |
+| Empty or binary-only diff | Report that the PR contains no reviewable text changes. List the binary files. |
 | Network/API failure | Report the `gh` error message. Let user retry. |

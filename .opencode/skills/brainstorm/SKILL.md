@@ -38,9 +38,7 @@ Parse `$ARGUMENTS` to determine new vs resume:
 
 ### List mode
 
-```bash
-ls -1t ~/docs/brainstorms/*.md 2>/dev/null
-```
+Use `Glob(pattern="*.md", path="~/docs/brainstorms")` to find existing brainstorm files.
 
 For each file, read the frontmatter to extract `status` and the `# Title`.
 Present as a table and ask whether to resume one or start a new brainstorm.
@@ -158,4 +156,5 @@ Suggested next steps by status:
 | No arguments and no existing brainstorms | Ask for an idea description |
 | Slug conflicts with existing file | Append a number suffix (e.g., `my-idea-2.md`) |
 | Brainstormer agent fails | Save current file state, report error, suggest manual resume |
+| Brainstorm file corrupted or unreadable | Re-create the file with the last known content from conversation history. |
 | User wants to stop mid-conversation | Update file with current state, set status to `developing` or `parked` |

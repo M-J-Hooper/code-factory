@@ -40,19 +40,6 @@ Announce: "I'm using the /do skill to orchestrate feature development with lifec
 When using subagents, include output rules: "Final response under 2000 characters. List outcomes, not process."
 Never call TaskOutput twice for the same subagent. If it times out, increase the timeout — don't re-read.
 
-### File Reading
-
-Read files with purpose. Before reading a file, know what you're looking for.
-Use Grep to locate relevant sections before reading entire large files.
-Never re-read a file you've already read in this session.
-For files over 500 lines, use offset/limit to read only the relevant section.
-
-### Responses
-
-Don't echo back file contents you've already read — the user can see them.
-Don't narrate tool calls ("Let me read the file..." / "Now I'll edit..."). Do it.
-Keep explanations proportional to complexity. Simple changes need one sentence, not three paragraphs.
-
 **Tables — STRICT RULES (apply everywhere, always):**
 - Markdown tables: use minimum separator (`|-|-|`). Never pad with repeated hyphens (`|---|---|`).
 - NEVER use box-drawing / ASCII-art tables with characters like `┌`, `┬`, `─`, `│`, `└`, `┘`, `├`, `┤`, `┼`. These are completely banned.
@@ -89,26 +76,11 @@ Every feature goes through the full workflow. A config change, a single-function
 - User can provide feedback, request changes, or adjust direction at any checkpoint
 - The orchestrator MUST NOT proceed to the next phase until the user explicitly approves
 
-**Autonomous Mode (selected in Step 1 or via `--auto` flag):**
-- Orchestrator makes best decisions based on research
-- Proceeds through all phases without interruption
-- Reports at completion or on blockers
+**Autonomous Mode (selected in Step 1 or via `--auto` flag):** Proceeds through all phases without interruption, reporting at completion or on blockers.
 
 ## State Storage
 
-All state is stored in `~/docs/plans/do/<short-name>/`, independent of the working directory:
-
-```
-~/docs/plans/do/<short-name>/
-  FEATURE.md              # Canonical state (YAML frontmatter + markdown)
-  RESEARCH.md             # Research phase outputs (codebase map, research brief)
-  PLAN.md                 # Execution plan (milestones, tasks, validation strategy)
-  REVIEW.md               # Plan review feedback
-  VALIDATION.md           # Validation results and evidence
-  SESSION.log             # Append-only activity log with token/timing metrics
-```
-
-The `<short-name>` is derived from the feature description (kebab-case, max 40 chars). State lives outside the repo, so no gitignore configuration is needed.
+All state is stored in `~/docs/plans/do/<short-name>/`, independent of the working directory. The `<short-name>` is derived from the feature description (kebab-case, max 40 chars). State lives outside the repo, so no gitignore configuration is needed. See [references/state-file-schema.md](references/state-file-schema.md) for the file listing and schemas.
 
 ## Iteration Behavior
 
@@ -118,13 +90,6 @@ After preferences (Step 1), determine intent from the user's query:
 2. **If fresh start**: Set up workdir (Step 4), create new run, proceed through REFINE phase.
 3. **If resuming**: Parse state file, reconcile git state, continue from current phase (Step 6).
 4. **If iterating**: User is providing feedback on existing work. Address the feedback directly within the current phase.
-
-**Feedback handling during phases:**
-- **REFINE phase feedback**: Adjust specification, clarify requirements
-- **RESEARCH phase feedback**: Adjust scope, investigate additional areas
-- **PLAN_DRAFT feedback**: Modify milestones, tasks, or approach
-- **EXECUTE feedback**: Modify code as requested, commit the change
-- **VALIDATE feedback**: Add tests, fix issues, re-run validation
 
 ## Step 1: Ask Preferences (ALWAYS FIRST)
 
@@ -202,21 +167,11 @@ Record choices:
 
 Search for active runs:
 
-```bash
-find ~/docs/plans/do -maxdepth 2 -name "FEATURE.md" 2>/dev/null
-```
+Use `Glob(pattern="*/FEATURE.md", path="~/docs/plans/do")` to find existing runs.
 
 For each discovered `FEATURE.md`, read it and check whether `current_phase: DONE` is present. Runs without `DONE` are active. Parse active runs for: `short_name`, `current_phase`, `phase_status`, `branch`, `worktree_path`, `last_checkpoint`.
 
-**Stale run detection:** Compute age from `last_checkpoint` for each active run:
-
-| Age | Indicator | Display |
-|-----|-----------|---------|
-| < 7 days | (active) | Show normally |
-| 7-30 days | (stale) | Show with "stale" marker |
-| > 30 days | (abandoned) | Show with "abandoned" marker |
-
-Include age in the run list. When listing runs, add a "Clean up stale/abandoned runs" option that archives them to `~/docs/plans/do/.archive/`.
+**Stale run detection:** Compute age from `last_checkpoint`: < 7 days = active, 7-30 days = stale, > 30 days = abandoned. Include age markers in the run list and offer to archive stale/abandoned runs to `~/docs/plans/do/.archive/`.
 
 ## Step 3: Mode Selection
 
@@ -530,25 +485,7 @@ Reconcile git state (branch, working tree), then continue from the current phase
 
 ## Step 7: Status Mode
 
-If user asks for status without wanting to resume:
-
-```
-Task(
-  subagent = "orchestrator",
-  description = "Status check: <short-name>",
-  prompt = "
-<state_path>
-~/docs/plans/do/<short-name>/FEATURE.md
-</state_path>
-
-<task>
-Report status of a feature development run without making changes.
-Read and parse the state file. Report: current phase, progress percentage, last checkpoint, any blockers.
-Do not modify state or code.
-</task>
-"
-)
-```
+If user asks for status without wanting to resume, dispatch the orchestrator with the state path and a read-only task: "Report status without making changes. Read FEATURE.md and report: current phase, progress percentage, last checkpoint, any blockers. Do not modify state or code."
 
 ## Phase Flow
 
@@ -565,15 +502,4 @@ See [references/phase-flow.md](references/phase-flow.md) for detailed phase desc
 
 ## State File Schema
 
-Full schemas for FEATURE.md, RESEARCH.md, and PLAN.md are in [references/state-file-schema.md](references/state-file-schema.md). Load when creating or parsing state files.
-
-All files live in `~/docs/plans/do/<short-name>/`:
-
-| File | Written After | Contents |
-|------|---------------|----------|
-| `FEATURE.md` | Creation | YAML frontmatter, acceptance criteria, progress, decisions, outcomes |
-| `RESEARCH.md` | RESEARCH | Codebase map, research brief, findings, open questions |
-| `PLAN.md` | PLAN_DRAFT | Milestones, task breakdown (TDD-first), validation strategy, recovery |
-| `REVIEW.md` | PLAN_REVIEW | Review feedback, required changes |
-| `VALIDATION.md` | VALIDATE | Test results, acceptance evidence, quality scorecard |
-| `SESSION.log` | EXECUTE entry | Append-only activity log with token/timing metrics per task and milestone |
+Full schemas and file listing in [references/state-file-schema.md](references/state-file-schema.md). Load when creating or parsing state files.

@@ -106,7 +106,7 @@ Slug = lowercase letters and hyphens, max ~5 words derived from the topic.
 
 When the user mentions someone by first name, nickname, or partial name:
 
-1. Run `ls ~/docs/People/` to get the list of known people.
+1. Use `Glob(pattern="*/", path="~/docs/People")` to get the list of known people.
 2. Match the input against existing directories using this priority order:
 
 | Priority | Rule | Example |

@@ -194,7 +194,7 @@ All automated reviews passed after {N} iteration(s).
 | Error | Action |
 |-------|--------|
 | `gh pr comment` fails | Check permissions. Report error. Skip that reviewer. |
-| Reviewer timeout (5 min) | Mark reviewer as unavailable. Skip in future iterations. Continue with others. |
+| Reviewer timeout (15 min) | Mark reviewer as unavailable. Skip in future iterations. Continue with others. |
 | No bot reviews detected | Reviewer may not be configured. Report to user and skip. |
 | Reply fails | Report error. Log the intended response. Continue with remaining comments. |
 | Push fails after fix | Report error. Do NOT force-push. Let user decide. |
