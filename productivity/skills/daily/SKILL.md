@@ -302,6 +302,30 @@ mcp__atlassian__searchConfluenceUsingCql(
 )
 ```
 
+**W2f: Google Drive Documents**
+
+Scan `~/google-drive/` for files created or modified during the target week.
+These are Google Workspace stubs — filenames and dates are usable, but contents are not readable.
+
+Use Glob to discover files, then filter by modification date:
+
+```bash
+ls -la ~/google-drive/**/*.{gdoc,gslides,gsheet,pptx} 2>/dev/null
+```
+
+Classify by filename pattern:
+
+| Pattern | Weekly Summary Section |
+|---------|----------------------|
+| `[Interview] *.gdoc` | Collaboration (count interviews conducted) |
+| `*.gslides` or `*.pptx` (not `Untitled`) | Key Accomplishments (presentations created/updated) |
+| Filename contains "RFC" | Key Accomplishments (RFC work) |
+| `Notas -` or `Notes -` prefix | Skip — meeting scratch notes |
+| `Untitled *` | Skip |
+| Other `.gdoc` with descriptive title | Note for user context |
+
+If `~/google-drive/` doesn't exist, skip and warn.
+
 #### W3: Synthesize
 
 Organize by theme, not by day or source.
@@ -400,5 +424,6 @@ The folder hierarchy (`YYYY/MM/`) naturally groups them.
 | User input is entirely empty | Ask what they'd like to log using AskUserQuestion |
 | `gh` CLI not installed or not authenticated | Skip GitHub collection in weekly summary, warn user, continue |
 | Atlassian MCP tools not available | Skip Jira/Confluence collection in weekly summary, warn user, continue |
-| No daily notes found for the target week | Proceed with GitHub/Jira/Confluence data only; warn user |
+| `~/google-drive/` directory doesn't exist | Skip Google Drive collection in weekly summary, warn user, continue |
+| No daily notes found for the target week | Proceed with GitHub/Jira/Confluence/Google Drive data only; warn user |
 | Weekly summary file already exists | Read it and ask whether to overwrite or skip |

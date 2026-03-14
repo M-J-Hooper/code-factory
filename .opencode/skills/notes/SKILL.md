@@ -10,7 +10,8 @@ description: >
   "update career plan for Alex", "promotion doc for Sam", "track a win for Jamie",
   "add to my notes", "write down", "log that", "record that",
   "find my notes about", "look up notes on", "meeting notes for",
-  "what did I write about", "search my notes",
+  "what did I write about", "search my notes", "search my google docs",
+  "find in google drive", "check google drive for",
   "X's github", "X's email", "set X's birthday", "update X's role", "what team is X on".
   Does NOT handle: daily work journal entries (use `/daily`),
   monthly brag document or automated accomplishment collection (use `/brag`),
@@ -208,9 +209,14 @@ If the user gives a partial date like "March 15" without a year, store as `MM-DD
 
 1. Glob `~/docs/**/*.md` filtered by relevant filename keywords (exclude `Daily/`).
 2. If no filename match: Grep vault content for keywords (exclude `Daily/`).
-3. Results:
-   - **0 matches**: inform user, offer to create a new note.
-   - **1 match**: Read and display the file.
+3. Search personal Google Drive for matching filenames:
+   `Glob(pattern="**/*.gdoc", path="~/google-drive/")` and filter results by keywords.
+   Also check `*.gslides` and `*.gsheet` patterns.
+   These are Google Workspace stubs — filenames are searchable but contents are not readable.
+   Include matching Google Drive files in results alongside Obsidian notes.
+4. Results:
+   - **0 matches** (in both Obsidian and Google Drive): inform user, offer to create a new note.
+   - **1 match**: Read and display the file (or report the Google Drive filename if it's a stub).
    - **Multiple matches**: use AskUserQuestion to let user pick.
 
 ### EDIT
@@ -251,3 +257,5 @@ This creates two-way links: notes mention people, People files link back to note
 | Request is completely vague (e.g., "create a note") | Use AskUserQuestion to clarify category before doing anything |
 | File has unexpected format | Append content at the end rather than inserting into sections |
 | Glob/Grep returns too many results | Narrow with additional keywords, then present top 5 matches |
+| `~/google-drive/` directory doesn't exist | Skip Google Drive search, continue with Obsidian results only |
+| Google Drive file found but not readable | Report the filename to the user — contents are stubs, not readable |

@@ -175,6 +175,25 @@ When you find relevant pages, fetch the full content:
 atlassian_getConfluencePage(pageId="<id>")
 ```
 
+### Step 2.5 — Personal Google Drive Documents
+
+Search `~/google-drive/` for documents related to the research topic:
+
+```bash
+find ~/google-drive/ -maxdepth 3 \( -name "*.gdoc" -o -name "*.gslides" -o -name "*.gsheet" \) 2>/dev/null | grep -i "<keywords>"
+```
+
+These are Google Workspace stub files — filenames are searchable but contents are not readable.
+If a relevant document is found (design doc, RFC, architecture slides, meeting notes),
+note the filename as a reference and ask the user for details if needed.
+
+Key subdirectories:
+- `~/google-drive/code/` — code-related documents
+- `~/google-drive/interviews/` — interview materials
+- Top-level `.gslides` and `.gdoc` files — presentations, design docs, RFCs
+
+If `~/google-drive/` doesn't exist, skip and continue.
+
 ### Step 3 — External Documentation (General Web Search)
 
 **Search efficiency:** Start with 2-3 targeted searches before fetching content. Fetch only the 3-5 most promising pages. If results are insufficient, refine terms and try again.

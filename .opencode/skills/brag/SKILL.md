@@ -186,25 +186,33 @@ Scan `~/google-drive/` for files created or modified within the date range.
 These are Google Workspace stub files — filenames and dates are usable, but contents are not readable.
 
 ```bash
-find ~/google-drive/ -maxdepth 1 \( -name "*.gdoc" -o -name "*.gslides" -o -name "*.gsheet" -o -name "*.pptx" \) \
+find ~/google-drive/ -maxdepth 3 \( -name "*.gdoc" -o -name "*.gslides" -o -name "*.gsheet" -o -name "*.pptx" \) \
   -newer <temp_start> ! -newer <temp_end> 2>/dev/null
 ```
 
-Classify by filename pattern:
+Also check the `interviews/` subdirectory for interview-specific files organized by candidate name:
+
+```bash
+find ~/google-drive/interviews/ -maxdepth 2 -type f 2>/dev/null
+```
+
+Classify by filename pattern and location:
 
 | Pattern | Brag Section |
 |---------|-------------|
-| `[Interview] *.gdoc` | Interviewing (count by name, don't list each) |
+| `[Interview] *.gdoc` (top-level) | Interviewing (count by name, don't list each) |
+| Files under `interviews/*/` (subdirectory per candidate) | Interviewing (count by subdirectory name) |
 | `*.gslides` or `*.pptx` (not `Untitled`) | Docs & Talks |
 | Filename contains "RFC" | Docs & Talks |
+| Files under `code/` | Direct Impact or Docs & Talks (code-related artifacts) |
 | `Notas -` or `Notes -` prefix | Skip — meeting scratch notes, not brag-worthy |
 | `Untitled *` | Skip |
 | `*.gsheet`, `*.gdraw` | Skip unless title suggests a significant artifact |
 | Promo docs, career docs | Skip — these are inputs, not outputs |
 | Other `.gdoc` with descriptive title | Uncategorized (let user decide) |
 
-For interview files, aggregate into a count:
-"Conducted N interviews: Name1, Name2, ..." → Interviewing section.
+For interview files (both top-level `[Interview]` docs and `interviews/` subdirectories),
+aggregate into a count: "Conducted N interviews: Name1, Name2, ..." → Interviewing section.
 
 For presentations and RFCs, use the filename as the entry title.
 These files can't be read, so ask the user for context if the filename alone is ambiguous.

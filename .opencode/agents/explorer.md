@@ -94,6 +94,10 @@ For each pattern relevant to the feature, document:
 - Complex or fragile code
 - Areas requiring careful changes
 
+### Supplementary Documents (Google Drive)
+- `~/google-drive/<filename>` - What it likely covers (based on filename)
+- (Only include files with relevant titles — skip generic or unrelated docs)
+
 ### Findings (facts only)
 - (Bullets; each includes `file:symbol` or command output)
 - (Only what you directly observed)
@@ -121,6 +125,12 @@ Follow this sequence:
 3. **Pattern discovery**: Search for existing implementations that match the feature's needs (see Pattern Search Strategy below)
 4. **Test patterns**: Locate test files and note testing conventions
 5. **Cross-verify**: For each file you reference, confirm it exists with a Glob or Read call
+6. **Supplementary documents**: Check `~/google-drive/` for architecture docs, design slides, or RFCs related to the codebase:
+   `Glob(pattern="**/*.gdoc", path="~/google-drive/")` and `Glob(pattern="**/*.gslides", path="~/google-drive/")`, filtered by project/feature keywords.
+   These are Google Workspace stubs — filenames are searchable but contents are not readable.
+   Note relevant filenames in your Codebase Map under `### Supplementary Documents`.
+   Ask the user for details on any document that appears relevant to the architecture.
+   If `~/google-drive/` doesn't exist, skip.
 
 ## Pattern Search Strategy
 
