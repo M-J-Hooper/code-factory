@@ -43,6 +43,8 @@ Parse `$ARGUMENTS` to select mode:
 REPO_ROOT=$(git rev-parse --show-toplevel)
 AGENTS_MD=$REPO_ROOT/AGENTS.md
 CLAUDE_MD=$REPO_ROOT/CLAUDE.md
+CLAUDE_LOCAL_MD=$REPO_ROOT/CLAUDE.local.md
+RULES_DIR=$REPO_ROOT/.claude/rules
 # Resolve project memory directory (Claude Code encodes repo path as slash-to-dash)
 PROJECT_DIR=$(ls -d ~/.claude/projects/*"$(basename "$REPO_ROOT")"* 2>/dev/null | head -1)
 MEMORY_MD=$PROJECT_DIR/memory/MEMORY.md
@@ -51,7 +53,8 @@ PENDING_FILE=$PROJECT_DIR/pending-learnings.md
 
 If `PROJECT_DIR` is empty, fall back to searching `~/.claude/projects/` for a directory containing `memory/MEMORY.md`.
 
-Read all three knowledge files to understand current content.
+Read all knowledge files to understand current content.
+Also scan `$RULES_DIR/*.md` if the directory exists — these are scoped rule files.
 
 ### 2A.2: Analyze Session
 
@@ -99,22 +102,56 @@ Use the target file selection rules from the same reference.
 
 Discard silently. Do not report discarded learnings unless the user explicitly asks.
 
-### 2A.5: Summary
+### 2A.5: Self-Improvement Analysis
+
+After extracting learnings, analyze the conversation for self-improvement findings.
+If the session was short or routine with nothing notable, say "Nothing to improve" and skip to 2A.6.
+
+**Finding categories:**
+
+| Category | What to look for |
+|-|-|
+| **Skill gap** | Things the agent struggled with, got wrong, or needed multiple attempts |
+| **Friction** | Repeated manual steps, things the user had to ask for explicitly that should have been automatic |
+| **Knowledge** | Facts about the project, preferences, or setup that the agent didn't know but should have |
+| **Automation** | Repetitive patterns that could become skills, hooks, or scripts |
+
+**For each finding, determine the action:**
+
+| Action | When to use |
+|-|-|
+| CLAUDE.md edit | Permanent project convention or boundary rule |
+| Rules file | Topic-specific instruction scoped to certain file types — create or update `.claude/rules/<topic>.md` with `paths:` frontmatter |
+| Auto memory | Pattern or insight for future sessions |
+| Skill/Hook spec | Document a new skill or hook specification for later implementation |
+| CLAUDE.local.md | Personal WIP context, local URLs, sandbox credentials |
+
+**Auto-apply all actionable findings** — do not ask for approval on each one.
+Apply the changes, then include them in the summary.
+
+### 2A.6: Summary
 
 Present a summary table:
 
 ```markdown
 ## Session Reflection Summary
 
-### Auto-Applied
+### Auto-Applied Learnings
 | Learning | Target | Section |
-|----------|--------|---------|
+|-|-|-|
 | ... | ... | ... |
 
 ### Queued for Review
 | Learning | Confidence | Target |
-|----------|-----------|--------|
+|-|-|-|
 | ... | ... | ... |
+
+### Self-Improvement Findings
+| Finding | Category | Action |
+|-|-|-|
+| ... | ... | ... |
+
+(or "Nothing to improve" if session was routine)
 
 ### Stats
 - Signals analyzed: N
@@ -122,6 +159,7 @@ Present a summary table:
 - Queued: N
 - Duplicates skipped: N
 - Discarded (low confidence): N
+- Self-improvement findings: N applied
 ```
 
 ## Step 2B: Review Mode (`--review`)

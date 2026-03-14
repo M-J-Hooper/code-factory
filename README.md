@@ -13,6 +13,7 @@ rtfpessoa's personal [Claude Code](https://docs.anthropic.com/en/docs/claude-cod
 | `/doc` | productivity | Create/update/improve/audit Markdown docs |
 | `/workspace` | productivity | Manage Datadog remote development workspaces |
 | `/reflect` | productivity | Capture session learnings into knowledge files |
+| `/wrap-up` | productivity | End-of-session checklist: ship, reflect, publish |
 | `/brag` | productivity | Update brag document with recent accomplishments |
 | `/daily` | productivity | Daily work journal and weekly summaries in Obsidian vault |
 | `/notes` | productivity | Obsidian notes: 1:1s, meetings, career plans, promotions |
@@ -44,7 +45,8 @@ rtfpessoa's personal [Claude Code](https://docs.anthropic.com/en/docs/claude-cod
 - `/review` -- Structured PR review across correctness, security, design, testing, and style.
 - `/tour` -- Codebase tours in interactive or written modes.
 - `/workspace` -- Datadog workspace lifecycle management (`create`, `list`, `delete`, `ssh`, `connect`, `validate`).
-- `/reflect` -- Session learning extraction with confidence-based auto-apply/queue behavior.
+- `/reflect` -- Session learning extraction with confidence-based auto-apply/queue behavior. Includes self-improvement analysis for skill gaps, friction, and automation opportunities.
+- `/wrap-up` -- End-of-session checklist: commits via `/atcommit`, deploys if available, cleans up tasks, runs `/reflect` for learnings, and drafts publishable content.
 - `/brag` -- Brag document management: auto-collects work from GitHub, Jira, Confluence, git, and daily logs; asks interactive questions for undiscoverable work; maintains monthly docs at `~/log/YYYY-MM/brag.md`.
 - `/daily` -- Daily work journal and weekly summaries in Obsidian: captures work activity, meetings, achievements, team pulse, travel, learning, and kudos. Weekly summary mode (`/daily summary`) aggregates daily notes with GitHub PRs, Jira tickets, and Confluence pages into dual-format output (Confluence + Slack). Resolves people names via Obsidian People directory with wikilinks and backlinks. Feeds into `/brag` as a data source.
 - `/notes` -- Obsidian notes management: 1:1 records, meeting notes, per-person career plans, promotion proposals, achievements tracking, and general notes. Shares `~/docs/People/` directory with `/daily` for graph integration.

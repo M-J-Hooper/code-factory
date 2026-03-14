@@ -76,10 +76,22 @@ New knowledge about tools, commands, or the codebase.
 ## Target File Selection
 
 | Target | When to use |
-|--------|-------------|
+|-|-|
 | `AGENTS.md` | Repo-wide conventions, workflow rules, structural patterns that all agents should follow |
 | `MEMORY.md` | Personal learnings, debugging insights, tool tips, project-specific knowledge |
 | `CLAUDE.md` | Project instructions that affect all agents but are project-specific (rare — only for new boundary rules) |
+| `.claude/rules/<topic>.md` | Topic-specific instructions scoped to certain file types or areas — use `paths:` frontmatter to scope (e.g., testing rules scoped to `tests/**`) |
+| `CLAUDE.local.md` | Personal WIP context, local URLs, sandbox credentials, current focus areas that shouldn't be committed |
+
+**Decision framework:**
+
+| Question | Target |
+|-|-|
+| Is it a permanent project convention? | `CLAUDE.md` or `AGENTS.md` |
+| Is it scoped to specific file types? | `.claude/rules/` with `paths:` frontmatter |
+| Is it a pattern or insight the agent discovered? | `MEMORY.md` |
+| Is it personal or ephemeral context? | `CLAUDE.local.md` |
+| Is it duplicating content from another file? | Use `@import` reference instead |
 
 **Default to MEMORY.md** when uncertain.
 AGENTS.md changes affect all contributors and should be high-confidence only.
@@ -92,6 +104,38 @@ Before applying any learning:
 2. If the learning already exists → skip
 3. If it refines an existing entry → update (not add)
 4. If it's genuinely new → proceed with apply/queue per confidence threshold
+
+## Self-Improvement Signals
+
+In addition to knowledge extraction, scan the session for meta-level improvement signals.
+These identify how the agent can improve its own behavior, not just what it learned about the codebase.
+
+### Skill Gap Signals (confidence ≥ 0.8)
+
+Things the agent struggled with, got wrong, or needed multiple attempts.
+
+**Indicators**:
+- User corrected agent approach 2+ times on the same task
+- Agent tried multiple approaches before finding the right one
+- Output quality was lower than expected
+
+### Friction Signals (confidence ≥ 0.7)
+
+Repeated manual steps or things the user had to ask for explicitly.
+
+**Indicators**:
+- User repeatedly asked for something that should have been automatic
+- Same manual step performed 3+ times in a session
+- User said "you should always do X" or "why didn't you do Y"
+
+### Automation Signals (confidence 0.5–0.7)
+
+Repetitive patterns that could become skills, hooks, or scripts.
+
+**Indicators**:
+- Same multi-step workflow executed 2+ times
+- User described a process that could be codified
+- Manual orchestration of multiple tools that should be a single skill
 
 ## What to Ignore
 
