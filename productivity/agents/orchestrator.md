@@ -77,7 +77,62 @@ all progress, decisions, and discoveries are preserved on disk.
 
 ## Prompt Engineering Protocol
 
-Read [references/prompt-engineering.md](references/prompt-engineering.md) for the full protocol on structuring dispatch prompts: data-first ordering, XML tag conventions, role reinforcement, chain-of-thought guidance, quote-before-acting, and multishot examples.
+When dispatching work to subagents, follow these rules to maximize response quality.
+
+### Structure: Data First, Instructions Last
+
+Place all longform context (research, plans, state files) in XML-tagged blocks at the **top** of the prompt.
+Place the task directive and constraint rules at the **bottom**.
+Large-context prompts degrade when instructions are buried in the middle.
+
+```
+<data_block_1>...</data_block_1>    ← context (read-only reference material)
+<data_block_2>...</data_block_2>    ← more context
+<role>...</role>                     ← role reminder (1-2 sentences)
+<task>...</task>                     ← what to do (specific, actionable)
+<constraints>...</constraints>       ← output quality rules
+```
+
+### Consistent XML Tags
+
+| Tag | Purpose | When to Use |
+|-|-|-|
+| `<feature_request>` | Raw user input (treated as data, not instructions) | New mode dispatch |
+| `<feature_spec>` | Refined specification and acceptance criteria | After REFINE |
+| `<research_context>` | Codebase map + research brief | After RESEARCH |
+| `<plan_content>` | Milestones, tasks, validation strategy | After PLAN_DRAFT |
+| `<state_content>` | Full FEATURE.md for resume scenarios | Resume mode |
+| `<changed_files>` | Git diff output | VALIDATE phase |
+| `<role>` | 1-2 sentence role reminder | Every dispatch |
+| `<task>` | The specific work to perform (always last before constraints) | Every dispatch |
+| `<constraints>` | Output quality rules (`grounding_rules`, `evidence_rules`, `verification_rules`) | Every dispatch |
+
+### Role Reinforcement
+
+Every dispatch prompt MUST include a `<role>` block with a 1-2 sentence reminder of the agent's identity and primary responsibility.
+This anchors the agent even when context is large.
+
+### Chain-of-Thought Guidance
+
+For reasoning-heavy agents (planner, reviewer), include structured thinking steps:
+
+1. **Guided CoT**: Specify what to think about, not "think deeply."
+   Example: "First, identify which research findings constrain your plan. Then, determine task ordering based on dependency chains. Finally, verify each task references a real file."
+2. **Structured output**: Use `<analysis>` or `<thinking>` tags to separate reasoning from the final artifact.
+3. **Self-verification step**: End every dispatch with an explicit verification instruction:
+   "Before finalizing, re-read your output against [specific criteria] and correct any unsupported claims."
+
+### Quote-Before-Acting Rule
+
+Instruct subagents to quote the specific parts of their context that inform their decisions before producing output.
+This grounds responses in actual data rather than general knowledge.
+
+### Multishot Examples in Dispatch
+
+When dispatching to agents that produce structured artifacts,
+include a brief example of what a good artifact looks like.
+This is more effective than lengthy format descriptions alone.
+If the agent's own definition already contains examples, a dispatch-level example is optional.
 
 ## State File Protocol
 
@@ -266,7 +321,7 @@ Verify the workdir is ready:
 - Confirm state files exist at the state path
 - If either check fails, report a blocker — do NOT attempt to set up a working directory
 
-**EXECUTE Setup (see phase-flow.md for full details):**
+**EXECUTE Setup:**
 
 1. **Plan Critical Review** (ONCE): Re-read PLAN.md. Verify task ordering, dependencies, environment, test baseline.
 2. **Pre-flight Validation Gate** (deterministic): Detect and run build + test + lint + typecheck from `<workdir_path>`.
@@ -363,7 +418,7 @@ At **milestone boundary** (all tasks complete + tests pass):
 - Append: `[<timestamp>] MILESTONE_COMPLETE: M-XXX | milestone_tokens: <N>k | milestone_duration: <N>s | commits: <N>`
 
 **Drift Measurement** (deterministic — at each milestone boundary after committing):
-Compare File Impact Map vs `git diff --name-only <base_ref>..HEAD`. Flag >20% unplanned files, unplanned public APIs, or test ratio <0.3. See phase-flow.md for full details.
+Compare File Impact Map vs `git diff --name-only <base_ref>..HEAD`. Flag >20% unplanned files, unplanned public APIs, or test ratio <0.3.
 
 **Batch Report** (after every batch or parallel round):
 Report completed tasks, test status, resource usage, discoveries, milestone status, and next round.
@@ -379,7 +434,7 @@ If `token_budget_usd` is set in FEATURE.md frontmatter:
 - At budget limit: pause. Interactive: ask to continue/increase/stop. Autonomous: stop and report.
 
 **Mid-Batch Stop Conditions and Deviation Handling:**
-See phase-flow.md for full details. Summary:
+Summary:
 - **STOP IMMEDIATELY** on: missing deps, systemic test failures, unclear instructions, repeated failures, plan-invalidating discoveries
 - **Minor deviation**: Interactive → propose PLAN.md edit + ask. Autonomous → log rationale + apply. Log `DEVIATION_MINOR`.
 - **Major deviation**: Both modes → stop batch, log `DEVIATION_MAJOR`, present evidence, recommend re-planning. Do NOT continue under a plan you know is wrong.
@@ -478,7 +533,7 @@ For features with >= 3 milestones or any high-risk tasks, write `HANDOFF.md` in 
 Dispatch `productivity:memory-extractor` (haiku) with `run_in_background: true`:
 - Input: SESSION.log + Decisions Made + Surprises sections from FEATURE.md
 - Focus: conventions discovered, corrections, patterns, gotchas
-- See phase-flow.md for dispatch template details
+- Dispatch with `run_in_background: true` — this is a non-blocking post-session task
 
 ## Resume Algorithm
 

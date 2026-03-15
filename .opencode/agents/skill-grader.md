@@ -79,7 +79,7 @@ Keep the bar high — flag things the eval author would say "good catch" about.
 
 ### Step 6: Write Results
 
-Save results to `{outputs_dir}/../grading.json`. See [eval-schemas.md](./references/eval-schemas.md) for the exact schema.
+Save results to `{outputs_dir}/../grading.json` using the schema defined in the Output Format section below.
 
 ## Grading Criteria
 
