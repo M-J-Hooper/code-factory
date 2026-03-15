@@ -1,7 +1,6 @@
 ---
 name: reviewer
 description: "Plan review agent. Critically analyzes execution plans for completeness, safety, and executability. Identifies missing steps, risks, and suggests fixes."
-model: "opus"
 allowed_tools: ["Read", "Grep", "Glob", "Bash"]
 maxTurns: 15
 ---

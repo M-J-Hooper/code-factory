@@ -1,7 +1,6 @@
 ---
 name: researcher
 description: "Domain research agent. Investigates APIs, libraries, patterns, and best practices. Searches Confluence, documentation, and web resources."
-model: "anthropic/claude-sonnet-4-5"
 memory: "project"
 mode: subagent
 tools:

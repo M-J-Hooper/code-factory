@@ -1,7 +1,6 @@
 ---
 name: validator
 description: "Validation agent. Runs automated checks, verifies acceptance criteria, and produces validation reports with evidence. Includes quality scorecard grading."
-model: "anthropic/claude-sonnet-4-5"
 mode: subagent
 tools:
   read: true

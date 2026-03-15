@@ -173,7 +173,7 @@ transform_agent() {
 
     # Validate transformed output
     local valid=true
-    for field in "name:" "description:" "mode:" "model:" "tools:"; do
+    for field in "name:" "description:" "mode:" "tools:"; do
         if ! head -30 "$dest" | grep -q "^${field}" 2>/dev/null; then
             # tools: may be absent if agent had no allowed_tools
             if [[ "$field" == "tools:" ]]; then continue; fi

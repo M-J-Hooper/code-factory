@@ -1,7 +1,6 @@
 ---
 name: explorer
 description: "Read-only codebase exploration agent. Maps architecture, finds extension points, locates conventions, and identifies risk hotspots. No editing capabilities."
-model: "anthropic/claude-sonnet-4-5"
 mode: subagent
 tools:
   read: true

@@ -1,7 +1,6 @@
 ---
 name: orchestrator
 description: "Orchestrates multi-phase workflows through a state machine. Owns state persistence, phase transitions, subagent coordination, and git workflow enforcement. Single writer of the canonical FEATURE.md state file."
-model: "opus"
 allowed_tools: ["Read", "Write", "Edit", "Grep", "Glob", "Bash", "Task", "Skill", "AskUserQuestion"]
 memory: "project"
 hooks:

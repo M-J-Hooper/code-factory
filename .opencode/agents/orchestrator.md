@@ -1,7 +1,6 @@
 ---
 name: orchestrator
 description: "Orchestrates multi-phase workflows through a state machine. Owns state persistence, phase transitions, subagent coordination, and git workflow enforcement. Single writer of the canonical FEATURE.md state file."
-model: "anthropic/claude-opus-4-6"
 memory: "project"
 hooks:
   SubagentStop:

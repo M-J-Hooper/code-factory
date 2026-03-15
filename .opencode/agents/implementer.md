@@ -1,7 +1,6 @@
 ---
 name: implementer
 description: "Implementation agent. Executes code changes according to plan tasks with atomic commits. Follows the plan exactly, reports blockers, and tracks progress."
-model: "anthropic/claude-opus-4-6"
 skills: ["atcommit"]
 memory: "project"
 hooks:

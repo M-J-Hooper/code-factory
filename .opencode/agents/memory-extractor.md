@@ -1,7 +1,6 @@
 ---
 name: memory-extractor
 description: "Session learning extractor. Analyzes conversation transcripts to identify reusable knowledge — conventions, corrections, patterns, and gotchas — then updates knowledge files with confidence-based auto-apply."
-model: "anthropic/claude-haiku-4-5"
 mode: subagent
 tools:
   read: true

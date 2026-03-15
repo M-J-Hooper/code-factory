@@ -1,7 +1,6 @@
 ---
 name: skill-grader
 description: "Evaluates expectations against execution transcripts and outputs with structured pass/fail evidence. Critiques eval quality and extracts implicit claims. Use when grading skill test results."
-model: "sonnet"
 allowed_tools: ["Read", "Grep", "Glob", "Bash"]
 ---
 

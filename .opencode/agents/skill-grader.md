@@ -1,7 +1,6 @@
 ---
 name: skill-grader
 description: "Evaluates expectations against execution transcripts and outputs with structured pass/fail evidence. Critiques eval quality and extracts implicit claims. Use when grading skill test results."
-model: "anthropic/claude-sonnet-4-5"
 mode: subagent
 tools:
   read: true
