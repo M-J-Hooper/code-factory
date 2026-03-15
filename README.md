@@ -9,7 +9,6 @@ rtfpessoa's personal [Claude Code](https://docs.anthropic.com/en/docs/claude-cod
 | `/do` | productivity | Orchestrate feature delivery with phase/state tracking |
 | `/rfc` | productivity | Write RFCs and design docs with iterative research |
 | `/debug` | productivity | Systematic debugging with root-cause-first workflow |
-
 | `/doc` | productivity | Create/update/improve/audit Markdown docs |
 | `/workspace` | productivity | Manage Datadog remote development workspaces |
 | `/reflect` | productivity | Capture session learnings into knowledge files |
