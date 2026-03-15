@@ -56,7 +56,7 @@ Check for in-progress or stale tasks:
 
 ```bash
 ls ~/docs/plans/do/*/FEATURE.md 2>/dev/null
-ls .plans/*.plan.md 2>/dev/null
+ls ~/docs/plans/do/*/PLAN.md 2>/dev/null
 ```
 
 For each discovered task or plan file:

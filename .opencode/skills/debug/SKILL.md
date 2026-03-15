@@ -60,22 +60,14 @@ If you catch yourself thinking any of these, STOP and return to Phase 1:
 
 Determine from `$ARGUMENTS` and conversation whether to start a new session or resume:
 
-**If `$ARGUMENTS` references a `.plans/debug/` state file:** Resume mode (Step 1b).
+**If `$ARGUMENTS` references a `~/docs/plans/debug/` state file:** Resume mode (Step 1b).
 **Otherwise:** New session.
 
 ### New Session
 
 ```bash
-REPO_ROOT=$(git rev-parse --show-toplevel)
-STATE_ROOT="$REPO_ROOT/.plans/debug"
+STATE_ROOT=~/docs/plans/debug
 mkdir -p "$STATE_ROOT"
-
-# Verify .plans/ is in global gitignore (core.excludesFile) — do NOT modify the repo's .gitignore
-GLOBAL_IGNORE=$(git config --global core.excludesFile 2>/dev/null)
-if [ -z "$GLOBAL_IGNORE" ] || ! grep -q "^\.plans/$" "$GLOBAL_IGNORE" 2>/dev/null; then
-  echo "WARNING: .plans/ is not in your global gitignore. Add it to avoid committing state files."
-  echo "Run: echo '.plans/' >> $(git config --global core.excludesFile || echo '~/.gitignore') && git config --global core.excludesFile $(git config --global core.excludesFile || echo '~/.gitignore')"
-fi
 ```
 
 Generate a session ID: `<timestamp>-<slug>` (slug from the bug description, kebab-case, max 30 chars).

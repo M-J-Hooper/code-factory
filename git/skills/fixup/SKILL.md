@@ -62,9 +62,7 @@ Determine the **change set** — the files to match against branch commits:
 | Staged files exist | Staged files only |
 | No staged files | All modified + untracked files |
 
-**Automatic exclusions:** Remove `.plans/` directory and `*.plan.md` files from the change set.
-
-**If nothing remains after exclusions:** inform the user and stop.
+**If nothing remains:** inform the user and stop.
 
 ## Step 3: Match Changes to a Commit
 
@@ -132,12 +130,6 @@ Stop.
 
 ```bash
 git add <file1> <file2> ...
-```
-
-Unstage any accidentally included exclusions:
-
-```bash
-git reset HEAD -- '.plans/' '*.plan.md' 2>/dev/null || true
 ```
 
 Create the fixup commit:
