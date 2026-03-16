@@ -20,6 +20,7 @@ rtfpessoa's personal [Claude Code](https://docs.anthropic.com/en/docs/claude-cod
 | `/brainstorm` | productivity | Brainstorm and sharpen ideas into clear problem statements |
 | `/datadog` | productivity | Query Datadog products (logs, metrics, APM, monitors) via pup CLI |
 | `/code-simplify` | productivity | Simplify and refactor code for clarity without changing behavior |
+| `/ai-cli` | productivity | Evaluate and improve CLI design for AI agent usage |
 | `/skill-workbench` | productivity | Create or improve skills and agents |
 | `/review` | productivity | Review a pull request with structured findings |
 | `/tour` | productivity | Guided code walkthroughs (interactive or written) |
@@ -55,6 +56,7 @@ rtfpessoa's personal [Claude Code](https://docs.anthropic.com/en/docs/claude-cod
 - `/brainstorm` -- Problem-focused brainstorming: sharpens vague ideas into clear problem statements through iterative diagnostic questions. Saves brainstorms to `~/docs/brainstorms/`. Integrated with `/do` as an optional pre-refinement step.
 - `/datadog` -- Datadog product query via pup CLI: APM, logs, metrics, monitors, error tracking, RUM, infrastructure, security signals, incidents, SLOs, synthetics, CI/CD, and 30+ other API domains.
 - `/code-simplify` -- Code simplification across any scope (file, directory, package, branch diff, staged changes, or entire repo). Preserves behavior while improving clarity and maintainability.
+- `/ai-cli` -- CLI design evaluation and improvement for AI agents: scores against 7 Agent DX axes (machine-readable output, raw payload input, schema introspection, context window discipline, input hardening, safety rails, agent knowledge packaging), recommends prioritized improvements, and guides implementation.
 - `/skill-workbench` -- Skill and agent creation/improvement toolkit.
 
 **Agents:**
