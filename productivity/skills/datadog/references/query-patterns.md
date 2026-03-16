@@ -1,125 +1,253 @@
-# Query Patterns by Domain
+# Query Patterns, Response Schemas, and jq Filters
 
-Ready-to-use command patterns for common Datadog investigations.
 For domains not listed here, run `pup <domain> --help` to discover subcommands and flags.
 
-## Service Investigation
+## Response Schemas
 
-```bash
-pup apm services --agent
-pup apm dependencies --service <name> --agent
-pup traces search --query "service:<name>" --from 1h --limit 10 --agent
-pup traces aggregate --query "service:<name>" --from 1h --agent
-pup logs search --query "service:<name> status:error" --from 1h --limit 20 --agent
-pup logs aggregate --query "service:<name> status:error" --compute count --from 1h --agent
-pup error-tracking issues --query "service:<name>" --from 1d --agent
-pup service-catalog get --service <name> --agent
+Trust these schemas — do not `| head` to learn structure for documented commands.
+
+### Logs
+
+`pup logs search` returns:
+
+```
+.data.data[].attributes.{
+  attributes: {caller, level, ...},
+  tags: ["service:X", "datadog_index:Y", ...],
+  status, timestamp
+}
 ```
 
-## Monitors and Alerting
+For index breakdown, group by `{datadog_index}`.
 
-```bash
-pup monitors list --tags "service:<name>" --agent
-pup monitors search --query "<monitor-name>" --agent
-pup monitors get --id <monitor-id> --agent
-pup downtime list --agent
-pup slos list --agent
-pup slos status --id <slo-id> --agent
+### APM
+
+`pup apm services list` returns:
+
+```
+.data.data.attributes.services[]   // flat string array of service names
 ```
 
-## Metrics
+`pup apm services stats` returns:
 
-```bash
-pup metrics search --query "<metric-name>" --agent
-pup metrics query --query "avg:<metric>{env:prod} by {host}" --from 1h --agent
-pup metrics list --agent
-pup metrics tags --metric <metric-name> --agent
+```
+.data.data.attributes.services_stats[] with {service, operation, spanKind, hits, requestPerSecond, errorsPercentage}
 ```
 
-## Logs
+`pup apm entities list` returns:
 
-```bash
-pup logs aggregate --query "service:<name> status:error" --compute count --from 1h --agent
-pup logs search --query "service:<name> status:error" --from 1h --limit 20 --agent
-pup logs aggregate --query "service:<name>" --compute count --group-by status --from 1h --agent
+```
+.data.data[].attributes.{id_tags: {service: "..."}, stats: {operation, spanKind}}
 ```
 
-## Infrastructure
+`pup apm dependencies list` returns:
 
-```bash
-pup infrastructure hosts --filter "availability-zone:us-east-1a" --agent
-pup infrastructure hosts --filter "service:<name>" --agent
-pup tags list --agent
-pup fleet agents --agent
+```
+.data.{"<service-name>": {"calls": ["downstream-svc-1", ...]}}
 ```
 
-## Security
+### Synthetics
 
-```bash
-pup security signals --query "status:critical" --from 1d --agent
-pup security findings --from 1d --agent
-pup security rules --agent
-pup audit-logs search --from 1d --agent
+`pup synthetics tests list` returns:
+
+```
+.data.tests[] with {name, public_id, status, tags, config.request.url}
 ```
 
-## Incidents and On-Call
+## jq Filter Patterns
+
+Write complex jq filters to `/tmp/filter.jq` and run `jq -f /tmp/filter.jq /tmp/result.json`.
+
+### Pre-filter Exploration
+
+Run these FIRST for undocumented response shapes:
 
 ```bash
-pup incidents list --agent
-pup incidents get --id <incident-id> --agent
-pup on-call teams --agent
-pup cases search --agent
+jq '.data | keys' /tmp/result.json            # top-level structure
+jq '.data[0]' /tmp/result.json                # first object shape
+jq '.data.data[0]' /tmp/result.json           # nested first object
 ```
 
-## CI/CD
+### Common Filters
 
-```bash
-pup cicd pipelines --from 1d --agent
-pup cicd flaky-tests --from 7d --agent
-pup cicd tests --from 1d --agent
-pup code-coverage branch-summary --agent
+Filter synthetics by service tag:
+
+```jq
+[.data.tests[] | select(any(.tags[]?; . == "service:SVC"))]
 ```
 
-## RUM and Synthetics
+Filter synthetics by URL:
 
-```bash
-pup rum events --query "@type:error" --from 1h --agent
-pup rum sessions --from 1h --agent
-pup rum apps --agent
-pup synthetics tests --agent
-pup synthetics suites --agent
+```jq
+[.data.tests[] | select((.config.request.url // "") | test("PATTERN"; "i"))]
 ```
 
-## Network
+Filter APM stats by service:
 
-```bash
-pup network flows --from 1h --agent
-pup network devices --agent
-pup network interfaces --agent
+```jq
+[.data.data.attributes.services_stats[] | select(.service == "SVC")]
 ```
 
-## Cost and Usage
+Get callers from dependency map:
 
-```bash
-pup cost attribution --from 30d --agent
-pup cost by-org --from 30d --agent
-pup usage summary --from 30d --agent
-pup usage hourly --from 1d --agent
+```jq
+to_entries | map(select(.value.calls | index("SVC"))) | map(.key)
 ```
 
-## Dashboards and Notebooks
+## Domain Commands
+
+### Logs
 
 ```bash
-pup dashboards list --agent
-pup dashboards get --id <dashboard-id> --agent
-pup notebooks list --agent
+pup logs search --query="service:X status:error" --from="1h"
+pup logs query --query="service:X" --from="4h" --to="now"
+pup logs aggregate --query="service:X" --compute count --group-by status --from="1h"
 ```
 
-## Cloud Integrations
+### APM
+
+All APM commands require `--env prod` (or target environment).
+`pup apm flow-map` is unreliable — use `pup apm dependencies list` instead.
 
 ```bash
-pup cloud aws --agent
-pup cloud gcp --agent
-pup cloud azure --agent
-pup integrations list --agent
+pup apm services list --env prod
+pup apm services stats --start EPOCH --end EPOCH --env prod
+pup apm entities list --start EPOCH --end EPOCH --env prod
+pup apm dependencies list --env prod --start EPOCH --end EPOCH
+```
+
+### Monitors
+
+```bash
+pup monitors list [--name="pattern"] [--tags="service:X,team:Y"]
+pup monitors search --query="tag:service:X"
+pup monitors get ID
+```
+
+### Service Catalog
+
+Requires per-service lookups. Does not support team filtering.
+
+```bash
+pup service-catalog list
+pup service-catalog get SERVICE_NAME
+```
+
+### On-Call / Teams
+
+Team names in user questions are often shorthand.
+Use `pup monitors search --query="<name>"` to discover actual tag values first.
+
+```bash
+pup on-call teams list
+pup on-call teams memberships list TEAM_ID
+```
+
+### Incidents
+
+```bash
+pup incidents list
+pup incidents get INCIDENT_ID
+```
+
+### Synthetics
+
+```bash
+pup synthetics tests list
+pup synthetics tests get TEST_ID
+```
+
+### RUM
+
+```bash
+pup rum apps list
+pup rum sessions list --from="1h"
+```
+
+### Error Tracking
+
+```bash
+pup error-tracking issues search
+pup error-tracking issues get ISSUE_ID
+```
+
+### Cost / Usage
+
+```bash
+pup cost projected
+pup cost attribution --start-month=YYYY-MM --fields=team
+pup usage summary --start="YYYY-MM-DD" --end="YYYY-MM-DD"
+```
+
+### Infrastructure
+
+```bash
+pup infrastructure hosts list [--filter="env:production"]
+```
+
+### Events
+
+```bash
+pup events list --from="1h"
+pup events search --query="source:deploy"
+```
+
+### Dashboards
+
+```bash
+pup dashboards list
+pup dashboards get DASH_ID
+```
+
+### Metrics
+
+```bash
+pup metrics search --query="<metric-name>"
+pup metrics query --query="avg:<metric>{env:prod} by {host}" --from="1h"
+pup metrics list
+pup metrics tags --metric <metric-name>
+```
+
+### Security
+
+```bash
+pup security signals --query="status:critical" --from="1d"
+pup security findings --from="1d"
+pup audit-logs search --from="1d"
+```
+
+### CI/CD
+
+```bash
+pup cicd pipelines --from="1d"
+pup cicd flaky-tests --from="7d"
+```
+
+### Network
+
+```bash
+pup network flows --from="1h"
+pup network devices
+```
+
+### Cloud Integrations
+
+```bash
+pup cloud aws
+pup cloud gcp
+pup cloud azure
+pup integrations list
+```
+
+### SLOs
+
+```bash
+pup slos list
+pup slos status --id <slo-id>
+```
+
+### Downtime
+
+```bash
+pup downtime list
 ```

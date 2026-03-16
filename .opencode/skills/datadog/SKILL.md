@@ -11,50 +11,45 @@ description: >
   "infrastructure", "hosts", "Kubernetes", "CI/CD pipeline", "observability".
 argument-hint: "[query or product domain]"
 user-invocable: true
-allowed-tools: Bash(pup:*), Bash(jq:*)
+allowed-tools: Bash(pup:*), Bash(jq:*), Read, Write
 ---
 
 # Datadog Product Query
 
 Announce: "I'm using the /datadog skill to query Datadog via the pup CLI."
 
-## Step 1: Verify Authentication
+## Step 1: Execution Strategy
 
-```bash
-pup auth status --agent
-```
+pup is installed and pre-authenticated. Do not check if it exists or verify auth — use it directly.
 
-If not authenticated, instruct the user to run `pup auth login` and wait for confirmation.
+All pup output is JSON. Follow these rules for efficient querying:
 
-For multi-org setups, use `--org <name>` on all commands to target the correct organization.
+| Rule | Detail |
+|-|-|
+| jq filters to file | Write jq to `/tmp/filter.jq`, run `jq -f /tmp/filter.jq`. Avoids shell escaping issues with zsh `!`, backticks, nested quotes. Exception: trivial access like `jq '.data'`. |
+| Cache responses | Redirect first query to file (`> /tmp/result.json`). Filter cached file for follow-ups. Never re-query the same API. |
+| Parallel queries | Background independent queries: `pup ... > /tmp/a.json & pup ... > /tmp/b.json & wait`. Batch as many initial queries as possible. |
+| Trust documented schemas | For commands in [references/query-patterns.md](references/query-patterns.md), trust the response schemas. Do not `\| head` to learn structure. Only `\| head` for unlisted commands. |
+| Pre-filter exploration | For undocumented shapes: `jq '.data \| keys'` then `jq '.data[0]'` to see structure before writing complex filters. |
+| Budget awareness | Partial answer from available data beats no answer. Prefer one comprehensive jq filter over many single-purpose ones. |
+| Switch data sources | If an approach yields no results in 2 attempts, try a different domain or data source. |
 
-## Step 2: Discover Commands
+For multi-org setups, add `--org <name>` to all commands.
+When unsure about a domain's subcommands or flags, run `pup <domain> --help`.
 
-pup is self-documenting. When unsure about a domain's subcommands or flags:
+## Step 2: Classify Intent and Execute
 
-```bash
-pup <domain> --help --agent
-```
-
-This returns structured JSON with every subcommand, flag, type, and default.
-Use this as the primary reference — the patterns below cover common workflows,
-but `pup --help` is the authoritative source for any domain.
-
-## Step 3: Classify Intent and Execute
-
-Determine which pup domain the user's request maps to.
+Determine which pup domain maps to the user's request.
 Many requests span multiple domains — start with the most specific, then chain.
 
 | User Intent | Primary | Chain With |
 |-|-|-|
-| Service performance, latency, throughput | `apm` | `traces`, `metrics` |
-| Application errors, exceptions, stack traces | `error-tracking` | `logs`, `traces` |
+| Service performance, latency, throughput | `apm` | `logs`, `monitors` |
+| Application errors, exceptions | `error-tracking` | `logs`, `apm` |
 | Log search, patterns, volume | `logs` | `metrics` |
 | Custom or system metrics | `metrics` | `dashboards` |
 | Alert status, monitor health | `monitors` | `downtime`, `slos` |
-| Distributed traces, spans | `traces` | `apm` |
 | Frontend performance, user sessions | `rum` | `synthetics` |
-| Network traffic, device monitoring | `network` | `infrastructure` |
 | Host inventory, containers | `infrastructure` | `fleet`, `tags` |
 | Security findings, threat detection | `security` | `audit-logs` |
 | Incident management | `incidents` | `cases`, `on-call` |
@@ -63,20 +58,9 @@ Many requests span multiple domains — start with the most specific, then chain
 | CI/CD pipelines, flaky tests | `cicd` | `code-coverage` |
 | Service ownership, metadata | `service-catalog` | `scorecards` |
 | Cost analysis, billing | `cost` | `usage` |
-| Cloud integrations | `cloud` | `infrastructure` |
 
-For ready-to-use command patterns per domain, see [references/query-patterns.md](references/query-patterns.md).
-
-### Global Flags
-
-| Flag | Purpose |
-|-|-|
-| `--agent` | Always include. Enables structured output for AI assistants. |
-| `--from <range>` | Time range. Always specify explicitly. Formats: `1h`, `30m`, `7d`, `2hours`. |
-| `--limit <n>` | Result cap. Start small (10-50), increase only if needed. |
-| `--output table` | Human-readable display. Default is JSON (better for parsing). |
-| `--read-only` | Block all write operations. Use when investigating to prevent accidental changes. |
-| `--org <name>` | Target a specific org in multi-org setups. |
+For command patterns, response schemas, and jq filters per domain,
+see [references/query-patterns.md](references/query-patterns.md).
 
 ### Query Syntax
 
@@ -85,59 +69,61 @@ Operators: `AND`, `OR`, `NOT`, `-field:val` (negation), `*` (wildcard).
 
 **Metrics**: `<agg>:<metric>{<filter>} by {<group>}`.
 Example: `avg:system.cpu.user{env:prod} by {host}`.
-Aggregations: `avg`, `sum`, `min`, `max`, `count`.
 
 **Traces**: `service:<name> resource_name:<path> @duration:>5s status:error`.
-Duration supports shorthand (`5s`, `500ms`) and raw nanoseconds (`5000000000`).
-
-**RUM**: `@type:error @session.type:user @view.url_path:/path service:<app>`.
 
 **Monitors**: `--name` for substring, `--tags` for tag filter, `--query` for full-text search.
 
-## Step 4: Investigation Workflows
+## Step 3: Investigation Workflows
 
-When diagnosing issues, follow a structured flow rather than ad-hoc queries.
+When diagnosing issues, batch initial queries in parallel, then narrow.
 
 ### Service Degradation
 
-1. `pup monitors list --tags "service:<name>"` — check alerting monitors
-2. `pup metrics query --query "avg:<key_metric>{service:<name>}" --from 1h` — identify anomaly timing
-3. `pup traces search --query "service:<name> @duration:>1s" --from 1h --limit 10` — find slow traces
-4. `pup logs search --query "service:<name> status:error" --from 1h --limit 20` — correlate with errors
-5. `pup apm dependencies --service <name>` — check downstream dependencies
+```bash
+pup monitors list --tags="service:<name>" > /tmp/monitors.json &
+pup logs search --query="service:<name> status:error" --from="1h" > /tmp/errors.json &
+pup apm dependencies list --env prod --start $(date -v-1H +%s) --end $(date +%s) > /tmp/deps.json &
+wait
+```
+
+1. Check alerting monitors from `/tmp/monitors.json`
+2. Review error logs from `/tmp/errors.json`
+3. Check downstream dependencies from `/tmp/deps.json`
+4. If needed: `pup apm services stats --start EPOCH --end EPOCH --env prod` for throughput
 
 ### Error Spike
 
-1. `pup logs aggregate --query "service:<name>" --compute count --group-by status --from 4h` — quantify the spike
-2. `pup error-tracking issues --query "service:<name>" --from 1d` — group by error type
-3. `pup traces search --query "service:<name> status:error" --from 1h --limit 10` — get trace-level detail
-4. `pup events search --from 4h` — check for deploy or change events correlating with the spike
+```bash
+pup logs search --query="service:<name> status:error" --from="4h" > /tmp/logs.json &
+pup error-tracking issues search > /tmp/et-issues.json &
+pup events search --query="source:deploy" > /tmp/events.json &
+wait
+```
 
-### Infrastructure Issue
+1. Quantify spike from cached log data (write jq group-by filter to file)
+2. Group errors by type from error-tracking
+3. Correlate with deploy events
+4. If needed: `pup apm services stats` for throughput changes
 
-1. `pup infrastructure hosts --filter "service:<name>"` — identify affected hosts
-2. `pup metrics query --query "avg:system.cpu.user{host:<name>}" --from 1h` — check resource utilization
-3. `pup network flows --from 1h` — check network health
-4. `pup fleet agents` — verify agent status
+After each step, summarize findings and identify patterns before querying further.
 
-After each query, summarize findings in plain language, identify patterns, and suggest next queries.
-Chain narrow queries: aggregate first to find patterns, then search for specific examples.
-
-## Step 5: Critical Gotchas
-
-These are the mistakes that waste the most time. pup's own `--help` covers general usage;
-this section covers what agents specifically get wrong.
+## Step 4: Domain-Specific Gotchas
 
 | Gotcha | Detail |
 |-|-|
-| Missing `--from` | Most commands default to 1h but some don't. Always specify `--from` explicitly. |
-| Huge result sets | Never start with `--limit=1000`. Start with 10-50, refine query, then increase. |
-| Counting via raw fetch | Do not fetch all logs and count them locally. Use `pup logs aggregate --compute count`. |
-| Duration units | APM durations in raw form are **nanoseconds**: 1s = 1,000,000,000 ns. Prefer shorthand: `@duration:>5s`. |
-| Missing aggregation | `pup metrics query` requires an aggregation prefix: `avg:`, `sum:`, `max:`, `min:`, `count:`. |
-| Auth errors | 401 = re-authenticate (`pup auth login`). 403 = missing permissions. Do not blindly retry. |
-| Wide time ranges | `--from=30d` is slow. Start narrow (1h), widen only if needed. |
-| Large org listings | Do not list all monitors or logs unfiltered in large orgs. Always add `--tags` or `--query` filters. |
+| APM requires `--env` | All APM commands need `--env prod` (or target environment). |
+| APM flow-map unreliable | Use `pup apm dependencies list` for upstream/downstream mapping. |
+| Service catalog: no team filter | Requires per-service lookups. For team queries, use `pup monitors search` (monitors carry team tags). |
+| Team names are shorthand | User team names may not match Datadog tags. Use `pup monitors search --query="<name>"` to discover actual tag values first. |
+| Epoch math (macOS) | `$(date -v-1H +%s)` for 1 hour ago. Linux: `$(date -d '1 hour ago' +%s)`. |
+| Missing `--from` | Most commands default to 1h but some don't. Always specify explicitly. |
+| Huge result sets | Start with 10-50, refine query, then increase. |
+| Duration units | APM durations are nanoseconds. Prefer shorthand: `@duration:>5s`. |
+| Missing aggregation | `pup metrics query` requires prefix: `avg:`, `sum:`, `max:`, `min:`, `count:`. |
+| Log counting | Use `pup logs aggregate --compute count`, not fetch-and-count. |
+| Wide time ranges | `--from=30d` is slow. Start narrow (1h), widen if needed. |
+| Large org listings | Never list all monitors or logs unfiltered. Always add `--tags` or `--query`. |
 
 ## Error Handling
 
@@ -146,8 +132,7 @@ this section covers what agents specifically get wrong.
 | `pup` not found | Tell user to install pup (check internal Datadog docs) |
 | 401 Unauthorized | `pup auth login` to re-authenticate |
 | 403 Forbidden | User lacks API permissions; check role assignments |
-| 429 Rate Limited | Narrow query scope: smaller `--limit`, tighter time range, add filters |
-| Empty results | Widen time range, verify service/tag names with `pup service-catalog list` |
+| 429 Rate Limited | Narrow query: smaller `--limit`, tighter time range, add filters |
+| Empty results | Verify tag values with a broader search before retrying syntax variations |
 | Timeout | Narrow `--from` range or add more query filters |
-| Auth expired | `pup auth refresh` or `pup auth login` |
 | Unknown domain | Run `pup --help` to list all available domains |
