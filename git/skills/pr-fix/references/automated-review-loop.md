@@ -1,6 +1,6 @@
 # Automated Review Loop
 
-Reference for the `pr-fix` skill. Triggers automated code reviews (Greptile, Codex), processes feedback, and loops until clean.
+Reference for the `pr-fix` skill. Triggers automated code reviews (Codex), processes feedback, and loops until clean.
 
 ## Overview
 
@@ -8,11 +8,7 @@ After CI passes (or CI loop completes), trigger automated reviewers via PR comme
 
 ## Phase 1: Trigger Reviews
 
-Post **separate comments** for each reviewer — one comment per tool:
-
-```bash
-gh pr comment {number} --body "@greptileai review"
-```
+Post a comment to trigger the reviewer:
 
 ```bash
 gh pr comment {number} --body "@codex review"
@@ -36,26 +32,25 @@ gh api repos/{owner}/{repo}/pulls/{number}/reviews --jq 'length'
 gh api repos/{owner}/{repo}/pulls/{number}/comments --jq 'length'
 ```
 
-**Poll every 30 seconds** for new reviews or comments from bot accounts. Detect bot accounts by checking if the author login contains `greptile`, `codex`, or matches known bot patterns.
+**Poll every 30 seconds** for new reviews or comments from bot accounts. Detect bot accounts by checking if the author login contains `codex` or matches known bot patterns.
 
 ```bash
-gh api repos/{owner}/{repo}/pulls/{number}/reviews --jq '[.[] | select(.user.login | test("greptile|codex"; "i"))] | length'
+gh api repos/{owner}/{repo}/pulls/{number}/reviews --jq '[.[] | select(.user.login | test("codex"; "i"))] | length'
 ```
 
 ### Reviewer Status Detection
 
-Both Greptile and Codex use `:eyes:` (👀) to signal they are investigating. Poll until `:eyes:` is gone — that means the review is complete.
+Codex uses `:eyes:` (👀) to signal it is investigating. Poll until `:eyes:` is gone — that means the review is complete.
 
 **Where to check for `:eyes:`:**
 
 | Reviewer | Check locations |
 |----------|---------------|
-| Greptile | PR comments — look for `:eyes:` in comment body. When done: replaces with `:+1:` (👍) if no issues, or posts review comments if issues found. |
 | Codex | PR comments AND PR description/body — adds `:eyes:` to both. When done: **removes** the emoji (no replacement) and posts review comments if issues found. |
 
 ```bash
-# Check PR comments for :eyes: from either reviewer
-gh api repos/{owner}/{repo}/issues/{number}/comments --jq '[.[] | select(.user.login | test("greptile|codex"; "i")) | select(.body | test(":eyes:|👀"))] | length' 2>/dev/null
+# Check PR comments for :eyes: from Codex
+gh api repos/{owner}/{repo}/issues/{number}/comments --jq '[.[] | select(.user.login | test("codex"; "i")) | select(.body | test(":eyes:|👀"))] | length' 2>/dev/null
 
 # Check PR body for :eyes: (Codex)
 gh pr view {number} --json body --jq '.body | test(":eyes:|👀")' 2>/dev/null
@@ -70,7 +65,7 @@ gh pr view {number} --json body --jq '.body | test(":eyes:|👀")' 2>/dev/null
 Fetch all review comments from bot reviewers:
 
 ```bash
-gh api repos/{owner}/{repo}/pulls/{number}/comments --jq '[.[] | select(.user.login | test("greptile|codex"; "i")) | select(.in_reply_to_id == null)]'
+gh api repos/{owner}/{repo}/pulls/{number}/comments --jq '[.[] | select(.user.login | test("codex"; "i")) | select(.in_reply_to_id == null)]'
 ```
 
 For each comment, extract:
@@ -127,7 +122,7 @@ git push
 
 ## Phase 6: Reply to Comments
 
-For each processed comment, reply in a **separate comment** (not in the same thread as Greptile/Codex):
+For each processed comment, reply in a **separate comment** (not in the same thread as Codex):
 
 ```bash
 gh api repos/{owner}/{repo}/pulls/comments/{comment_id}/replies \
@@ -175,7 +170,6 @@ Return this report to the calling step in SKILL.md:
 
 | Reviewer | Comments | Fixed | Skipped | Iterations |
 |----------|----------|-------|---------|------------|
-| Greptile | {count}  | {count} | {count} | {N}      |
 | Codex    | {count}  | {count} | {count} | {N}      |
 
 {if all clean}

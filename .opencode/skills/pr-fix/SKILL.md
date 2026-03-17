@@ -2,11 +2,11 @@
 name: pr-fix
 description: >
   Use when the user wants to address PR review feedback, fix PR comments, resolve review threads,
-  or respond to code review suggestions on a pull request. Supports --auto for fully autonomous mode.
+  or respond to code review suggestions on a pull request. Supports --auto for bot/CI automation and --auto-human for fully autonomous mode.
   Triggers: "fix pr feedback", "address pr comments", "resolve pr reviews", "pr fix",
   "address review feedback", "fix review comments", "handle pr feedback",
   "respond to pr review", "address pr feedback", "pr fix --auto".
-argument-hint: "[PR number, URL, or comment URL, optional --reviewer <name>, optional --auto]"
+argument-hint: "[PR number, URL, or comment URL, optional --reviewer <name>, optional --auto, optional --auto-human]"
 user-invocable: true
 allowed-tools: Bash(git:*), Bash(gh:*), Bash(get_ddci_logs.sh:*), Read, Write, Edit, Grep, Glob, AskUserQuestion, Task
 ---
@@ -26,8 +26,11 @@ Parse `$ARGUMENTS` for:
 | Comment URL | `github.com/.*/pull/\d+#discussion_r\d+` | `https://github.com/org/repo/pull/42#discussion_r123` |
 | Reviewer filter | `--reviewer <name>` | `--reviewer alice` |
 | Autonomous mode | `--auto` | `--auto` |
+| Full autonomous mode | `--auto-human` | `--auto-human` |
 
-**Autonomous mode (`--auto`):** Runs the full fix-commit-push-CI-review cycle without user prompts. Defaults: fix all threads, explain-and-keep for disagreements, watch-and-fix CI, review-and-fix automated feedback. Use when you want a hands-off run.
+**Autonomous mode (`--auto`):** Skips prompts for CI monitoring and automated (bot) review feedback only. Human review threads always require explicit user approval — prompts are never skipped for those. Use when you want CI and bot reviews handled hands-off while retaining control over human feedback.
+
+**Full autonomous mode (`--auto-human`):** Implies `--auto` and additionally skips prompts for human review threads. Defaults: "Fix all" for non-disagreements, "Explain and keep" for disagreements (code stays unchanged, reviewer gets a reasoned explanation). Use when you want a fully hands-off run across all feedback types.
 
 Run in parallel:
 
@@ -122,9 +125,9 @@ Proposed actions:
 - Need your decision: {count} (disagreements)
 ```
 
-**If `--auto` mode:** Skip all prompts. Default to "Fix all" for non-disagreements and "Explain and keep" for disagreements (safest autonomous default — code stays unchanged, reviewer gets a reasoned explanation). Proceed to Step 5.
+**If `--auto-human` mode:** Skip all prompts. Default to "Fix all" for non-disagreements and "Explain and keep" for disagreements. Proceed to Step 5.
 
-**For disagreements** (interactive mode only), present each one explicitly:
+**For disagreements**, present each one explicitly:
 
 <interaction>
 AskUserQuestion(
@@ -138,7 +141,7 @@ AskUserQuestion(
 )
 </interaction>
 
-**For everything else** (interactive mode only), ask:
+**For everything else**, ask:
 
 <interaction>
 AskUserQuestion(
@@ -209,7 +212,7 @@ Response format by category:
 | Disagreement (keep) | `{explanation of reasoning}. Let me know if you'd like to discuss further.` |
 | Outdated (addressed) | `This has been addressed in a subsequent update.` |
 
-**Bot attribution:** When replying to automated reviewer comments (Greptile, Codex, etc.), prefix every reply with `*Automated response from Claude:*` to distinguish from human responses.
+**Bot attribution:** When replying to automated reviewer comments (Codex, etc.), prefix every reply with `*Automated response from Claude:*` to distinguish from human responses.
 
 **Resolve** the thread using the GraphQL mutation from [references/graphql-queries.md](references/graphql-queries.md), passing the thread's `thread_id`.
 
@@ -258,12 +261,12 @@ After pushing (or if no push was needed because there were no threads to fix), t
 
 ### 8a: Trigger Automated Reviews (if stale)
 
-Check if new commits exist since the last greptile/codex comments:
+Check if new commits exist since the last codex comments:
 
 ```bash
 # Get the latest bot comment timestamp
 gh api repos/{owner}/{repo}/issues/{number}/comments \
-  --jq '[.[] | select(.user.login | test("greptile|codex"; "i")) | .created_at] | sort | last'
+  --jq '[.[] | select(.user.login | test("codex"; "i")) | .created_at] | sort | last'
 
 # Get the latest commit timestamp on the PR branch
 gh api repos/{owner}/{repo}/pulls/{number}/commits \
@@ -281,7 +284,7 @@ Compare timestamps. If the latest commit is **after** the latest bot comment (or
 <interaction>
 AskUserQuestion(
   header: "Re-trigger automated reviews?",
-  question: "There are new commits since the last Greptile/Codex reviews. Re-trigger them?",
+  question: "There are new commits since the last Codex reviews. Re-trigger them?",
   options: [
     "Yes — review and fix" — Trigger reviewers, fix actionable feedback after CI (max 3 iterations),
     "Just trigger" — Post review comments but do not auto-fix,
@@ -290,7 +293,7 @@ AskUserQuestion(
 )
 </interaction>
 
-If triggering: post `@greptileai review` and `@codex` comments now per [references/automated-review-loop.md](references/automated-review-loop.md) Phase 1. **Do NOT wait here** — bots review in background while CI runs in 8b. Step 8c will poll and wait for their responses.
+If triggering: post `@codex` comment now per [references/automated-review-loop.md](references/automated-review-loop.md) Phase 1. **Do NOT wait here** — bots review in background while CI runs in 8b. Step 8c will poll and wait for their responses.
 
 **After 8a completes → proceed to 8b.** Do not skip, summarize, or exit.
 
@@ -394,5 +397,5 @@ gh pr edit {number} --add-reviewer {reviewer1},{reviewer2}
 | CI fix loop exceeds 3 iterations | Stop. Report remaining failures with log excerpts. Let user investigate. |
 | Same CI failure recurs after fix | Mark as unfixable. Do NOT retry the same fix. Report to user. |
 | DDCI logs unavailable | Skip log analysis. Report the Mosaic URL for manual investigation. |
-| Greptile/Codex not configured | If no review appears after 15-min timeout, skip that reviewer. Continue with others. |
+| Codex not configured | If no review appears after 15-min timeout, skip that reviewer. Continue with others. |
 | Automated review loop exceeds 3 iterations | Stop. Report remaining review comments. Let user investigate. |

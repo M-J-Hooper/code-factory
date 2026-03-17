@@ -24,7 +24,6 @@
       "Skill(do)",
       "Skill(rfc)",
       "Skill(debug)",
-
       "Skill(doc)",
       "Skill(workspace)",
       "Skill(datadog)",
@@ -125,13 +124,9 @@
       "/private/var/tmp"
     ]
   },
-  "model": "opus",
-  "enabledMcpjsonServers": [
-    "atlassian"
-  ],
-  "disabledMcpjsonServers": [
-    "datadog"
-  ],
+  "model": "opusplan",
+  "enabledMcpjsonServers": ["atlassian"],
+  "disabledMcpjsonServers": ["datadog"],
   "hooks": {
     "PreToolUse": [
       {
@@ -204,9 +199,9 @@
     }
   },
   "alwaysThinkingEnabled": true,
+  "effortLevel": "high",
   "autoUpdatesChannel": "latest",
   "skipDangerousModePermissionPrompt": true,
   "defaultMode": "default",
-  "bypassPermissionsModeAccepted": true,
-  "effortLevel": "high"
+  "bypassPermissionsModeAccepted": true
 }
