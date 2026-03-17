@@ -50,11 +50,15 @@ Parse `$ARGUMENTS` to select mode:
 REPO_ROOT = git rev-parse --show-toplevel
 AGENTS_MD = $REPO_ROOT/AGENTS.md
 CLAUDE_MD = $REPO_ROOT/CLAUDE.md
-MEMORY_MD = ~/.claude/projects/<project>/memory/MEMORY.md
-PENDING_FILE = ~/.claude/projects/<project>/pending-learnings.md
+MEMORY_MD = ~/workspace/memory/MEMORY.md
+PENDING_FILE = ~/workspace/memory/pending-learnings.md
 ```
 
+Create the `~/workspace/memory/` directory if it doesn't exist.
+
 Read all three knowledge files to understand current content.
+
+**Important — skill files vs plugin cache:** If a learning involves updating a skill file (e.g., changing a timeout, fixing a workflow step), the edit must be made in the source repo at `~/workspace/code-factory/`, **never** in the plugin cache at `~/.claude/plugins/cache/`. The cache is a read-only deployment artifact that gets overwritten on sync.
 
 ### 2A.2: Analyze Session
 
