@@ -129,19 +129,32 @@ AskUserQuestion(
 )
 ```
 
-### 3b: Create Feature Branch
+### 3b: Optionally Create Feature Branch
 
-Create a feature branch and push it to remote so the workspace can check it out:
+Ask whether to create a new branch for this workspace:
+
+```
+AskUserQuestion(
+  header: "Feature branch?",
+  question: "Create a new feature branch for this workspace?",
+  options: [
+    "Yes — create new branch" -- Create and push a new branch,
+    "No — use current branch '<CURRENT_BRANCH>'" -- Work from the current branch
+  ]
+)
+```
+
+If yes, create and push:
 
 ```
 Skill(skill="branch", args="<name or feature description>")
 ```
 
-Then push the branch:
-
 ```bash
 git push -u origin <branch-name>
 ```
+
+If no: use `$CURRENT_BRANCH` as `<branch-name>` throughout the remaining steps.
 
 ### 3c: Create Workspace
 
@@ -173,13 +186,13 @@ I'll start a tmux session when it's ready.
 Status:  workspaces list
 ```
 
-### 3e: Start Tmux Session
+### 3e: Start Tmux Session with Claude
 
 When the background `workspaces create` task completes successfully,
-SSH into the workspace and start a detached tmux session in the repo directory on the correct branch:
+SSH into the workspace, cd into the repo, and start a detached tmux session running Claude Code:
 
 ```bash
-ssh -A workspace-<name> "cd /workspaces/<repo> && git checkout <branch-name> && tmux new-session -d -s main"
+ssh -A workspace-<name> "cd /workspaces/<repo> && git checkout <branch-name> && tmux new-session -d -s main -c /workspaces/<repo> claude"
 ```
 
 The workspace is created with `--branch`, so the checkout is a no-op in the happy path
@@ -192,7 +205,7 @@ Then print the join command for the user:
 ```
 Workspace "<name>" is ready on branch "<branch-name>".
 
-Join the tmux session:
+Join the session with Claude open:
   ssh -A workspace-<name> -t "tmux -CC new-session -A -s main"
 
 Other commands:

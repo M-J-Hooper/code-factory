@@ -243,6 +243,34 @@ main() {
 
     mkdir -p "$SKILLS_DIR" "$AGENTS_DIR" "$COMMANDS_DIR"
 
+    # Update vendored rtk files from upstream source.
+    # Skipped in check mode (read-only). Fails silently if offline.
+    if [[ "$CHECK_MODE" != "true" ]]; then
+        _sync_rtk_file() {
+            local label="$1" url="$2" dest="$3"
+            if fetched=$(curl -fsSL "$url" 2>/dev/null); then
+                if [[ "$fetched" != "$(cat "$dest" 2>/dev/null)" ]]; then
+                    printf '%s\n' "$fetched" > "$dest"
+                    echo "  SYNC  $label (updated)"
+                else
+                    echo "  SYNC  $label (up-to-date)"
+                fi
+            else
+                echo "  SKIP  $label (offline or fetch failed)"
+            fi
+        }
+
+        _sync_rtk_file \
+            "rtk Claude Code hook" \
+            "https://raw.githubusercontent.com/rtk-ai/rtk/latest/hooks/rtk-rewrite.sh" \
+            "$SCRIPT_DIR/hooks/rtk-rewrite.sh"
+
+        _sync_rtk_file \
+            "rtk OpenCode plugin" \
+            "https://raw.githubusercontent.com/rtk-ai/rtk/latest/hooks/opencode-rtk.ts" \
+            "$OPENCODE_DIR/plugins/rtk.ts"
+    fi
+
     # Discover and sync
     while IFS= read -r plugin_dir; do
         [[ -d "$plugin_dir" ]] || continue

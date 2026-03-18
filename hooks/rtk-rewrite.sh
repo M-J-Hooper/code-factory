@@ -1,63 +1,54 @@
-#!/bin/bash
-# RTK auto-rewrite hook for Claude Code PreToolUse:Bash
-# Transparently rewrites raw commands to their RTK equivalents.
-# Uses `rtk rewrite` as single source of truth — no duplicate mapping logic here.
+#!/usr/bin/env bash
+# rtk-hook-version: 2
+# RTK Claude Code hook — rewrites commands to use rtk for token savings.
+# Requires: rtk >= 0.23.0, jq
 #
-# To add support for new commands, update src/discover/registry.rs (PATTERNS + RULES).
+# This is a thin delegating hook: all rewrite logic lives in `rtk rewrite`,
+# which is the single source of truth (src/discover/registry.rs).
+# To add or change rewrite rules, edit the Rust registry — not this file.
 
-# --- Audit logging (opt-in via RTK_HOOK_AUDIT=1) ---
-_rtk_audit_log() {
-  if [ "${RTK_HOOK_AUDIT:-0}" != "1" ]; then return; fi
-  local action="$1" original="$2" rewritten="${3:--}"
-  local dir="${RTK_AUDIT_DIR:-${HOME}/.local/share/rtk}"
-  mkdir -p "$dir"
-  printf '%s | %s | %s | %s\n' \
-    "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$action" "$original" "$rewritten" \
-    >> "${dir}/hook-audit.log"
-}
-
-# Guards: skip silently if dependencies missing
-if ! command -v rtk &>/dev/null || ! command -v jq &>/dev/null; then
-  _rtk_audit_log "skip:no_deps" "-"
+if ! command -v jq &>/dev/null; then
+  echo "[rtk] WARNING: jq is not installed. Hook cannot rewrite commands. Install jq: https://jqlang.github.io/jq/download/" >&2
   exit 0
 fi
 
-set -euo pipefail
+if ! command -v rtk &>/dev/null; then
+  echo "[rtk] WARNING: rtk is not installed or not in PATH. Hook cannot rewrite commands. Install: https://github.com/rtk-ai/rtk#installation" >&2
+  exit 0
+fi
+
+# Version guard: rtk rewrite was added in 0.23.0.
+# Older binaries: warn once and exit cleanly (no silent failure).
+RTK_VERSION=$(rtk --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+if [ -n "$RTK_VERSION" ]; then
+  MAJOR=$(echo "$RTK_VERSION" | cut -d. -f1)
+  MINOR=$(echo "$RTK_VERSION" | cut -d. -f2)
+  # Require >= 0.23.0
+  if [ "$MAJOR" -eq 0 ] && [ "$MINOR" -lt 23 ]; then
+    echo "[rtk] WARNING: rtk $RTK_VERSION is too old (need >= 0.23.0). Upgrade: cargo install rtk" >&2
+    exit 0
+  fi
+fi
 
 INPUT=$(cat)
 CMD=$(echo "$INPUT" | jq -r '.tool_input.command // empty')
 
 if [ -z "$CMD" ]; then
-  _rtk_audit_log "skip:empty" "-"
   exit 0
 fi
 
-# Skip heredocs (rtk rewrite also skips them, but bail early)
-case "$CMD" in
-  *'<<'*) _rtk_audit_log "skip:heredoc" "$CMD"; exit 0 ;;
-esac
+# Delegate all rewrite logic to the Rust binary.
+# rtk rewrite exits 1 when there's no rewrite — hook passes through silently.
+REWRITTEN=$(rtk rewrite "$CMD" 2>/dev/null) || exit 0
 
-# Rewrite via rtk — single source of truth for all command mappings.
-# Exit 1 = no RTK equivalent, pass through unchanged.
-# Exit 0 = rewritten command (or already RTK, identical output).
-REWRITTEN=$(rtk rewrite "$CMD" 2>/dev/null) || {
-  _rtk_audit_log "skip:no_match" "$CMD"
-  exit 0
-}
-
-# If output is identical, command was already using RTK — nothing to do.
+# No change — nothing to do.
 if [ "$CMD" = "$REWRITTEN" ]; then
-  _rtk_audit_log "skip:already_rtk" "$CMD"
   exit 0
 fi
 
-_rtk_audit_log "rewrite" "$CMD" "$REWRITTEN"
-
-# Build the updated tool_input with all original fields preserved, only command changed.
 ORIGINAL_INPUT=$(echo "$INPUT" | jq -c '.tool_input')
 UPDATED_INPUT=$(echo "$ORIGINAL_INPUT" | jq --arg cmd "$REWRITTEN" '.command = $cmd')
 
-# Output the rewrite instruction in Claude Code hook format.
 jq -n \
   --argjson updated "$UPDATED_INPUT" \
   '{
