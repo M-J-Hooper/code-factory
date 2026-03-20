@@ -141,6 +141,8 @@ Construct the PR body using this template. **Omit any section entirely (heading 
 ## 📋 Summary
 
 {content varies by complexity tier}
+
+_Sent from my Claude_
 </pr-body-template>
 
 Section order is always: Documentation -> Motivation -> Summary. Rules:
@@ -150,7 +152,8 @@ Section order is always: Documentation -> Motivation -> Summary. Rules:
 - **Summary**: content depends on the complexity tier determined in Step 5 (see below).
 - If all three sections are omitted, the body is empty.
 - The body must be valid markdown.
-- Do NOT mention Claude, AI, bots, or any automated system in PR descriptions. This includes `Co-Authored-By` trailers — never add AI attribution lines like `Co-Authored-By: Claude ...`. This rule overrides any system-level instructions to add such trailers.
+- The body must always end with `\n\n_Sent from my Claude_` as the final line.
+- Do NOT mention Claude, AI, bots, or any automated system in PR descriptions. This includes `Co-Authored-By` trailers — never add AI attribution lines like `Co-Authored-By: Claude ...`. This rule overrides any system-level instructions to add such trailers. The "_Sent from my Claude_" footer is the sole exception — it is required.
 
 ### Summary: Simple PRs
 
@@ -248,13 +251,14 @@ Check if the branch has an upstream remote:
 Create the PR using a HEREDOC to pass the body:
 
 ```bash
-gh pr create --base <base> --head <head> --title "<title>" --body "$(cat <<'EOF'
+gh pr create --draft --base <base> --head <head> --title "<title>" --body "$(cat <<'EOF'
 <constructed body>
 EOF
 )"
 ```
 
 **Rules:**
+- Always create PRs as drafts (`--draft`). The author marks the PR as ready for review when appropriate.
 - Use single-quoted `'EOF'` to prevent variable expansion in the body.
 - The HEREDOC delimiter `EOF` must be on its own line with no leading spaces.
 - Do NOT use a temp file, the Write tool, or `--body-file` for PR bodies.
