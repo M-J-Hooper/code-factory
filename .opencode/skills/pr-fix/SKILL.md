@@ -8,7 +8,7 @@ description: >
   "respond to pr review", "address pr feedback", "pr fix --auto".
 argument-hint: "[PR number, URL, or comment URL, optional --reviewer <name>, optional --auto, optional --auto-human]"
 user-invocable: true
-allowed-tools: Bash(git:*), Bash(gh:*), Bash(get_ddci_logs.sh:*), Read, Write, Edit, Grep, Glob, AskUserQuestion, Task
+allowed-tools: Bash(git:*), Bash(gh:*), Bash(get_ddci_logs.sh:*), Bash(./scripts/*), Read, Write, Edit, Grep, Glob, AskUserQuestion, Task
 ---
 
 # Fix PR Feedback
@@ -48,6 +48,18 @@ gh pr view --json number -q '.number' 2>/dev/null
 ```
 
 **If still no PR:** ask the user for the PR number. Stop.
+
+Once the PR is identified, capture context for failure classification and conflict detection:
+
+```bash
+# Run in parallel
+gh pr view {number} --json baseRefName,mergeable,mergeStateStatus
+git diff --name-only origin/{base}...HEAD
+```
+
+Save the changed-files list — it is used throughout for CI failure classification (PR-related vs pre-existing) and pattern scanning in Step 5.
+
+**If `mergeable` is `CONFLICTING`:** resolve conflicts before proceeding. Invoke `/fix-conflicts`, then push the resolved merge commit. Re-fetch the changed-files list after resolution since the diff may have grown.
 
 ## Step 2: Fetch Unresolved Review Threads
 
@@ -177,6 +189,16 @@ For threads requiring code changes:
 2. Determine the fix based on the reviewer's comment.
 3. Apply the change using the Edit tool.
 4. If the fix is unclear, ask the user for clarification before proceeding.
+
+### Pattern Scanning
+
+After applying a code change, scan the other files in the changed-files list (from Step 1) for the same pattern. If the reviewer flagged missing error handling, a naming convention, or a structural issue — the same problem likely exists elsewhere in this PR.
+
+1. Use Grep to search the changed files for the same pattern.
+2. Fix all occurrences, not just the one the reviewer flagged.
+3. Note the additional fixes in the Step 6 reply: "Fixed here and in {N} other locations: {file1}, {file2}."
+
+Only scan for the **exact pattern** the reviewer identified. Do not generalize into a broad lint pass.
 
 ### Preparing Explanations
 

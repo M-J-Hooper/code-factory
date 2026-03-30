@@ -18,47 +18,30 @@ gh pr comment {number} --body "@codex review"
 
 ## Phase 2: Wait for Reviews
 
-Record the current review/comment state before triggering, so you can detect new reviews.
-
-**Fetch current review count:**
+Record the current review/comment state before triggering, then use the background polling script. This runs in the background so **zero tokens are consumed while waiting**.
 
 ```bash
-gh api repos/{owner}/{repo}/pulls/{number}/reviews --jq 'length'
+# Capture baseline counts first
+COMMENT_COUNT=$(gh api "repos/{owner}/{repo}/pulls/{number}/comments" --paginate 2>/dev/null | jq -s 'add | length')
+REVIEW_COUNT=$(gh api "repos/{owner}/{repo}/pulls/{number}/reviews" --paginate 2>/dev/null | jq -s 'add | [.[] | select(.state != "COMMENTED")] | length')
+
+# Run background poller — pass a bot pattern regex matching your automated reviewers
+${CLAUDE_PLUGIN_ROOT}/skills/pr-fix/scripts/poll-reviews.sh {number} {owner}/{repo} "$COMMENT_COUNT" "$REVIEW_COUNT" "{bot-pattern}"
 ```
 
-**Fetch current comment count:**
+Run with `run_in_background: true`. The `{bot-pattern}` parameter is a regex matching bot reviewer login names (e.g., `"codex|mybot|app"`). Default: `"bot|app|\[bot\]"`.
 
-```bash
-gh api repos/{owner}/{repo}/pulls/{number}/comments --jq 'length'
-```
+The script handles `:eyes:` emoji detection automatically — it waits until the emoji clears from PR comments and body before checking for new feedback. Polls every 30 seconds for up to 15 minutes.
 
-**Poll every 30 seconds** for new reviews or comments from bot accounts. Detect bot accounts by checking if the author login contains `codex` or matches known bot patterns.
+### Handle the script's exit state
 
-```bash
-gh api repos/{owner}/{repo}/pulls/{number}/reviews --jq '[.[] | select(.user.login | test("codex"; "i"))] | length'
-```
+| State | Action |
+|-------|--------|
+| `REVIEWS_READY` | New review comments or reviews detected. Parse the JSON output (included in script output). Continue to Phase 3. |
+| `NO_NEW_REVIEWS` | No bot activity after 15 minutes — reviewer may not be configured. Skip for the rest of the loop. |
+| `TIMEOUT` | `:eyes:` was active but never completed. Report to user. |
 
-### Reviewer Status Detection
-
-Codex uses `:eyes:` (👀) to signal it is investigating. Poll until `:eyes:` is gone — that means the review is complete.
-
-**Where to check for `:eyes:`:**
-
-| Reviewer | Check locations |
-|----------|---------------|
-| Codex | PR comments AND PR description/body — adds `:eyes:` to both. When done: **removes** the emoji (no replacement) and posts review comments if issues found. |
-
-```bash
-# Check PR comments for :eyes: from Codex
-gh api repos/{owner}/{repo}/issues/{number}/comments --jq '[.[] | select(.user.login | test("codex"; "i")) | select(.body | test(":eyes:|👀"))] | length' 2>/dev/null
-
-# Check PR body for :eyes: (Codex)
-gh pr view {number} --json body --jq '.body | test(":eyes:|👀")' 2>/dev/null
-```
-
-**Do NOT proceed to Phase 3 while `:eyes:` is present** in any PR comment or the PR body. Keep polling every 30 seconds.
-
-**Timeout:** 15 minutes per reviewer. If `:eyes:` never appears and no review comments arrive, the reviewer is not configured — skip it for the rest of the loop.
+**On `REVIEWS_READY`:** the script output includes the full review/comment data. Use this directly — no follow-up API call needed.
 
 ## Phase 3: Read Review Comments
 

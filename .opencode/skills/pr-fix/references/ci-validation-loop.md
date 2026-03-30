@@ -8,38 +8,24 @@ After pushing fixes, monitor CI status. If checks fail, analyze failures, apply 
 
 ## Phase 1: Wait for CI
 
-After the push from Step 7, wait for CI to start and complete.
-
-**Do NOT use `gh pr checks --watch`** — it waits for ALL checks including approval-gated ones (like Merge Gate, peer review gates) that require human action and will never complete on their own.
-
-Instead, poll and filter:
+After the push from Step 7, wait for CI to start and complete using the background polling script. This runs in the background so **zero tokens are consumed while waiting**.
 
 ```bash
-gh pr checks {number} --json name,state,bucket,link
+${CLAUDE_PLUGIN_ROOT}/skills/pr-fix/scripts/poll-ci.sh {number}
 ```
 
-States: `pending` and `queued` mean still running. `pass` means success. `fail` means failure.
+Run with `run_in_background: true`. The script automatically filters out approval-gated checks (merge gate, peer review, manual approval, codeowner) and polls every 30 seconds for up to 20 minutes.
 
-### Exclude approval-gated checks
+### Handle the script's exit state
 
-Some checks require human approval and will stay `pending` forever. Exclude them from the wait condition:
+| State | Action |
+|-------|--------|
+| `ALL_PASSING` | Skip to Phase 5 (report success) |
+| `FAILURES_DETECTED` | Parse the `FULL_STATUS` JSON from the output. Continue to Phase 2. |
+| `CONFLICTS_DETECTED` | PR has merge conflicts from base branch movement. Invoke `/fix-conflicts`, push the resolution, then restart the poller. |
+| `TIMEOUT` | Report to the user that CI hasn't completed in 20 minutes. Ask how to proceed. |
 
-| Pattern (case-insensitive) | Reason |
-|-|-|
-| `merge gate` | Requires peer approval |
-| `peer review` | Requires human review |
-| `manual approval` | Requires human action |
-| `codeowner` | Requires code owner approval |
-
-When polling, ignore checks whose `name` matches these patterns.
-A check is "still running" only if it is `pending` or `queued` AND does NOT match an approval-gated pattern.
-
-**Wait until no non-gated checks are `pending` or `queued` before proceeding.** Poll every 30 seconds, max 20 minutes.
-
-After polling completes, evaluate the non-gated checks:
-
-- **All non-gated checks passed** → skip to Phase 4 (report success).
-- **At least one non-gated check failed** → continue to Phase 2.
+**On `FAILURES_DETECTED`:** the script output includes the full status JSON with `name`, `state`, `bucket`, and `link` for each check. Use this directly — no follow-up API call needed.
 
 ## Phase 2: Identify Failures
 
@@ -129,6 +115,20 @@ retry_ddci_job.sh {job_id}
 
 After re-running, return to Phase 1 to wait for the new run. Count this as an iteration.
 
+### Classify: PR-related vs Pre-existing
+
+Before fixing, compare the failure against the changed-files list captured in Step 1 of the main skill.
+
+**PR-related** (fix on this branch):
+- Failing test file is in the changed-files list
+- Error references a symbol, type, or function this PR modified
+- Build/lint/type-check failure on a file this PR touched
+
+**Pre-existing** (fix separately):
+- Failing test is in a file this PR did not touch
+- Error is in an unrelated package or shared infrastructure
+- Failure was already present on the base branch
+
 ### Fix Strategy
 
 For each failure, in priority order:
@@ -150,6 +150,23 @@ For each failure, in priority order:
 | Confidence threshold | Only auto-fix if you can identify the exact root cause from the logs |
 | Ask on ambiguity | If multiple fixes are possible, present options to the user |
 | Never suppress tests | Do not skip, disable, or mark tests as expected-failure to pass CI |
+
+### Scope Discipline
+
+**Only commit changes that are directly required to make this PR's code correct.**
+
+If a failure is classified as pre-existing (not caused by this PR's changes):
+
+1. Create a new branch from the base branch (not the PR branch):
+   ```bash
+   default_branch=$(gh pr view {number} --json baseRefName --jq '.baseRefName')
+   git fetch origin "$default_branch"
+   git checkout -b fix/{short-description} "origin/$default_branch"
+   ```
+2. Apply the fix on the new branch.
+3. Commit, push, and open a separate draft PR.
+4. Report the new PR URL to the user.
+5. Switch back to the PR branch and re-run the failing job to unblock CI.
 
 ### Commit and Push
 
