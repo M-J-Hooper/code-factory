@@ -116,6 +116,7 @@ This pattern "greatly improves output quality" by catching errors early.
 | Compress examples | 20 words beats 42 words if they show the same pattern |
 | Eliminate redundancy | Don't repeat what's in referenced files |
 | Tables over paragraphs | 3 table rows < 3 paragraphs in tokens |
+| Codify loops into scripts | `scripts/poll.sh` with `run_in_background: true` instead of inline "poll every 30s" — see [progressive-disclosure.md](progressive-disclosure.md) |
 
 **Targets:**
 

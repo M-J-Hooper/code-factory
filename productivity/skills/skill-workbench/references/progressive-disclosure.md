@@ -50,6 +50,44 @@ skill-name/
 
 **When:** Skill includes reusable code. Scripts offer reliability and token efficiency over generated code.
 
+#### Codify Loops into Scripts
+
+Any skill instruction that tells the model to poll, retry, or wait in a loop is a script candidate.
+Each loop iteration is a full inference round-trip (input tokens + output tokens).
+A background script that blocks and returns only when actionable costs **zero tokens while waiting**.
+
+**Before (inline polling — wastes 30+ inference cycles):**
+
+```markdown
+Poll every 30 seconds for CI to complete. Check `gh pr checks` output.
+If all checks pass, proceed. If any fail, analyze. Max 20 minutes.
+```
+
+**After (background script — zero tokens while waiting):**
+
+```markdown
+Run the background polling script:
+  ${CLAUDE_PLUGIN_ROOT}/skills/{name}/scripts/poll-ci.sh {number}
+Run with `run_in_background: true`. The script polls and returns an actionable state.
+```
+
+**Script design rules:**
+
+| Rule | Rationale |
+|------|-----------|
+| Output a structured exit state (`ALL_PASSING`, `FAILURES_DETECTED`, `TIMEOUT`) | Model can branch without parsing free-text |
+| Include relevant data in the output (e.g., full status JSON) | Eliminates follow-up API calls |
+| Accept tuning parameters (interval, max polls) as arguments | Skills can customize without forking the script |
+| Use `run_in_background: true` | Returns control to the model only when there is work to do |
+
+**When to codify vs. keep inline:**
+
+| Keep inline | Codify into script |
+|-------------|-------------------|
+| 1-2 iterations (e.g., fix + recheck) | 5+ iterations or open-ended waiting |
+| Human-interactive loops (ask user each time) | Autonomous polling (CI, reviews, deployments) |
+| Different logic each iteration | Same check repeated with sleep |
+
 ## Critical Rules
 
 | Rule | Rationale |
@@ -120,6 +158,7 @@ Use your judgment based on the complexity and risk of the change.
 | **Tables over paragraphs** | Medium | 3 table rows < 3 paragraphs |
 | **Compress examples** | Low-Medium | Minimal example showing the same pattern in fewer words |
 | **Remove Claude-known content** | High | Don't explain what git commands do |
+| **Codify loops into scripts** | Very High | `scripts/poll.sh` with `run_in_background` vs inline "poll every 30s" (eliminates 30+ inference cycles) |
 
 ## Conditional Loading Pattern
 
