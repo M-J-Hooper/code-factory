@@ -40,11 +40,19 @@ case "$operation" in
     ;;
   rebase)
     if [ -d "$git_dir/rebase-merge" ]; then
-      [ -f "$git_dir/rebase-merge/head-name" ] && echo "Branch: $(cat "$git_dir/rebase-merge/head-name")"
-      [ -f "$git_dir/rebase-merge/onto" ] && echo "Onto: $(git rev-parse --short "$(cat "$git_dir/rebase-merge/onto")")"
+      [ -f "$git_dir/rebase-merge/head-name" ] && echo "Branch (your feature branch): $(cat "$git_dir/rebase-merge/head-name")"
+      [ -f "$git_dir/rebase-merge/onto" ] && echo "Onto (upstream): $(git rev-parse --short "$(cat "$git_dir/rebase-merge/onto")")"
+      if [ -f "$git_dir/rebase-merge/stopped-sha" ]; then
+        sha=$(cat "$git_dir/rebase-merge/stopped-sha")
+        echo "Current commit being applied (theirs): $(git log --format='%h %s' -1 "$sha" 2>/dev/null || echo "$sha")"
+      fi
     elif [ -d "$git_dir/rebase-apply" ]; then
-      [ -f "$git_dir/rebase-apply/head-name" ] && echo "Branch: $(cat "$git_dir/rebase-apply/head-name")"
-      [ -f "$git_dir/rebase-apply/onto" ] && echo "Onto: $(git rev-parse --short "$(cat "$git_dir/rebase-apply/onto")")"
+      [ -f "$git_dir/rebase-apply/head-name" ] && echo "Branch (your feature branch): $(cat "$git_dir/rebase-apply/head-name")"
+      [ -f "$git_dir/rebase-apply/onto" ] && echo "Onto (upstream): $(git rev-parse --short "$(cat "$git_dir/rebase-apply/onto")")"
+      if [ -f "$git_dir/rebase-apply/original-commit" ]; then
+        sha=$(cat "$git_dir/rebase-apply/original-commit")
+        echo "Current commit being applied (theirs): $(git log --format='%h %s' -1 "$sha" 2>/dev/null || echo "$sha")"
+      fi
     fi
     ;;
   revert)

@@ -53,7 +53,22 @@ For each conflict, determine:
 
 ## Step 3: Resolve by Conflict Type
 
-**Rebase ours/theirs warning:** During `git rebase`, ours/theirs are reversed from merge. `HEAD` (ours) = the branch being rebased **onto** (e.g., main), and theirs = the commits being replayed (your feature branch). The conflict markers reflect this: `<<<<<<< HEAD` shows the upstream code during rebase.
+### Rebase conflict orientation (CRITICAL)
+
+During `git rebase`, ours/theirs are **reversed** from merge:
+
+| Side | Merge | Rebase |
+|------|-------|--------|
+| `<<<<<<< HEAD` (ours) | Your branch | **Upstream** (e.g., main) |
+| `=======` → `>>>>>>>` (theirs) | Incoming branch | **Your feature branch** |
+
+The code between `=======` and `>>>>>>>` is YOUR feature branch work.
+**Never discard it without explicit user confirmation** — doing so silently loses changes you wrote.
+
+Resolution posture during rebase:
+1. Treat the theirs section as the change you must land; treat the ours section as context to integrate around it.
+2. If both sides modified the same lines with incompatible intent, ask the user (see "When uncertain" below).
+3. "Upstream looks newer/cleaner" is NOT sufficient justification to drop theirs.
 
 ### Standard conflicts (UU — both modified, AA — both added)
 
@@ -65,7 +80,7 @@ For each conflict, determine:
 | Changes are independent (different functions, different lines) | Merge both — keep all changes |
 | Changes overlap but complement each other | Combine intelligently — integrate both intents |
 | Changes contradict each other | Ask the user (see "When uncertain" below) |
-| One side is strictly newer/better | Keep the better version |
+| One side is strictly newer/better | Keep the better version — during rebase, verify "better" is not just upstream recency |
 
 3. Remove ALL conflict markers (`<<<<<<<`, `=======`, `>>>>>>>`).
 4. Verify the result is syntactically correct.
@@ -95,7 +110,9 @@ AskUserQuestion(
 
 ### When uncertain about any conflict
 
-**Do NOT guess about business logic.** Ask the user:
+**Do NOT guess about business logic.** Ask the user.
+
+For **merge** conflicts:
 
 <interaction>
 AskUserQuestion(
@@ -105,6 +122,21 @@ AskUserQuestion(
     "Keep local (ours)" -- Use the local/HEAD version,
     "Keep remote (theirs)" -- Use the incoming version,
     "Merge both" -- Combine changes from both sides,
+    "Leave unresolved" -- Skip this file for manual resolution
+  ]
+)
+</interaction>
+
+For **rebase** conflicts (ours = upstream, theirs = your feature branch):
+
+<interaction>
+AskUserQuestion(
+  header: "Conflict choice (rebase)",
+  question: "Conflict in <file> while replaying your commit '<commit message>'. Upstream (HEAD) has: <ours summary>. Your branch has: <theirs summary>. How should this be resolved?",
+  options: [
+    "Keep your branch change (theirs)" -- Preserve your feature branch work,
+    "Keep upstream (ours)" -- Discard your branch's version for this section,
+    "Merge both" -- Combine both sides,
     "Leave unresolved" -- Skip this file for manual resolution
   ]
 )
@@ -162,6 +194,26 @@ git status
 ```
 
 **If conflict markers remain:** go back to Step 3 for the affected files.
+
+**During rebase — verify feature branch changes are preserved:**
+
+Get the SHA of the commit currently being applied:
+
+```bash
+git_dir=$(git rev-parse --git-dir)
+cat "$git_dir/rebase-merge/stopped-sha" 2>/dev/null \
+  || cat "$git_dir/rebase-apply/original-commit" 2>/dev/null
+```
+
+Then inspect what that commit intended:
+
+```bash
+git show <stopped-sha> --stat
+git show <stopped-sha> -- <conflicted-file>
+```
+
+For each conflicted file, confirm that the intent of the feature branch commit is present in the resolved version.
+If any change was silently dropped, re-open that file and restore it before continuing.
 
 **Detect and run type checker or linter** to catch semantic conflicts (code that merges cleanly but is logically broken — e.g., a function signature changed on one side while the other side calls it with old arguments). Detection: check for `tsconfig.json` (→ `npx tsc --noEmit`), `mypy.ini`/`pyproject.toml` with mypy config (→ `mypy`), `Cargo.toml` (→ `cargo check`), or a `lint` target in the Makefile (→ `make lint`). If none found, skip.
 
