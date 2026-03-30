@@ -13,6 +13,14 @@ allowed-tools: Bash(git:*), Read, Grep, Glob
 
 Announce: "I'm using the commit skill to create a structured git commit."
 
+## Routing
+
+| If you need... | Use instead |
+|----------------|-------------|
+| Commit a single logical change | `/commit` — you're here |
+| Split mixed working-tree changes into multiple atomic commits | `/atcommit` — groups changes by concern |
+| Fix up an earlier commit on the current branch | `/fixup` |
+
 ## Step 1: Gather Context
 
 Run in parallel:

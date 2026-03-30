@@ -86,14 +86,22 @@ gh run view {run_id} --json jobs --jq '.jobs[] | select(.conclusion == "failure"
 
 ## Phase 3: Analyze and Fix
 
-Classify each failure by priority:
+Classify each failure before deciding the fix strategy:
 
-| Priority | Category | Examples | Auto-fixable? |
-|----------|----------|----------|---------------|
-| **P0** | Build errors | Compilation failure, missing imports, syntax errors | Yes — read error, fix code |
-| **P1** | Test failures | Unit test assertion, integration test timeout | Maybe — read test output, fix if clear root cause |
-| **P2** | Lint/format | Style violations, unused imports, formatting | Yes — run formatter/linter with --fix |
-| **P3** | Flaky/infra | Network timeout, runner OOM, service unavailable | No — retry, not fix |
+| Priority | Category | Symptoms | Auto-fixable? | Action |
+|----------|----------|----------|---------------|--------|
+| **P0** | Build | Compilation failure, missing imports, syntax errors | Yes | Read error, fix code |
+| **P1** | Test/logic | Unit test assertion, wrong output, type error | Maybe | Read test output, fix if root cause is clear |
+| **P2** | Config | Wrong env var, missing flag, bad deploy config | Maybe | Check config; ask user if env-specific |
+| **P3** | Dependency | Missing package, version mismatch, import not found | Maybe | Check lock file / dependency versions |
+| **P4** | Lint/format | Style violations, unused imports, formatting | Yes | Run formatter/linter with `--fix` |
+| **P5** | Flaky/infra | Network timeout, runner OOM, service unavailable, non-deterministic | No | Retry only — never "fix" an infra failure with code changes |
+
+**Classification heuristics:**
+- Error message mentions a package or module → P3 (Dependency)
+- Error is in a config file or environment variable → P2 (Config)
+- Error is non-deterministic (passes on re-run) → P5 (Flaky)
+- Error is in a file this PR didn't touch → likely pre-existing, see Scope Discipline below
 
 ### Re-run Flaky Jobs
 

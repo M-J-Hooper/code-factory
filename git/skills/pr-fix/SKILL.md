@@ -15,6 +15,14 @@ allowed-tools: Bash(git:*), Bash(gh:*), Bash(get_ddci_logs.sh:*), Bash(${CLAUDE_
 
 Announce: "I'm using the pr-fix skill to address PR review feedback."
 
+## Routing
+
+| If you need... | Use instead |
+|----------------|-------------|
+| Review a PR and produce feedback | `/review` — read-only analysis with structured findings |
+| Address existing PR review comments | `/pr-fix` — you're here |
+| Fix CI failures not tied to review feedback | Use the CI validation loop directly (see references) |
+
 ## Step 1: Gather Context
 
 Parse `$ARGUMENTS` for:

@@ -7,6 +7,7 @@ description: >
   "what did we learn", or at session end via Stop hook.
 argument-hint: "[--review to process pending learnings]"
 user-invocable: true
+allowed-tools: Read, Write, Edit, Glob, Grep, Task
 ---
 
 # Session Reflection

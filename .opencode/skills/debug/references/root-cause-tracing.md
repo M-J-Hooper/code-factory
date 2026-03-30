@@ -85,6 +85,23 @@ Bisection approach:
 
 Look for: global state mutations, unrestored mocks, database records not cleaned up, environment variable changes, file system artifacts.
 
+## Failure Classification
+
+Classify the failure before tracing. Classification determines the fix strategy.
+
+| Category | Symptoms | Fix Strategy |
+|----------|----------|--------------|
+| **CODE_ERROR** | Logic bug, wrong algorithm, incorrect condition, off-by-one | Trace to root cause, fix at source |
+| **CONFIG_ERROR** | Wrong env var, missing flag, invalid config value, wrong connection string | Check config loading path; validate at startup |
+| **DEPENDENCY** | Missing package, version mismatch, incompatible interface, import not found | Check dependency versions, lock files, import paths |
+| **INFRA** | Intermittent network timeout, OOM, disk full, port conflict | Verify environment; restart services; check resource limits |
+| **FLAKY** | Passes in isolation, fails in suite; non-deterministic; time-sensitive | Bisect for test pollution; check shared state, mocks, and timers |
+| **DATA** | Unexpected null, corrupted record, schema mismatch, encoding issue | Trace data origin; add validation at input boundaries |
+
+**Triage order:** CODE_ERROR → CONFIG_ERROR → DEPENDENCY → DATA → INFRA → FLAKY
+
+**Re-run before tracing INFRA/FLAKY:** A re-run costs nothing. Confirm the failure is reproducible before investing in root cause analysis.
+
 ## Key Principle
 
 **NEVER fix the symptom.** Trace backward to the original trigger, then:

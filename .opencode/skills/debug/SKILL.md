@@ -7,11 +7,20 @@ description: >
   "root cause", "debug this", "what's causing", "track down", "bisect".
 argument-hint: "[bug description, error message, or failing test]"
 user-invocable: true
+allowed-tools: Read, Grep, Glob, Bash(git:*), Bash(make:*), Bash(npm:*), Bash(cargo:*), Bash(go:*), Bash(python3:*), Bash(pytest:*), AskUserQuestion
 ---
 
 # Systematic Debugging
 
 Announce: "I'm using the /debug skill to systematically investigate this issue before proposing fixes."
+
+## Routing
+
+| If you need... | Use instead |
+|----------------|-------------|
+| Implement a new feature or change | `/do` — full lifecycle with REFINE → EXECUTE phases |
+| Fix a specific bug with known root cause | `/debug` — you're here |
+| Address PR review comments | `/pr-fix` |
 
 ## The Iron Law
 

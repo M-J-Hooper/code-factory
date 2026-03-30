@@ -8,6 +8,7 @@ description: >
   "evaluate CLI agent readiness", "agent DX", or asks about designing CLIs that AI agents can use.
 argument-hint: "[CLI name, path, or repo to evaluate/improve]"
 user-invocable: true
+allowed-tools: Read, Grep, Glob, Bash, WebSearch, WebFetch, AskUserQuestion
 ---
 
 # AI-Friendly CLI Design
