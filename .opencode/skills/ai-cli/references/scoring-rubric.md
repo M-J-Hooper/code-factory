@@ -1,6 +1,8 @@
 # Agent DX Scoring Rubric
 
-Score each axis 0-3. Sum for a total between 0-21.
+Score each axis 0-3. Sum for a total between 0-24.
+Aligned with the AXI (Agent eXperience Interface) 10 principles —
+see [axi-principles.md](axi-principles.md) for the full mapping.
 
 ## 1. Machine-Readable Output
 
@@ -129,8 +131,8 @@ Does the CLI ship agent-consumable knowledge?
 |-------|----------|
 | 0 | Only `--help` and a docs site. No agent-specific context files. |
 | 1 | A `CONTEXT.md` or `AGENTS.md` with basic usage guidance. |
-| 2 | Structured skill files (YAML frontmatter + Markdown) with per-command workflows. Error output includes next-step hints and recovery paths (concrete corrective commands, valid values). Help text is concise (5-10 lines per command, not 100). |
-| 3 | Comprehensive skill library with agent guardrails, versioned and following a standard. Mutation receipts include undo commands. Content-first defaults (bare command shows live data, not help text). Context files are focused on non-inferable invariants only. |
+| 2 | Structured skill files (YAML frontmatter + Markdown) with per-command workflows. Error output includes next-step hints and recovery paths (concrete corrective commands, valid values). Help text is concise (5-10 lines per command, not 100). Content-first defaults: bare command in a project context shows live status data, not help text. |
+| 3 | Comprehensive skill library with agent guardrails, versioned and following a standard. Mutation receipts include undo commands. help[] blocks after output with contextual next-step commands (specific to the result, not generic help). Context files are focused on non-inferable invariants only. |
 
 ### What to check
 
@@ -142,15 +144,37 @@ Does the CLI ship agent-consumable knowledge?
 - Run a mutation: does the receipt include an undo command?
 - Run `<cli>` with no subcommand in a repo context: does it show live data or just help text?
 - Run `<cli> <command> --help`: is it concise (5-10 lines) or overwhelming (100+ lines)?
+- After any command output: are there help[] blocks with contextual next-step commands?
+
+## 8. Efficiency & Composition
+
+Does the CLI minimize agent token consumption and compose well in shell pipelines?
+
+| Score | Criteria |
+|-------|----------|
+| 0 | Full verbose JSON by default. No pipe-safe conventions. Commands require multiple round-trips for action+observation. |
+| 1 | Minimal default fields on list commands (3-4 fields, not 10+). stdout/stderr separation (data on stdout, diagnostics on stderr). |
+| 2 | Token-efficient output option (TOON or equivalent) alongside JSON. Combined action+observation commands (mutations return the affected resource inline, no follow-up GET needed). Shell-pipeable output (one record per line, filterable with grep/jq). |
+| 3 | Ambient context via session hooks (state shown before invocation without agent querying). help[] blocks with contextual next-step commands appended after output. Full shell composition: pipes, process substitution, combined operations that eliminate round-trips. |
+
+### What to check
+
+- Run a list command: how many fields in the default output? (Target: 3-4, not 10+)
+- Does the CLI offer a TOON or compact output mode alongside JSON? (`--output toon`)
+- Run a mutation: does the response include the created/updated resource, or must you query again?
+- Can you pipe output to grep, jq, or another CLI? (`<cli> list | jq '.[] | .id'`)
+- Does the CLI install session hooks or show ambient state? (`<cli> shell-hook install`)
+- After output, are there help[] blocks suggesting next commands?
+- Can you chain commands in a pipeline? (`<cli> list --output ndjson | jq 'select(.status == "failed")' | <cli> delete --stdin`)
 
 ## Interpreting the Total
 
 | Range | Rating | Description |
 |-------|--------|-------------|
-| 0-5 | Human-only | Built for humans. Agents struggle with parsing, hallucinate inputs, lack safety rails. |
-| 6-10 | Agent-tolerant | Agents can use it but waste tokens, make avoidable errors, need heavy prompt engineering. |
-| 11-15 | Agent-ready | Solid agent support. Structured I/O, input validation, some introspection. A few gaps remain. |
-| 16-21 | Agent-first | Purpose-built for agents. Full introspection, hardening, safety rails, packaged knowledge. |
+| 0-6 | Human-only | Built for humans. Agents struggle with parsing, hallucinate inputs, lack safety rails. |
+| 7-12 | Agent-tolerant | Agents can use it but waste tokens, make avoidable errors, need heavy prompt engineering. |
+| 13-18 | Agent-ready | Solid agent support. Structured I/O, input validation, some introspection. A few gaps remain. |
+| 19-24 | Agent-first | Purpose-built for agents. Full introspection, hardening, safety rails, packaged knowledge, efficient composition. |
 
 ## Bonus: Multi-Surface Readiness
 
@@ -159,3 +183,12 @@ Not scored, but note whether the CLI exposes multiple agent surfaces:
 - [ ] **MCP (stdio JSON-RPC)** — typed tool invocation, no shell escaping
 - [ ] **Extension / plugin install** — agent treats CLI as native capability
 - [ ] **Headless auth** — env vars for tokens/credentials, no browser redirect
+
+### Anti-pattern: ToolSearch Overhead
+
+AXI benchmarks show ToolSearch-based tool discovery reduces agent success by ~15 percentage points
+compared to explicit tool listings.
+Agents guess wrong tool names (e.g., `take_screenshot` vs `take_snapshot`),
+causing context overflow and failures.
+Prefer shipping a SKILL.md or CONTEXT.md with explicit command names
+over relying on agents to discover tools dynamically.

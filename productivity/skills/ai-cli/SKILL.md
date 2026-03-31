@@ -5,7 +5,8 @@ description: >
   improve CLI design for AI agents, or add machine-readable output, schema introspection,
   input hardening, or safety rails to a CLI. Also use when the user says "ai-cli",
   "make this CLI work with AI", "agent-friendly CLI", "CLI for AI agents",
-  "evaluate CLI agent readiness", "agent DX", or asks about designing CLIs that AI agents can use.
+  "evaluate CLI agent readiness", "agent DX", "AXI", "agent experience interface",
+  "token-efficient CLI", "TOON format", or asks about designing CLIs that AI agents can use.
 argument-hint: "[CLI name, path, or repo to evaluate/improve]"
 user-invocable: true
 allowed-tools: Read, Grep, Glob, Bash, WebSearch, WebFetch, AskUserQuestion
@@ -18,9 +19,13 @@ Announce: "I'm using the ai-cli skill to evaluate and improve CLI design for AI 
 Guide CLI evaluation and improvement for AI agent consumption.
 Human DX optimizes for discoverability and forgiveness;
 Agent DX optimizes for predictability and defense-in-depth.
+This skill aligns with the AXI (Agent eXperience Interface) framework's 10 principles,
+organized into Efficiency, Robustness, Discoverability, and Help Access.
 
 AXI benchmarks (985 runs, two domains) show the impact:
 hint-rich CLI wrappers achieved 100% vs 86% task success, with 36% fewer turns and 39% fewer tokens.
+Per-domain breakdown: browser automation (560 runs, 100%, $0.133/task, 4.6 turns);
+GitHub operations (425 runs, 100%, $0.050/task, 3 turns).
 Gains are largest on aggregate and multi-step tasks.
 
 ## Step 1: Discover the CLI
@@ -52,7 +57,7 @@ Parse `$ARGUMENTS` to identify the target CLI and mode.
 
 > Skip this step in Design mode — go directly to Step 3.
 
-Evaluate the CLI on 7 axes, scoring each 0-3.
+Evaluate the CLI on 8 axes, scoring each 0-3.
 Load the full scoring criteria from [references/scoring-rubric.md](references/scoring-rubric.md).
 
 | Axis | Key question |
@@ -64,6 +69,7 @@ Load the full scoring criteria from [references/scoring-rubric.md](references/sc
 | Input hardening | Does the CLI defend against agent hallucination patterns? |
 | Safety rails | Can agents validate before acting? |
 | Agent knowledge packaging | Does the CLI ship agent-consumable knowledge files? |
+| Efficiency & composition | Does the CLI minimize tokens and support shell pipelines? |
 
 For each axis:
 
@@ -86,6 +92,8 @@ For each command's output, ask:
 | "can I undo this?" | `undo_command` in mutation receipt |
 | "should I retry?" | `retryable` flag on errors |
 | "is it safe to proceed?" | `--yes` flag + non-interactive mode |
+| "what state is the system in?" | Ambient context (session hooks showing state) |
+| "can I pipe this somewhere?" | Shell-composable output (stdout = data, one record per line) |
 
 If every answer is "nothing," the CLI is already agent-friendly.
 Use gaps found here to prioritize recommendations in Step 3.
@@ -104,15 +112,27 @@ Present the scorecard:
 | Input hardening | N/3 | <finding> |
 | Safety rails | N/3 | <finding> |
 | Agent knowledge packaging | N/3 | <finding> |
-| **Total** | **N/21** | |
+| Efficiency & composition | N/3 | <finding> |
+| **Total** | **N/24** | |
 
 | Range | Rating |
 |-------|--------|
-| 0-5 | Human-only — agents will struggle |
-| 6-10 | Agent-tolerant — works but wastes tokens and makes avoidable errors |
-| 11-15 | Agent-ready — solid support, a few gaps |
-| 16-21 | Agent-first — purpose-built for agents |
+| 0-6 | Human-only — agents will struggle |
+| 7-12 | Agent-tolerant — works but wastes tokens and makes avoidable errors |
+| 13-18 | Agent-ready — solid support, a few gaps |
+| 19-24 | Agent-first — purpose-built for agents |
 ```
+
+### Reference Implementations
+
+Two AXI-compliant CLIs demonstrate these patterns in production:
+
+- **gh-axi** (GitHub): combined list+filter, pre-computed totals, help[] blocks, TOON output.
+  425 runs, 100% success, $0.050/task, 3 turns.
+- **chrome-devtools-axi** (browser): combined navigate+snapshot, ambient context via session hooks,
+  shell pipes for multi-step extraction. 560 runs, 100% success, $0.133/task, 4.6 turns.
+
+For the full AXI principles mapping, see [references/axi-principles.md](references/axi-principles.md).
 
 ## Step 3: Recommend Improvements
 
@@ -126,11 +146,13 @@ Follow this implementation priority order — each item builds on the previous:
 | 3 | Exit code design and recovery paths in errors | JSON output |
 | 4 | Schema introspection (`schema` or `--describe`) | JSON output |
 | 5 | Field masks (`--fields`), pagination, pre-computed totals | JSON output |
-| 6 | Non-interactive mode (`--yes`, headless auth, secret redaction) | None |
-| 7 | Dry-run for mutations (`--dry-run`) | None |
-| 8 | Follow-up reduction (next-step hints, undo commands, truncation) | JSON output |
-| 9 | Agent context files (`CONTEXT.md`, skill files) | None |
-| 10 | MCP surface (JSON-RPC over stdio) | JSON output, schema |
+| 6 | Token-efficient output (TOON option, minimal defaults) | JSON output |
+| 7 | Non-interactive mode (`--yes`, headless auth, secret redaction) | None |
+| 8 | Dry-run for mutations (`--dry-run`) | None |
+| 9 | Follow-up reduction (help[] blocks, undo commands, truncation) | JSON output |
+| 10 | Shell composition (pipe-safe output, combined operations) | JSON output |
+| 11 | Agent context files (`CONTEXT.md`, skill files, ambient context) | None |
+| 12 | MCP surface (JSON-RPC over stdio) | JSON output, schema |
 
 ### Quick Wins (highest ROI, start here)
 
@@ -139,6 +161,7 @@ Follow this implementation priority order — each item builds on the previous:
 3. Structured errors with recovery suggestions
 4. Ship a focused `SKILL.md` with non-inferable invariants only
 5. `--dry-run` on all mutating commands
+6. Minimal default fields on list commands (3-4 fields, not 10+)
 
 For each recommendation:
 
@@ -181,3 +204,4 @@ If the user wants to continue, return to Step 3 for the next improvement.
 | Language/framework not recognized | Provide language-agnostic patterns from the reference file |
 | User wants to evaluate a CLI they don't own | Provide scorecard and recommendations as a report only |
 | No argument provided | Ask: which CLI to evaluate, design, or retrofit? |
+| Agent uses ToolSearch to find CLI tools | Warn: ToolSearch reduces success by ~15 points. Ship explicit SKILL.md with tool names instead. |

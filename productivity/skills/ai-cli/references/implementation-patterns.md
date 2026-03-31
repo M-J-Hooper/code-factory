@@ -368,15 +368,17 @@ without it, agents reported the page size as the total.
 }
 ```
 
-### Next-step hints
+### help[] blocks (next-step commands)
 
-Append copy-pasteable commands specific to what just happened:
+Append copy-pasteable commands specific to what just happened.
+AXI calls these "help[] blocks" — the primary mechanism for contextual disclosure.
+Previously called "hints" in some implementations; AXI standardizes on `help`.
 
 ```json
 {
   "id": "deploy-123",
   "status": "in_progress",
-  "hints": [
+  "help": [
     "Run `myctl deploy status deploy-123` to check progress",
     "Run `myctl deploy rollback deploy-123` to cancel"
   ]
@@ -478,4 +480,315 @@ With batch validation: 1 command, 1 diagnosis, 1 correction pass.
 // Reject first (dangerous/ambiguous), then normalize (cosmetic).
 // Reject: ".." (traversal), "?#" (embedded params), control chars, ambiguous values.
 // Normalize: TrimSpace, TrimRight("/"), ToLower.
+```
+
+## 13. Token-Efficient Output (TOON)
+
+TOON (Token-Oriented Object Notation) uses indentation instead of braces and minimal quoting.
+~40% token savings over JSON with 74% parsing accuracy vs JSON's 70% across 4 LLM models.
+Lossless, deterministic round-trips with JSON. Spec: toonformat.dev
+
+### When to use
+
+Offer as `--output toon` alongside `json` and `table`.
+TOON is an option for token-conscious callers, not a replacement for JSON.
+
+### Format comparison
+
+JSON (39 tokens):
+```json
+[{"id": "web-1", "status": "running", "replicas": 3}, {"id": "web-2", "status": "stopped", "replicas": 0}]
+```
+
+TOON (~23 tokens):
+```
+{fields}
+id      status   replicas
+web-1   running  3
+web-2   stopped  0
+```
+
+Uniform object arrays compress into tables: declare fields once, stream row values.
+
+### Go example
+
+```go
+func printTOON(w io.Writer, items []map[string]any, fields []string) {
+    fmt.Fprintf(w, "{fields}\n")
+    fmt.Fprintf(w, "%s\n", strings.Join(fields, "\t"))
+    for _, item := range items {
+        vals := make([]string, len(fields))
+        for i, f := range fields {
+            vals[i] = fmt.Sprintf("%v", item[f])
+        }
+        fmt.Fprintf(w, "%s\n", strings.Join(vals, "\t"))
+    }
+}
+```
+
+### Python example
+
+```python
+def print_toon(items: list[dict], fields: list[str], out=sys.stdout):
+    out.write("{fields}\n")
+    out.write("\t".join(fields) + "\n")
+    for item in items:
+        out.write("\t".join(str(item.get(f, "")) for f in fields) + "\n")
+```
+
+### Integration with `--output` flag
+
+Add `toon` to the output format choices alongside `json` and `table`:
+
+```go
+case "toon":
+    printTOON(os.Stdout, data, defaultFields)
+```
+
+## 14. Combined Operations
+
+Combine action + observation in a single CLI call.
+Eliminates follow-up reads after mutations — the primary source of unnecessary agent turns.
+AXI benchmarks show combined operations are the key differentiator for browser automation tasks.
+
+### Pattern 1: Mutation returns full resource
+
+Instead of returning only an ID and forcing a follow-up GET:
+
+```go
+// Bad: returns only ID — agent must call Get() next
+func createHandler(cmd *cobra.Command, args []string) error {
+    id, err := client.Create(payload)
+    printOutput(map[string]string{"id": id})
+    return err
+}
+
+// Good: returns the full resource inline
+func createHandler(cmd *cobra.Command, args []string) error {
+    id, err := client.Create(payload)
+    if err != nil { return err }
+    resource, err := client.Get(id)
+    if err != nil { return err }
+    resource["help"] = []string{
+        fmt.Sprintf("Run `myctl get %s` to refresh", id),
+        fmt.Sprintf("Run `myctl delete %s` to remove", id),
+    }
+    return printOutput(resource)
+}
+```
+
+```python
+# Good: create returns the full resource
+@cli.command()
+def create(payload: str):
+    resource_id = client.create(json.loads(payload))
+    resource = client.get(resource_id)
+    resource["help"] = [
+        f"Run `myctl get {resource_id}` to refresh",
+        f"Run `myctl delete {resource_id}` to remove",
+    ]
+    print_output(resource)
+```
+
+### Pattern 2: Navigate + snapshot (UI CLIs)
+
+For browser or UI automation CLIs, one command opens a URL and returns state:
+
+```bash
+# One command does both navigation and snapshot:
+myctl open https://example.com --snapshot
+# Returns: page title, URL, DOM summary, visible elements
+```
+
+### When NOT to combine
+
+Do not combine when the observation is expensive (>5s) or when the caller
+may not need it. Offer `--no-fetch` to skip the follow-up read.
+
+## 15. Shell Composition
+
+CLIs that compose via shell pipes achieve multi-step workflows in a single pipeline,
+reducing agent turns significantly.
+AXI benchmarks: shell composition enabled patterns impossible in MCP.
+
+### Core rules
+
+1. **stdout = data, stderr = diagnostics.** Progress bars, warnings, and debug info go to stderr.
+   Data goes to stdout. This lets pipes work correctly.
+2. **One record per line for lists.** NDJSON (one JSON object per line) is filterable with grep and jq.
+3. **Exit codes must be correct.** Pipe chains short-circuit on non-zero exit —
+   incorrect exit codes break composition.
+4. **Accept stdin.** Commands that operate on resources should accept IDs via stdin
+   for piping from other commands.
+
+### Pipeline pattern
+
+Without composition (3 agent turns):
+```
+Turn 1: myctl list --status failed --output json > /tmp/failed.json
+Turn 2: # Agent parses JSON, extracts IDs
+Turn 3: myctl delete id1 id2 id3
+```
+
+With composition (1 pipeline):
+```bash
+myctl list --status failed --output ndjson | jq -r '.id' | xargs myctl delete
+```
+
+### Go example: stdin acceptance
+
+```go
+func deleteHandler(cmd *cobra.Command, args []string) error {
+    ids := args
+    if len(ids) == 0 && !isatty.IsTerminal(os.Stdin.Fd()) {
+        scanner := bufio.NewScanner(os.Stdin)
+        for scanner.Scan() {
+            if id := strings.TrimSpace(scanner.Text()); id != "" {
+                ids = append(ids, id)
+            }
+        }
+    }
+    if len(ids) == 0 {
+        return fmt.Errorf("no resource IDs provided (pass as args or via stdin)")
+    }
+    return client.DeleteBatch(ids)
+}
+```
+
+### Python example: stdin acceptance
+
+```python
+@cli.command()
+@click.argument("ids", nargs=-1)
+def delete(ids: tuple[str, ...]):
+    if not ids and not sys.stdin.isatty():
+        ids = tuple(line.strip() for line in sys.stdin if line.strip())
+    if not ids:
+        raise click.UsageError("No resource IDs provided (pass as args or via stdin)")
+    client.delete_batch(ids)
+```
+
+## 16. Ambient Context
+
+Self-installing session hooks that display CLI state before each agent invocation.
+The agent never needs to spend a turn querying "what is the current state?"
+
+### Shell hook pattern
+
+Provide a `shell-hook` subcommand that detects the shell and emits hook code:
+
+```go
+func shellHookCmd() *cobra.Command {
+    return &cobra.Command{
+        Use:   "shell-hook install",
+        Short: "Install a shell hook that shows CLI context before each command",
+        RunE: func(cmd *cobra.Command, args []string) error {
+            shell := detectShell() // fish, bash, zsh
+            switch shell {
+            case "fish":
+                fmt.Println(`function __myctl_hook --on-event fish_preexec; myctl context --compact 2>/dev/null; end`)
+            case "bash":
+                fmt.Println(`__myctl_hook() { myctl context --compact 2>/dev/null; }; PROMPT_COMMAND="__myctl_hook;$PROMPT_COMMAND"`)
+            case "zsh":
+                fmt.Println(`__myctl_hook() { myctl context --compact 2>/dev/null; }; precmd_functions+=(__myctl_hook)`)
+            }
+            return nil
+        },
+    }
+}
+```
+
+### Context subcommand
+
+A `context` command emits a compact one-line state summary:
+
+```bash
+$ myctl context --compact
+project=web-api env=staging version=v2.1 status=deployed last-deploy=2h-ago
+```
+
+This is what the session hook displays before each command.
+The agent sees the state in its context window without querying.
+
+### Relationship to help[] blocks
+
+- **Ambient context** shows state BEFORE the command (what is the world right now?)
+- **help[] blocks** show next steps AFTER the command (what should I do next?)
+
+Together they frame each CLI invocation,
+eliminating both pre-command state queries and post-command "what now?" questions.
+
+## 17. help[] Blocks (Detailed)
+
+After every command output, append a `help` array with contextual next-step commands.
+These are not generic help — they are specific to the result.
+AXI calls this "contextual disclosure" (Principle 9).
+
+### Format
+
+Include `help` as a top-level field in JSON responses:
+
+```json
+{
+  "id": "deploy-456",
+  "status": "failed",
+  "error": "health check timeout",
+  "help": [
+    "Run `myctl deploy logs deploy-456` to see failure details",
+    "Run `myctl deploy retry deploy-456` to retry",
+    "Run `myctl deploy rollback deploy-456 --to v2.0` to roll back"
+  ]
+}
+```
+
+Commands should vary help[] content based on the result:
+
+| Result | help[] content |
+|--------|---------------|
+| Success | Status check, logs, related resources |
+| Failure | Logs, retry, rollback, diagnostic commands |
+| Partial | Resume, status, cancel commands |
+| List | Filter, export, act-on-item commands |
+
+### Go wrapper
+
+```go
+func withHelp(data map[string]any, commands ...string) map[string]any {
+    data["help"] = commands
+    return data
+}
+
+// Usage:
+result := withHelp(resource,
+    fmt.Sprintf("Run `myctl get %s` to refresh", id),
+    fmt.Sprintf("Run `myctl logs %s` to view logs", id),
+)
+```
+
+### Python wrapper
+
+```python
+def with_help(data: dict, *commands: str) -> dict:
+    data["help"] = list(commands)
+    return data
+
+# Usage:
+result = with_help(resource,
+    f"Run `myctl get {resource_id}` to refresh",
+    f"Run `myctl logs {resource_id}` to view logs",
+)
+```
+
+### In TOON format
+
+For TOON output, help[] blocks appear as an indented list after the main data:
+
+```
+id        deploy-456
+status    failed
+error     health check timeout
+help
+  Run `myctl deploy logs deploy-456` to see failure details
+  Run `myctl deploy retry deploy-456` to retry
+  Run `myctl deploy rollback deploy-456 --to v2.0` to roll back
 ```
