@@ -19,6 +19,10 @@ Guide CLI evaluation and improvement for AI agent consumption.
 Human DX optimizes for discoverability and forgiveness;
 Agent DX optimizes for predictability and defense-in-depth.
 
+AXI benchmarks (985 runs, two domains) show the impact:
+hint-rich CLI wrappers achieved 100% vs 86% task success, with 36% fewer turns and 39% fewer tokens.
+Gains are largest on aggregate and multi-step tasks.
+
 ## Step 1: Discover the CLI
 
 Parse `$ARGUMENTS` to identify the target CLI and mode.
@@ -67,6 +71,25 @@ For each axis:
 2. Read source code for the implementation
 3. Assign a score (0-3) with evidence
 
+### The One Question Diagnostic
+
+After scoring, run this test on 3-5 representative commands.
+For each command's output, ask:
+**"What is the human caller implicitly expected to figure out here?"**
+
+| If the answer is... | The fix is... |
+|----------------------|---------------|
+| "what format is this?" | Structured output default when piped |
+| "how many total?" | `total_count` field |
+| "what do I do next?" | Next-step hints |
+| "which flag did I get wrong?" | Batch validation — all errors at once |
+| "can I undo this?" | `undo_command` in mutation receipt |
+| "should I retry?" | `retryable` flag on errors |
+| "is it safe to proceed?" | `--yes` flag + non-interactive mode |
+
+If every answer is "nothing," the CLI is already agent-friendly.
+Use gaps found here to prioritize recommendations in Step 3.
+
 Present the scorecard:
 
 ```markdown
@@ -98,13 +121,24 @@ Follow this implementation priority order — each item builds on the previous:
 
 | Priority | Improvement | Prerequisite |
 |----------|------------|--------------|
-| 1 | Machine-readable output (`--output json`) | None |
-| 2 | Input validation and hardening | None |
-| 3 | Schema introspection (`schema` or `--describe`) | JSON output |
-| 4 | Field masks (`--fields`) and pagination | JSON output |
-| 5 | Dry-run for mutations (`--dry-run`) | None |
-| 6 | Agent context files (`CONTEXT.md`, skill files) | None |
-| 7 | MCP surface (JSON-RPC over stdio) | JSON output, schema |
+| 1 | Machine-readable output (`--output json`, structured errors) | None |
+| 2 | Input validation, batch validation, reject/normalize | None |
+| 3 | Exit code design and recovery paths in errors | JSON output |
+| 4 | Schema introspection (`schema` or `--describe`) | JSON output |
+| 5 | Field masks (`--fields`), pagination, pre-computed totals | JSON output |
+| 6 | Non-interactive mode (`--yes`, headless auth, secret redaction) | None |
+| 7 | Dry-run for mutations (`--dry-run`) | None |
+| 8 | Follow-up reduction (next-step hints, undo commands, truncation) | JSON output |
+| 9 | Agent context files (`CONTEXT.md`, skill files) | None |
+| 10 | MCP surface (JSON-RPC over stdio) | JSON output, schema |
+
+### Quick Wins (highest ROI, start here)
+
+1. JSON by default when output is piped or captured
+2. No prompts in non-interactive mode (+ `--yes` flag)
+3. Structured errors with recovery suggestions
+4. Ship a focused `SKILL.md` with non-inferable invariants only
+5. `--dry-run` on all mutating commands
 
 For each recommendation:
 
@@ -121,6 +155,7 @@ Ask the user which improvement to tackle first.
 When the user selects an improvement,
 load the relevant implementation patterns from [references/implementation-patterns.md](references/implementation-patterns.md)
 and guide the implementation.
+For a quick pass/fail assessment, consult the [references/agent-dx-checklist.md](references/agent-dx-checklist.md).
 
 ### Implementation workflow
 

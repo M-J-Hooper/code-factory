@@ -274,3 +274,208 @@ Eliminates shell escaping, argument parsing ambiguity, and output parsing.
 2. Map each command to a tool with typed input/output schemas
 3. Handle auth via environment variables (headless — no browser redirect)
 4. Return structured JSON responses, not formatted text
+
+## 8. Exit Code Design
+
+### Semantic exit codes
+
+Use distinct exit codes so agents can branch without parsing stderr.
+The exact numbering matters less than consistency and documentation.
+
+| Code | Meaning |
+|------|---------|
+| 0 | Success |
+| 1 | General error |
+| 2 | Usage / invalid arguments |
+| 10 | Resource not found |
+| 11 | Conflict with existing state |
+| 12 | Permission denied |
+| 20 | Transient failure (retryable) |
+| 130 | Interrupted (SIGINT) |
+
+### Enhanced structured errors
+
+Return errors as JSON on stderr with `retryable` flag and `suggestions` array.
+
+```json
+{
+  "error": "invalid_value",
+  "field": "--env",
+  "message": "Unknown environment 'prod'",
+  "retryable": false,
+  "suggestions": [
+    "Valid values: dev, staging, production",
+    "Run `myctl env list` to see all environments"
+  ]
+}
+```
+
+### Cancellation signal
+
+When a streamed operation is interrupted, emit a partial-progress signal:
+
+```json
+{"interrupted": true, "completed": 47, "total": 150}
+```
+
+This tells the caller what state the system is in without requiring a follow-up query.
+
+## 9. Non-Interactive Mode
+
+### `--yes` and TTY detection
+
+Add a `--yes` flag. In non-TTY contexts, skip prompts automatically.
+
+```go
+var yesFlag bool
+cmd.Flags().BoolVar(&yesFlag, "yes", false, "Skip confirmation prompts")
+
+// In non-TTY: auto-skip. In TTY without --yes: prompt on stderr.
+if yesFlag || !isatty.IsTerminal(os.Stdin.Fd()) { proceed() }
+```
+
+### Headless auth
+
+Auth priority: env var > stdin > credential file > browser (last resort).
+Browser redirect only in interactive TTY. Support `echo $TOKEN | myctl login --stdin`.
+
+### Secret redaction
+
+Redact `Authorization`, `X-Api-Key`, `Cookie` headers in `--verbose` and `--dry-run` output.
+Prefer stdin or env vars over process arguments — process args appear in `ps` and shell history.
+
+### Declarative commands
+
+Where possible, use idempotent verbs: `apply`, `sync`, `ensure` instead of `create`, `delete`.
+Agents can safely re-run declarative commands without checking current state first.
+
+## 10. Follow-up Reduction
+
+Patterns that answer the agent's next question before it asks.
+
+### Pre-computed totals
+
+Include `total_count` in list responses.
+AXI benchmarks found this was the difference between 5/5 and 0/5 on a `list_labels` task —
+without it, agents reported the page size as the total.
+
+```json
+{
+  "items": [{"id": "abc", "name": "web-1"}],
+  "total_count": 47,
+  "page": 1,
+  "page_size": 25
+}
+```
+
+### Next-step hints
+
+Append copy-pasteable commands specific to what just happened:
+
+```json
+{
+  "id": "deploy-123",
+  "status": "in_progress",
+  "hints": [
+    "Run `myctl deploy status deploy-123` to check progress",
+    "Run `myctl deploy rollback deploy-123` to cancel"
+  ]
+}
+```
+
+### Recovery paths in errors
+
+Include valid values and concrete corrective commands — not vague advice.
+See Section 8 (Enhanced structured errors) for the JSON schema with `suggestions` array.
+
+### Truncation hints
+
+When truncating a large field, indicate that more data exists:
+
+```
+"body": "First 500 chars of the issue body… [truncated, 2847 chars total; use --full to see complete body]"
+```
+
+### Undo commands in mutation receipts
+
+Include the rollback command in mutation responses:
+
+```json
+{
+  "action": "deploy",
+  "resource": "web-api",
+  "version": "v2.1",
+  "undo_command": "myctl rollback web-api --to v2.0"
+}
+```
+
+### Content-first defaults
+
+When context is clear (e.g., current repo), a bare command should show live data:
+
+```
+$ myctl          # in a repo with a myctl project
+{"project": "web-api", "status": "deployed", "version": "v2.1", ...}
+```
+
+This collapses a two-step interaction (`myctl --help` then `myctl status`) into one.
+
+### Definitive empty states
+
+Return explicit zero-result messages, not ambiguous empty output:
+
+```json
+{"items": [], "total_count": 0, "message": "No deployments found matching filter 'failed'"}
+```
+
+Without this, agents may assume the command failed or that results were truncated.
+
+## 11. Batch Validation
+
+### Return all errors at once
+
+Collect all validation errors before returning, instead of failing on the first.
+
+```go
+// Accumulate all errors before returning — never fail-fast on the first.
+var errs []ValidationError
+if !isValidEnv(cmd.Env)   { errs = append(errs, ValidationError{Field: "--env", ...}) }
+if cmd.Image == ""         { errs = append(errs, ValidationError{Field: "--image", ...}) }
+if !isDuration(cmd.Timeout){ errs = append(errs, ValidationError{Field: "--timeout", ...}) }
+return errs // caller formats as JSON with all errors
+```
+
+Without batch validation: 3 invalid flags = 3 separate retries.
+With batch validation: 1 command, 1 diagnosis, 1 correction pass.
+
+## 12. Reject vs. Normalize
+
+### Decision framework
+
+| Condition | Action | Rationale |
+|-----------|--------|-----------|
+| Correction could change caller's intent | **Reject** with error | Silent "fix" may do the wrong thing |
+| Correction is cosmetic with no ambiguity | **Normalize** silently | Reduces friction without risk |
+
+### Reject these (ambiguous or dangerous)
+
+| Input | Why reject |
+|-------|-----------|
+| `../../.ssh/config` | Path traversal — dangerous |
+| `fileId?fields=name` | Embedded query params — structural error |
+| `hello\x00world` | Control characters — injection risk |
+| `300` (for a duration) | Ambiguous — could mean 300s, 300ms, or 300m |
+
+### Normalize these (unambiguous cosmetic)
+
+| Input | Normalized | Why safe |
+|-------|-----------|----------|
+| `Production` | `production` | Case difference, one canonical form |
+| `my-resource ` | `my-resource` | Trailing whitespace |
+| `us-east-1/` | `us-east-1` | Trailing slash on an ID |
+
+```go
+// Reject first (dangerous/ambiguous), then normalize (cosmetic).
+// Reject: ".." (traversal), "?#" (embedded params), control chars, ambiguous values.
+// Normalize: TrimSpace, TrimRight("/"), ToLower.
+```

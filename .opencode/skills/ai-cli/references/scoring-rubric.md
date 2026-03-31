@@ -10,8 +10,8 @@ Can an agent parse the CLI's output without heuristics?
 |-------|----------|
 | 0 | Human-only output (tables, color codes, prose). No structured format. |
 | 1 | `--output json` exists but is incomplete or inconsistent across commands. |
-| 2 | Consistent JSON output across all commands. Errors also return structured JSON. |
-| 3 | NDJSON streaming for paginated results. Structured output is default in non-TTY contexts. |
+| 2 | Consistent JSON output across all commands. Errors return structured JSON. Exit codes distinguish failure categories (usage, not-found, conflict, transient). |
+| 3 | NDJSON streaming for paginated results. Structured output is default in non-TTY contexts. Cancellation produces a structured partial-progress signal (`{"interrupted": true, "completed": N, "total": M}`). |
 
 ### What to check
 
@@ -19,6 +19,8 @@ Can an agent parse the CLI's output without heuristics?
 - Pipe output: `<cli> <command> | cat` — does it detect non-TTY and switch to JSON?
 - Trigger an error: does the error come back as structured JSON?
 - List a large collection: does it stream (NDJSON) or buffer the entire array?
+- Check exit codes: does `<cli> get nonexistent` return a different exit code than `<cli> create duplicate`?
+- Trigger a cancellation mid-stream: does the CLI emit a structured partial-progress signal or die silently?
 
 ## 2. Raw Payload Input
 
@@ -63,9 +65,9 @@ Does the CLI help agents control response size?
 | Score | Criteria |
 |-------|----------|
 | 0 | Returns full API responses with no way to limit fields or paginate. |
-| 1 | `--fields` or field masks on some commands. |
-| 2 | Field masks on all read commands. Pagination with `--page-size` or equivalent. |
-| 3 | NDJSON streaming pagination. Guidance in context files on field mask usage. |
+| 1 | `--fields` or field masks on some commands. Minimal field defaults (3-4 fields per list item, not 10+). |
+| 2 | Field masks on all read commands. Pagination with `--page-size` or equivalent. Truncation hints on large fields with `--full` escape hatch. Definitive empty states (explicit "No items found" messages, not ambiguous empty output). |
+| 3 | NDJSON streaming pagination. Pre-computed aggregates in responses (`total_count`, CI rollups, summaries) so the agent never needs a follow-up counting query. Guidance in context files on field mask usage. |
 
 ### What to check
 
@@ -73,6 +75,9 @@ Does the CLI help agents control response size?
 - Is `--fields "id,name"` or `--select` supported?
 - Does pagination work? (`--page-size`, `--limit`, `--cursor`)
 - For large responses: does it stream or buffer?
+- Does a list response include a `total_count` field, or must the agent paginate to count?
+- Are long text fields truncated with a hint and `--full` escape?
+- Run a query that returns zero results: is the output an explicit "No items found" message or an ambiguous empty array?
 
 ## 5. Input Hardening
 
@@ -82,8 +87,8 @@ Does the CLI defend against agent hallucination patterns?
 |-------|----------|
 | 0 | No input validation beyond basic type checks. |
 | 1 | Some validation, but misses agent-specific hallucination patterns. |
-| 2 | Rejects control chars, path traversals (`../`), percent-encoded segments, embedded query params. |
-| 3 | All of the above plus output path sandboxing, HTTP-layer encoding. Treats agent as untrusted operator. |
+| 2 | Rejects control chars, path traversals (`../`), percent-encoded segments, embedded query params. Returns all validation errors at once (batch validation), not one at a time. |
+| 3 | All of the above plus output path sandboxing, HTTP-layer encoding. Smart normalization of unambiguous inputs (case, whitespace) while rejecting ambiguous ones. Treats agent as untrusted operator. |
 
 ### What to check
 
@@ -92,6 +97,8 @@ Does the CLI defend against agent hallucination patterns?
 - Pass `%2e%2e%2f` — does it detect double encoding?
 - Pass strings with control characters (null bytes, newlines) — does it reject?
 - Check source code for input sanitization functions
+- Submit a command with 3 invalid flags at once — does it report all three errors or just the first?
+- Pass `Production` where `production` is expected — does it normalize or reject? (Normalize is correct: unambiguous case difference.)
 
 ## 6. Safety Rails
 
@@ -99,10 +106,10 @@ Can agents validate before acting?
 
 | Score | Criteria |
 |-------|----------|
-| 0 | No dry-run. No response sanitization. |
-| 1 | `--dry-run` for some mutating commands. |
-| 2 | `--dry-run` for all mutating commands. Agent can validate without side effects. |
-| 3 | Dry-run plus response sanitization against prompt injection in API data. Full request-response loop defended. |
+| 0 | No dry-run. No response sanitization. Interactive prompts block non-TTY callers. |
+| 1 | `--dry-run` for some mutating commands. `--yes` flag on some confirmation-gated commands. |
+| 2 | `--dry-run` for all mutating commands. Agent can validate without side effects. Non-interactive by default when piped. Headless auth via env vars, stdin, or credential files (no browser redirect). Pagers auto-disabled outside TTY. |
+| 3 | Dry-run plus response sanitization against prompt injection in API data. Secret redaction in all output modes (stdout, stderr, `--verbose`, `--dry-run`). Process args avoid secrets (prefer stdin/env). Full request-response loop defended. |
 
 ### What to check
 
@@ -110,6 +117,9 @@ Can agents validate before acting?
 - Does dry-run show what would happen (the request that would be sent)?
 - Are API responses filtered before display?
 - Is there a confirmation prompt for destructive operations?
+- Pipe a destructive command: `echo | <cli> delete <resource>` — does it hang waiting for a prompt, proceed with `--yes`, or reject?
+- Run `<cli> login` without a TTY — does it offer env-var or stdin auth, or require a browser?
+- Run `<cli> --verbose` with credentials configured — are tokens redacted in the output?
 
 ## 7. Agent Knowledge Packaging
 
@@ -119,8 +129,8 @@ Does the CLI ship agent-consumable knowledge?
 |-------|----------|
 | 0 | Only `--help` and a docs site. No agent-specific context files. |
 | 1 | A `CONTEXT.md` or `AGENTS.md` with basic usage guidance. |
-| 2 | Structured skill files (YAML frontmatter + Markdown) with per-command workflows. |
-| 3 | Comprehensive skill library with agent guardrails. Skills are versioned and follow a standard. |
+| 2 | Structured skill files (YAML frontmatter + Markdown) with per-command workflows. Error output includes next-step hints and recovery paths (concrete corrective commands, valid values). Help text is concise (5-10 lines per command, not 100). |
+| 3 | Comprehensive skill library with agent guardrails, versioned and following a standard. Mutation receipts include undo commands. Content-first defaults (bare command shows live data, not help text). Context files are focused on non-inferable invariants only. |
 
 ### What to check
 
@@ -128,6 +138,10 @@ Does the CLI ship agent-consumable knowledge?
 - Are there skill files with YAML frontmatter?
 - Do the files encode agent-specific invariants ("always use --dry-run", "always add --fields")?
 - Are they versioned and maintained alongside the CLI?
+- Trigger an error: does the output include a concrete corrective command, or just a message?
+- Run a mutation: does the receipt include an undo command?
+- Run `<cli>` with no subcommand in a repo context: does it show live data or just help text?
+- Run `<cli> <command> --help`: is it concise (5-10 lines) or overwhelming (100+ lines)?
 
 ## Interpreting the Total
 
