@@ -28,6 +28,7 @@ Tracks mentees, recurring meetings, and ongoing projects in a state file (`~/doc
 | `~/docs/log/brag-state.md` | State file — mentees, meetings, interview types, last run date |
 | `~/.claude/projects/` | Session logs for automated scanning |
 | `~/docs/Daily/` | Obsidian daily notes (from `/daily` skill) |
+| `~/docs/People/` | Obsidian People directory — name resolution and backlinks |
 | `~/google-drive/` | Google Workspace stub files |
 
 ## Step 1: Initialize
@@ -250,7 +251,54 @@ Assign each new item to a brag doc section:
 
 Items that don't fit go in `## Uncategorized`.
 
-### 3c: Format Entries
+### 3c: Resolve People Names
+
+When collected entries mention people by name,
+resolve them to full names using the People directory in the vault.
+
+Use `Glob(pattern="*/", path="~/docs/People")` to get the list of known people.
+
+Match each name against existing directories using this priority order:
+
+| Priority | Rule | Example |
+|----------|------|---------|
+| 1 | **Exact match** — input matches a directory name exactly | "Nick Nakas" → `Nick Nakas/` |
+| 2 | **First-name match** — input matches the first name of exactly one person | "Nick" → `Nick Nakas/` |
+| 3 | **Accent-insensitive match** — strip accents before comparing | "Alvaro" → `Álvaro Mongil/` |
+| 4 | **Substring match** — input is a clear substring of exactly one name | "Mongil" → `Álvaro Mongil/` |
+
+- **Unique match at any priority**: use the full name exactly as it appears (preserving accents/diacritics).
+- **Multiple matches**: use `AskUserQuestion` to present candidates and let the user pick.
+- **No match**: bootstrap a new People entry.
+  Create `~/docs/People/<Full Name>/<Full Name>.md` with minimal frontmatter
+  and an Overview section capturing what you know from context.
+  Use the same format as existing People files:
+
+```markdown
+---
+date_created: YYYY-MM-DD
+date_modified: YYYY-MM-DD
+category: overview
+person: Full Name
+tags: [overview, fullname-slug, relationship]
+---
+
+# Full Name
+
+## Overview
+Brief context from the brag entry.
+```
+
+For the relationship tag, use your best guess from context:
+`collaborator`, `peer`, `mentee`, `external`, etc.
+If only a first name is available and you can't infer the full name, ask using `AskUserQuestion`.
+
+Use full names wrapped in Obsidian wikilinks in brag doc entries
+so they are searchable and linkable in the Obsidian graph.
+For example, "Helped Platform team with debugging" becomes
+"Helped [[Sarah Chen]] from Platform team with debugging".
+
+### 3d: Format Entries
 
 Every entry requires a **date** and at least one **reference link** when available.
 For ephemeral sources (Slack messages, temporary docs),
@@ -259,7 +307,7 @@ capture a brief **quote** as proof since the link may not be accessible later.
 **Entry format:**
 
 ```
-* (YYYY-MM-DD) Brief description — why it matters or what impact it had
+* (YYYY-MM-DD) Brief description mentioning [[Person Name]] — why it matters or what impact it had
   [PR #1234](url) | [Confluence: Page Title](url) | [Slack thread](url): "relevant quote"
 ```
 
@@ -273,7 +321,7 @@ capture a brief **quote** as proof since the link may not be accessible later.
   [RFC: Ingestion Pipeline v2](https://datadoghq.atlassian.net/wiki/spaces/ENG/pages/123)
   [Slack thread](https://datadoghq.slack.com/archives/C123/p456): "Thanks @rodrigo, this saved us weeks of back-and-forth"
 
-* (2026-02-28) Helped Platform team debug memory leak in trace-agent — root-caused to unbounded cache
+* (2026-02-28) Helped [[Sarah Chen]] from Platform team debug memory leak in trace-agent — root-caused to unbounded cache
   [Slack DM](https://datadoghq.slack.com/archives/D789/p012): "You were right, the LRU eviction was disabled in prod config"
 ```
 
@@ -295,7 +343,7 @@ capture a brief **quote** as proof since the link may not be accessible later.
 Always capture a brief quote (1-2 sentences) that proves the accomplishment.
 This applies to: Slack messages, Slack threads, DMs, and any link that requires auth to access.
 
-### 3d: Present and Confirm
+### 3e: Present and Confirm
 
 Show proposed additions grouped by section.
 Use `AskUserQuestion` with `multiSelect: true` to let the user pick which to include.
@@ -318,6 +366,8 @@ Load the question bank from [references/questions.md](references/questions.md).
    If the user selects "Yes", the next question should accept free-text directly.
 5. For "skip"/"none" answers, move to the next question.
 6. Update state file if persistent data changed (new mentee, new guild, etc.).
+7. **Resolve people names** mentioned in answers using the same process as Step 3c.
+   Use `[[Full Name]]` wikilinks when writing entries from interactive input.
 
 **Data capture for manual entries**: When the user describes an accomplishment, always ask for:
 - **Date**: When did this happen? (exact date or approximate week/month)
@@ -366,12 +416,21 @@ End with an open-ended "anything else?" question.
 
 ## Step 5: Finalize
 
-### 5a: Update State
+### 5a: Update State and People Backlinks
 
 Update `~/docs/log/brag-state.md`:
 - Set `last_run` to today's date
 - Persist any mentee, guild, meeting, or interview type changes
 - Keep markdown format (Obsidian-compatible)
+
+Update each mentioned person's People file by appending a backlink under their `## Referenced In` section:
+
+```
+- `log/doc` - Brief context of the brag mention (YYYY-MM-DD)
+```
+
+If `## Referenced In` doesn't exist, add it.
+If there's already a backlink for the brag doc, update it rather than duplicating.
 
 ### 5b: Summary
 
@@ -418,4 +477,5 @@ Update `~/docs/log/brag-state.md`:
 | No new items found | Report and proceed to interactive questions |
 | `~/google-drive/` missing | Skip, warn user, continue |
 | `~/docs/log` not writable | Report error and exit |
+| `~/docs/People/` directory doesn't exist | Create it with `mkdir -p ~/docs/People` when first person is mentioned |
 | Background agent timeout | Use partial results from the agent, note incomplete scan |

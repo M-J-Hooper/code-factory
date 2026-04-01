@@ -106,7 +106,7 @@ Always capture a 1-2 sentence quote that proves the accomplishment.
 
 ## Consulting
 
-* (2026-03-10) Helped Platform team debug memory leak in trace-agent — root-caused to unbounded cache
+* (2026-03-10) Helped [[Sarah Chen]] from Platform team debug memory leak in trace-agent — root-caused to unbounded cache
   [Slack thread](https://datadoghq.slack.com/archives/C123/p456): "You were right, the LRU eviction was disabled in prod config"
   [PR #987](https://github.com/DataDog/datadog-agent/pull/987)
 
@@ -127,3 +127,4 @@ Always capture a 1-2 sentence quote that proves the accomplishment.
 - **Quote ephemeral sources**: Slack messages, DMs, and temporary docs — capture proof text
 - **Capture fuzzy work**: code review quality, onboarding help, unplanned consulting
 - **Don't undersell**: if you drove a decision, say "drove" not "helped with"
+- **Wikilink people**: use `[[Full Name]]` for all people mentioned — connects to the Obsidian People graph
