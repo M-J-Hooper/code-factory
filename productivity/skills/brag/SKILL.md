@@ -122,6 +122,10 @@ search `from:<@USER_ID> in:#channel-name` sorted by timestamp ascending to get t
 **Pagination**: use the `cursor` parameter to paginate through all results.
 Process results concisely — extract the brag-worthy signal, not every message.
 
+**Capture proof**: For each brag-worthy Slack message, save the message date, permalink, and a 1-2 sentence quote.
+Slack links require authentication and messages can be edited or deleted —
+the quote serves as durable proof of the accomplishment.
+
 **Classify Slack signals**:
 
 | Signal | Brag Section |
@@ -248,11 +252,48 @@ Items that don't fit go in `## Uncategorized`.
 
 ### 3c: Format Entries
 
-Each entry is a bullet with:
-- **What**: Brief description with link
-- **Context**: Why it matters or what impact it had
+Every entry requires a **date** and at least one **reference link** when available.
+For ephemeral sources (Slack messages, temporary docs),
+capture a brief **quote** as proof since the link may not be accessible later.
 
-Example: `* [Fix flaky test timeout in auth module](https://github.com/DataDog/dd-go/pull/1234) — Reduced CI flakiness for the auth team`
+**Entry format:**
+
+```
+* (YYYY-MM-DD) Brief description — why it matters or what impact it had
+  [PR #1234](url) | [Confluence: Page Title](url) | [Slack thread](url): "relevant quote"
+```
+
+**Examples:**
+
+```markdown
+* (2026-03-15) Fix flaky test timeout in auth module — reduced CI flakiness by 40% for the auth team
+  [PR #1234](https://github.com/DataDog/dd-go/pull/1234)
+
+* (2026-03-10) Led cross-team design review for new ingestion pipeline — aligned 3 teams on schema format
+  [RFC: Ingestion Pipeline v2](https://datadoghq.atlassian.net/wiki/spaces/ENG/pages/123)
+  [Slack thread](https://datadoghq.slack.com/archives/C123/p456): "Thanks @rodrigo, this saved us weeks of back-and-forth"
+
+* (2026-02-28) Helped Platform team debug memory leak in trace-agent — root-caused to unbounded cache
+  [Slack DM](https://datadoghq.slack.com/archives/D789/p012): "You were right, the LRU eviction was disabled in prod config"
+```
+
+**Link types to capture:**
+
+| Source | Link Format |
+|--------|------------|
+| GitHub PR | `[PR #N](url)` |
+| GitHub Issue | `[Issue #N](url)` |
+| Confluence | `[Confluence: Title](url)` |
+| Jira | `[PROJ-N](url)` |
+| Slack thread | `[Slack thread](url): "key quote"` |
+| Slack DM | `[Slack DM](url): "key quote"` |
+| Google Doc | `[GDoc: Title](url)` |
+| Google Slides | `[GSlides: Title](url)` |
+| Presentation | `[Talk: Title](event/url)` |
+
+**Ephemeral source rule**: Slack messages and temporary shared docs may become inaccessible.
+Always capture a brief quote (1-2 sentences) that proves the accomplishment.
+This applies to: Slack messages, Slack threads, DMs, and any link that requires auth to access.
 
 ### 3d: Present and Confirm
 
@@ -277,6 +318,13 @@ Load the question bank from [references/questions.md](references/questions.md).
    If the user selects "Yes", the next question should accept free-text directly.
 5. For "skip"/"none" answers, move to the next question.
 6. Update state file if persistent data changed (new mentee, new guild, etc.).
+
+**Data capture for manual entries**: When the user describes an accomplishment, always ask for:
+- **Date**: When did this happen? (exact date or approximate week/month)
+- **Links**: Any supporting references? (PR, Confluence page, Google Doc, Slack thread, Jira ticket)
+- **Quotes**: For Slack-sourced items, ask the user to paste the relevant message text as proof.
+
+If the user doesn't have an exact date, use the closest approximation: `(~2026-03-W2)` for "second week of March" or `(2026-03)` for "sometime in March".
 
 ### Mentee Check
 

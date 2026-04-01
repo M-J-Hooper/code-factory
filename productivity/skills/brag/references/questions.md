@@ -10,6 +10,19 @@ Grouped by brag document section. Ask in order. Skip sections already well-cover
 - Do not force multiple rounds of follow-up — if the user provides details in their first answer, use them directly.
 - Skip categories where automated collection already found 3+ entries.
 
+### Data Capture Rules
+
+For every "Yes" answer, always follow up for:
+
+| Field | Required | How to ask |
+|-------|----------|-----------|
+| **Date** | Always | "When did this happen?" Accept exact dates, weeks, or months. |
+| **Links** | When available | "Do you have a link? (PR, Confluence, Google Doc, Jira, Slack thread)" |
+| **Quotes** | For ephemeral sources | "Can you paste the key Slack message? Links may not be accessible later." |
+
+**Ephemeral sources** that need quotes: Slack messages, Slack threads, DMs, temporary shared docs.
+**Durable sources** that only need links: GitHub PRs, Confluence pages, Jira tickets, published Google Docs.
+
 ## Questions
 
 ### Documentation & Talks
