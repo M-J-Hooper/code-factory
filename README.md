@@ -56,7 +56,7 @@ rtfpessoa's personal [Claude Code](https://docs.anthropic.com/en/docs/claude-cod
 - `/brainstorm` -- Problem-focused brainstorming: sharpens vague ideas into clear problem statements through iterative diagnostic questions. Saves brainstorms to `~/docs/brainstorms/`. Integrated with `/do` as an optional pre-refinement step.
 - `/datadog` -- Datadog product query via pup CLI: APM, logs, metrics, monitors, error tracking, RUM, infrastructure, security signals, incidents, SLOs, synthetics, CI/CD, and 30+ other API domains.
 - `/code-simplify` -- Code simplification across any scope (file, directory, package, branch diff, staged changes, or entire repo). Preserves behavior while improving clarity and maintainability.
-- `/ai-cli` -- CLI design evaluation and improvement for AI agents: scores against 7 Agent DX axes (machine-readable output, raw payload input, schema introspection, context window discipline, input hardening, safety rails, agent knowledge packaging), recommends prioritized improvements, and guides implementation.
+- `/ai-cli` -- CLI design evaluation and improvement for AI agents: scores against 8 Agent DX axes aligned with the AXI (Agent eXperience Interface) framework (machine-readable output, raw payload input, schema introspection, context window discipline, input hardening, safety rails, agent knowledge packaging, efficiency & composition), recommends prioritized improvements, and guides implementation.
 - `/skill-workbench` -- Skill and agent creation/improvement toolkit.
 
 **Agents:**
@@ -89,7 +89,7 @@ rtfpessoa's personal [Claude Code](https://docs.anthropic.com/en/docs/claude-cod
 - `/fixup` -- Commit matching and autosquash-ready fixup creation.
 - `/pr` -- PR creation flow with base detection, commit analysis, and ready-mode support.
 - `/branch` -- Branch naming from ticket/description using local conventions.
-- `/pr-fix` -- Pull and resolve PR review threads, apply changes, and reply/resolve.
+- `/pr-fix` -- Pull and resolve PR review threads, apply changes, and reply/resolve. Supports `--auto` for bot/CI automation and `--auto-human` for fully autonomous mode.
 - `/fix-conflicts` -- Conflict-state-aware conflict resolution workflow.
 - `/worktree` -- Detached worktree creation from the default branch.
 

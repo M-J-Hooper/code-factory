@@ -124,9 +124,13 @@
       "/private/var/tmp"
     ]
   },
-  "model": "opusplan",
-  "enabledMcpjsonServers": ["atlassian"],
-  "disabledMcpjsonServers": ["datadog"],
+  "model": "opus[1m]",
+  "enabledMcpjsonServers": [
+    "atlassian"
+  ],
+  "disabledMcpjsonServers": [
+    "datadog"
+  ],
   "hooks": {
     "PreToolUse": [
       {
