@@ -5,106 +5,154 @@ description: >
   reflect on recent work, or prepare for performance reviews.
   Triggers: "brag", "update brag doc", "log accomplishments", "what did I do today",
   "update my doc", "brag doc", "end of day", "weekly update".
-argument-hint: "[--week | --month | --since YYYY-MM-DD]"
+argument-hint: "[--week | --month | --since YYYY-MM-DD | --comprehensive | --add | --review | --prep-review]"
 user-invocable: true
 ---
 
-# Brag Document
+# Brag Document Updater
 
 Announce: "I'm using the /brag skill to update your brag document with recent accomplishments."
 
+## Overview
+
+Maintains a persistent brag document (`~/docs/log/doc.md`) by scanning multiple sources
+(Slack, Confluence, GitHub, Jira, git, daily logs, Google Drive)
+and asking targeted questions for undiscoverable work.
+Tracks mentees, recurring meetings, and ongoing projects in a state file (`~/docs/log/brag-state.md`).
+
+## File Locations
+
+| File | Purpose |
+|------|---------|
+| `~/docs/log/doc.md` | Persistent brag document — single file, organized by section |
+| `~/docs/log/brag-state.md` | State file — mentees, meetings, interview types, last run date |
+| `~/.claude/projects/` | Session logs for automated scanning |
+| `~/docs/Daily/` | Obsidian daily notes (from `/daily` skill) |
+| `~/google-drive/` | Google Workspace stub files |
+
 ## Step 1: Initialize
 
-### 1a: Date Range
+### 1a: Determine Mode
 
-Parse `$ARGUMENTS` to determine the collection window.
+Parse `$ARGUMENTS`:
 
-```bash
-TODAY=$(date +%Y-%m-%d)
-MONTH_DIR=$(date +%Y-%m)
-```
-
-| Argument | Range |
-|----------|-------|
-| (none) | Since `last_run` in state file — catches up automatically. Falls back to today if first run. |
-| `--today` | Today only |
+| Argument | Mode |
+|----------|------|
+| (none) | **Auto** — scan since `last_run` in state file |
+| `--today` | Scan today only |
 | `--week` | Last 7 days |
 | `--month` | Current calendar month |
 | `--since YYYY-MM-DD` | From that date to today |
+| `--comprehensive` | Go as far back as possible — all sources, no date filter. Use for first-time setup or catching up. |
+| `--add` | Skip automated collection, go straight to interactive questions |
+| `--review` | Read brag doc, summarize, identify gaps |
+| `--prep-review` | Generate a summary organized by career dimensions for perf review |
 
-Store `START_DATE` and `END_DATE` for all queries.
+**Natural language detection**: if arguments contain phrases like "go as far back as possible",
+"first time", "never updated", "collect everything", or "all sources" — treat as `--comprehensive`.
 
-### 1b: State File
+```bash
+TODAY=$(date +%Y-%m-%d)
+```
 
-Read `~/log/.brag-state.json`.
+### 1b: Read State
+
+Read `~/docs/log/brag-state.md`.
 If missing, run first-time setup (Step 1c).
 
-The state file tracks persistent data across runs:
+The state file is **markdown** (Obsidian-compatible) with these sections:
 
-| Field | Purpose |
-|-------|---------|
-| `last_run` | ISO date of last run — determines default date range |
-| `github_user` | GitHub username for PR queries |
-| `repos` | GitHub repos to search (org/name format) |
-| `mentees.current` | Active mentees: `{name, since, notes}` |
-| `mentees.past` | Past mentees: `{name, period, notes}` |
-| `guilds` | Community groups and ERGs |
-| `recurring_meetings` | Regular syncs: `{name, cadence, role}` |
-| `interview_types` | Interview types conducted |
+| Section | Purpose |
+|---------|---------|
+| `## Last Run` | ISO date of last run — determines default date range |
+| `## GitHub` | GitHub username and repos to search |
+| `## Mentees` | Current and past mentees with name, since date, and context |
+| `## Recurring Meetings` | Regular syncs with name, cadence, and role |
+| `## Interview Types` | Interview types conducted |
+| `## Guilds & Groups` | Community groups and ERGs |
 
 ### 1c: First-Time Setup
 
 If no state file exists:
 
 ```bash
-mkdir -p ~/log
+mkdir -p ~/docs/log
 GH_USER=$(gh api user --jq .login 2>/dev/null || echo "unknown")
-```
-
-Discover the user's primary repos from recent git activity:
-
-```bash
-# Get orgs/repos from recent gh activity
 GH_REPOS=$(gh api "user/repos?sort=pushed&per_page=10&type=owner" --jq '.[].full_name' 2>/dev/null || echo "")
-# Also check the current repo
 CURRENT_REPO=$(gh repo view --json nameWithOwner --jq .nameWithOwner 2>/dev/null || echo "")
 ```
 
-Create `~/log/.brag-state.json` with discovered defaults:
+Create `~/docs/log/brag-state.md` with discovered defaults and present to user for confirmation.
+Ask about mentees, guilds, and meetings — these can't be auto-detected.
 
-```json
-{
-  "last_run": null,
-  "github_user": "<detected>",
-  "repos": ["<discovered from gh activity — include current repo and recently pushed repos>"],
-  "mentees": {"current": [], "past": []},
-  "guilds": [],
-  "recurring_meetings": [],
-  "interview_types": ["System Design", "Team Match", "Coding"]
-}
-```
+### 1d: Read Brag Doc
 
-Present the discovered repos and ask the user to confirm or customize repos, mentees, guilds, and meetings.
-Mentees are especially important — ask for current mentees by name, since when, and any context.
-
-### 1d: Monthly Document
-
-Find or create `~/log/$MONTH_DIR/brag.md`:
-
-```bash
-mkdir -p ~/log/$MONTH_DIR
-```
-
-If the file doesn't exist, create it from the [template](references/template.md).
-If it exists, read it to understand what's already been captured — this enables deduplication in Step 3.
+Read `~/docs/log/doc.md` to understand what's already documented.
+If missing, create from [template](references/template.md).
+This enables deduplication in Step 3.
 
 ## Step 2: Automated Collection
 
 Gather accomplishments from multiple sources.
-Only collect items within `START_DATE` to `END_DATE`.
-Run independent queries in parallel where possible.
+Only collect items within `START_DATE` to `END_DATE` (unless `--comprehensive`).
+**Run independent queries in parallel where possible.**
 
-### 2a: GitHub PRs Authored
+### 2a: Slack Messages
+
+Search Slack using the MCP tool for messages from the user.
+The user's Slack user ID is available from the tool description.
+
+Run these searches **in parallel**:
+
+| Search | Purpose |
+|--------|---------|
+| `from:<@USER_ID> is:thread` | Threaded discussions — consulting, help, technical guidance |
+| `to:<@USER_ID> thanks` | Recognition from others |
+| `from:<@USER_ID> help` | Help provided to others |
+| `from:<@USER_ID> RFC design doc` | Documents shared |
+| `from:<@USER_ID> merged shipped deployed` | Work completed |
+| `from:<@USER_ID> review PR` | Code reviews |
+| `from:<@USER_ID> presentation talk demo` | Talks and demos |
+| `from:<@USER_ID> interview` | Interviews conducted |
+| `from:<@USER_ID> migrate migration` | Migration work |
+
+For each relevant channel the user is active in (discovered from initial results),
+search `from:<@USER_ID> in:#channel-name` sorted by timestamp ascending to get the full history.
+
+**Pagination**: use the `cursor` parameter to paginate through all results.
+Process results concisely — extract the brag-worthy signal, not every message.
+
+**Classify Slack signals**:
+
+| Signal | Brag Section |
+|--------|-------------|
+| Helping someone with debugging/setup | Consulting |
+| Sharing docs or guides | Docs & Talks |
+| Recognition/thanks from others | Direct Impact or Consulting |
+| Cross-team coordination | Consulting |
+| Interview mentions | Interviewing |
+| Technical guidance in public channels | Engineering Culture |
+
+### 2b: Confluence Pages
+
+Search for pages the user created or contributed to:
+
+```
+mcp__atlassian__searchConfluenceUsingCql(
+  cloudId = "<from getAccessibleAtlassianResources>",
+  cql = "contributor = currentUser() AND type = page ORDER BY lastModified DESC",
+  limit = 250
+)
+```
+
+**Results will be large.** Extract only: page ID, title, created_by, last_modified.
+Use a script to parse the JSON rather than reading the raw output.
+
+Separate pages into:
+- **Created by user** → strong signal (Docs & Talks or Direct Impact)
+- **Contributed to** → weaker signal, skip unless title suggests significant contribution
+
+### 2c: GitHub PRs Authored
 
 For each repo in `state.repos`:
 
@@ -114,18 +162,14 @@ gh pr list --author @me --repo <repo> --state all \
   --json number,title,url,state,createdAt,mergedAt --limit 100
 ```
 
-Record: PR number, title, URL, state (merged/open/closed), dates.
-
-### 2b: GitHub PR Reviews Given
+### 2d: GitHub PR Reviews Given
 
 ```bash
 gh api "search/issues?q=reviewed-by:<github_user>+type:pr+created:>=<START_DATE>+org:DataDog&per_page=50" \
   --jq '.items[] | {number: .number, title: .title, url: .html_url, repo: .repository_url}'
 ```
 
-### 2c: Jira Tickets
-
-Search using the Atlassian MCP tool if available:
+### 2e: Jira Tickets
 
 ```
 mcp__atlassian__searchJiraIssuesUsingJql(
@@ -134,94 +178,50 @@ mcp__atlassian__searchJiraIssuesUsingJql(
 )
 ```
 
-Record: ticket key, summary, status, type.
+### 2f: Git History (Background Agent)
 
-### 2d: Confluence Pages
-
-Search for recently created or updated pages:
+Launch a background agent to scan git history across working directories:
 
 ```
-mcp__atlassian__searchConfluenceUsingCql(
-  cql = "creator = currentUser() AND created >= '<START_DATE>' ORDER BY created DESC",
-  limit = 20
+Agent(
+  subagent_type = "Explore",
+  run_in_background = true,
+  prompt = "Scan git log --author=<user> --since=<START_DATE> across <repo dirs>.
+            Summarize: features shipped, tools created, docs added, tests improved.
+            Bullet points per repo. Research only — do not edit files."
 )
 ```
 
-### 2e: Git Commits
+### 2g: Session Logs (Background Agent)
 
-Search for commits in the current repo and any accessible repo directories:
+Launch a background agent to scan Claude Code session history:
 
-```bash
-git log --author="$(git config user.email)" \
-  --since="<START_DATE>" --until="<END_DATE>" \
-  --oneline --no-merges
+```
+Agent(
+  subagent_type = "Explore",
+  run_in_background = true,
+  prompt = "Scan ~/.claude/projects/ for accomplished work.
+            Identify: skills created, services migrated, bugs fixed, tools built.
+            Bullet points. Research only — do not edit files."
+)
 ```
 
-### 2f: Daily Log Entries
+### 2h: Daily Log Entries
 
-Scan the Obsidian daily journal (written by `/daily`) for entries in the date range.
+Scan `~/docs/Daily/` for notes in the date range.
+Extract items from Work, Achievements, and Kudos sections.
+Skip items too generic to be meaningful.
 
-Use `Glob(pattern="*.md", path="~/docs/Daily/")` to list daily notes, then filter by date range from filenames (format: `YYYY-MM-DD.md`).
-
-For each daily note file in range, Read the file and extract items from these sections:
-
-| Daily Log Section | Brag Section |
-|-------------------|-------------|
-| **Work** | Direct Impact |
-| **Achievements** | Direct Impact |
-| **Kudos** (given by others to the user) | Direct Impact or Uncategorized |
-| **Kudos** (given by the user to others) | Consulting or skip |
-| **Meetings** (with notable decisions) | Consulting or Direct Impact |
-| **Learning** | Learning |
-
-Skip Team Pulse, Travel, and Notes sections — they don't map to brag categories.
-
-Only extract items with enough context to be meaningful in a brag doc.
-"4x 1:1s" is too generic — skip it.
-"Architecture review — decided to go with option B for the caching layer" is worth capturing.
-
-### 2g: Google Drive Documents
+### 2i: Google Drive Documents
 
 Scan `~/google-drive/` for files created or modified within the date range.
-These are Google Workspace stub files — filenames and dates are usable, but contents are not readable.
+Classify by filename pattern (see [references/questions.md](references/questions.md) for patterns).
 
-```bash
-find ~/google-drive/ -maxdepth 3 \( -name "*.gdoc" -o -name "*.gslides" -o -name "*.gsheet" -o -name "*.pptx" \) \
-  -newer <temp_start> ! -newer <temp_end> 2>/dev/null
-```
-
-Also check the `interviews/` subdirectory for interview-specific files organized by candidate name:
-
-```bash
-find ~/google-drive/interviews/ -maxdepth 2 -type f 2>/dev/null
-```
-
-Classify by filename pattern and location:
-
-| Pattern | Brag Section |
-|---------|-------------|
-| `[Interview] *.gdoc` (top-level) | Interviewing (count by name, don't list each) |
-| Files under `interviews/*/` (subdirectory per candidate) | Interviewing (count by subdirectory name) |
-| `*.gslides` or `*.pptx` (not `Untitled`) | Docs & Talks |
-| Filename contains "RFC" | Docs & Talks |
-| Files under `code/` | Direct Impact or Docs & Talks (code-related artifacts) |
-| `Notas -` or `Notes -` prefix | Skip — meeting scratch notes, not brag-worthy |
-| `Untitled *` | Skip |
-| `*.gsheet`, `*.gdraw` | Skip unless title suggests a significant artifact |
-| Promo docs, career docs | Skip — these are inputs, not outputs |
-| Other `.gdoc` with descriptive title | Uncategorized (let user decide) |
-
-For interview files (both top-level `[Interview]` docs and `interviews/` subdirectories),
-aggregate into a count: "Conducted N interviews: Name1, Name2, ..." → Interviewing section.
-
-For presentations and RFCs, use the filename as the entry title.
-These files can't be read, so ask the user for context if the filename alone is ambiguous.
-
-## Step 3: Deduplicate and Update Document
+## Step 3: Deduplicate, Categorize, and Present
 
 ### 3a: Deduplicate
 
-For each collected item, search the existing monthly doc for:
+For each collected item, search the existing brag doc for:
 - URL matches (exact)
 - PR/ticket number matches
 - Title keyword overlap (fuzzy — use judgment)
@@ -230,35 +230,38 @@ Skip items already present.
 
 ### 3b: Categorize
 
-Assign each new item to a document section:
+Assign each new item to a brag doc section:
 
 | Signal | Section |
 |--------|---------|
 | PR authored or merged | Direct Impact |
-| Jira ticket resolved or in progress | Direct Impact |
+| Jira ticket resolved | Direct Impact |
 | PR review given (cross-team) | Consulting |
-| PR review given (own team) | Direct Impact |
 | Confluence page created | Docs & Talks |
-| Significant commit (not part of a PR) | Direct Impact |
-| Google Drive presentation (`.gslides`, `.pptx`) | Docs & Talks |
-| Google Drive RFC document | Docs & Talks |
-| Google Drive interview files | Interviewing |
+| Slack help/consulting | Consulting |
+| Slack recognition received | Direct Impact or Consulting |
+| Presentation or talk | Docs & Talks |
+| Interview conducted | Interviewing |
+| Google Drive presentation | Docs & Talks |
 
-Items that don't fit a category go in `## Uncategorized` for manual sorting.
+Items that don't fit go in `## Uncategorized`.
 
 ### 3c: Format Entries
 
-Format each entry as a bullet point with:
+Each entry is a bullet with:
 - **What**: Brief description with link
-- **Context**: Why it matters or what impact it had (infer from PR title, Jira summary, or ask)
+- **Context**: Why it matters or what impact it had
 
 Example: `* [Fix flaky test timeout in auth module](https://github.com/DataDog/dd-go/pull/1234) — Reduced CI flakiness for the auth team`
 
-### 3d: Present and Write
+### 3d: Present and Confirm
 
-Show the proposed additions grouped by section.
-Ask the user to confirm before writing to the monthly doc.
-Use the Edit tool to append new entries under the correct section headers.
+Show proposed additions grouped by section.
+Use `AskUserQuestion` with `multiSelect: true` to let the user pick which to include.
+Group entries into batches of ~4 options to avoid overwhelming the user.
+
+After confirmation, use `Edit` to append entries under the correct section headers in `~/docs/log/doc.md`.
+**Never** reorganize or reformat existing entries. Only append.
 
 ## Step 4: Interactive Questions
 
@@ -267,64 +270,62 @@ Load the question bank from [references/questions.md](references/questions.md).
 
 ### Question Flow
 
-1. Read the state file for context (mentees, guilds, meetings, interview types).
-2. Skip question categories already well-covered by automated collection.
+1. Read state file for context (mentees, guilds, meetings, interview types).
+2. Skip categories already well-covered by automated collection.
 3. Present questions one at a time using `AskUserQuestion`.
-4. For each answer with content, append to the appropriate doc section.
+4. **Allow free-text input early** — don't force multiple rounds of "tell me more".
+   If the user selects "Yes", the next question should accept free-text directly.
 5. For "skip"/"none" answers, move to the next question.
-6. Update the state file if persistent data changed (new mentee, new guild, etc.).
+6. Update state file if persistent data changed (new mentee, new guild, etc.).
 
 ### Mentee Check
 
-For each current mentee in `state.mentees.current`:
+For each current mentee in state:
 
 ```
 AskUserQuestion(
   header: "Mentorship",
-  question: "Any updates on your mentoring of <name> (<since>, <notes>)?",
+  question: "Any updates on <name> (<context>)?",
   options: [
-    "Yes" -- I have updates to add,
-    "No updates" -- Nothing new this period,
-    "Ended" -- This mentorship has concluded
+    "Yes" -- Describe in Other,
+    "No updates" -- Skip,
+    "Ended" -- Mark as completed
   ]
 )
 ```
 
-If "Yes": ask for details and add to Mentorship section.
-If "Ended": move to `state.mentees.past` with the current date as end period.
-
 ### Recurring Meeting Check
 
-For each meeting in `state.recurring_meetings`:
+For each meeting in state:
 
 ```
 AskUserQuestion(
   header: "Meetings",
   question: "Anything notable from <name> (<cadence>)?",
   options: [
-    "Yes" -- Something worth recording,
+    "Yes" -- Describe in Other,
     "Nothing notable" -- Skip,
-    "No longer attending" -- Remove from recurring list
+    "No longer attending" -- Remove
   ]
 )
 ```
 
+### Remaining Questions
+
+Ask from [references/questions.md](references/questions.md): bar-raising, consulting,
+notable 1:1s, interviews, new mentees, learning, guilds, customer engagement, goals.
+End with an open-ended "anything else?" question.
+
 ## Step 5: Finalize
 
-### 5a: Write Document
+### 5a: Update State
 
-Save the updated brag doc to `~/log/$MONTH_DIR/brag.md`.
-Use semantic line feeds: one sentence per line, target 120 characters.
-
-### 5b: Update State
-
-Update `~/log/.brag-state.json`:
+Update `~/docs/log/brag-state.md`:
 - Set `last_run` to today's date
 - Persist any mentee, guild, meeting, or interview type changes
+- Keep markdown format (Obsidian-compatible)
 
-### 5c: Summary
-
-Present a summary:
+### 5b: Summary
 
 ```
 ## Brag Update Summary
@@ -335,21 +336,38 @@ Present a summary:
 | Mentorship | N |
 | ... | ... |
 
-**Document**: ~/log/YYYY-MM/brag.md
+**Document**: ~/docs/log/doc.md
 **Period scanned**: START_DATE to END_DATE
 **Next run**: Will auto-collect from END_DATE onward
 ```
+
+## Review Mode (`--review`)
+
+1. Read `~/docs/log/doc.md` in full.
+2. Identify gaps — sections with no entries or stale entries (>3 months old).
+3. Highlight strengths.
+4. Suggest areas to focus on based on career path dimensions.
+
+## Prep Review Mode (`--prep-review`)
+
+1. Read `~/docs/log/doc.md` in full.
+2. Organize entries by career path dimensions (not brag doc sections).
+3. For each dimension, summarize the strongest evidence.
+4. Flag dimensions with weak evidence.
+5. Generate a draft summary suitable for a promotion packet or performance review.
 
 ## Error Handling
 
 | Error | Action |
 |-------|--------|
-| `gh` CLI not installed or not authenticated | Skip GitHub collection, warn user, continue with other sources |
-| Repo not found or no access | Skip that repo, log warning, continue with remaining repos |
+| `gh` CLI not installed or not authenticated | Skip GitHub collection, warn user, continue |
+| Slack MCP tools not available | Skip Slack collection, warn user, continue |
 | Jira/Confluence MCP tools not available | Skip those sources, warn user, continue |
-| Monthly doc has unexpected format | Append new items at the end rather than inserting into sections |
-| State file corrupted | Back up to `~/log/.brag-state.json.bak`, recreate from defaults |
-| No new items found anywhere | Report "no new items found" and proceed directly to interactive questions |
-| `~/google-drive/` directory doesn't exist | Skip Google Drive collection, warn user, continue with other sources |
-| Google Drive files have no useful modification dates | Skip, warn user that Google Drive sync may not be running |
-| `~/log` directory not writable | Report error and exit |
+| Confluence results too large | Parse with script; extract titles and metadata only |
+| Brag doc not found | Create from [template](references/template.md) |
+| State file corrupted | Back up to `.bak`, recreate from defaults |
+| Section not found in doc | Append a new section at the end |
+| No new items found | Report and proceed to interactive questions |
+| `~/google-drive/` missing | Skip, warn user, continue |
+| `~/docs/log` not writable | Report error and exit |
+| Background agent timeout | Use partial results from the agent, note incomplete scan |
