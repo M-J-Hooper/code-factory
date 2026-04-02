@@ -60,21 +60,36 @@ Produce a **Codebase Map** artifact with these sections:
 
 ### Pattern Catalog
 
-For each pattern relevant to the feature, document:
+For each pattern relevant to the feature, document with **execution-ready detail**.
+These patterns will be included in task execution bundles —
+the implementer should be able to mirror the pattern without further exploration.
 
 #### Pattern: <Descriptive Name>
 **Category**: Feature / Structural / Integration / Testing
-**Found in**: `path/to/file.ts:45-67`
+**Found in**: `path/to/file.ts:45-67` (include line range)
 **Used for**: What this pattern accomplishes
 
-<code snippet showing the pattern>
+```<language>
+<actual code from the file — include the full pattern, not just a summary>
+```
 
 **Key aspects**:
-- Notable implementation details
-- Conventions used
+- Notable implementation details (naming conventions, error handling, return patterns)
+- Conventions used (imports, exports, type annotations)
 - Related utilities at `path/to/helper.ts:12`
 
-(Show 2-3 patterns. If variations exist, show each with its location.)
+**Replication instructions** (for task bundles):
+- To add a similar feature: copy this pattern, change X, Y, Z
+- Insertion point: where new code following this pattern should go
+
+**Test pattern** (if a comparable test exists):
+**Found in**: `tests/path/to/file.test.ts:30-55`
+```<language>
+<actual test code showing how this pattern is tested>
+```
+
+(Show 2-3 patterns. Include actual code — not descriptions of code.
+If variations exist, show each with its location.)
 
 ### Build Environment
 - Language: <detected language and version>

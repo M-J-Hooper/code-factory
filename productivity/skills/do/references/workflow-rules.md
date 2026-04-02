@@ -70,18 +70,27 @@ If `token_budget_usd` is set in FEATURE.md frontmatter:
 | CI | Timeout or unavailable | Proceed to PR, note CI pending in PR description |
 | WebSearch/WebFetch | Network error | Proceed with codebase-only research, flag gaps |
 
+## Phase-Level Dispatch Model
+
+The SKILL.md outer loop owns phase transitions. The orchestrator owns within-phase execution.
+
+**Ownership split:**
+- **SKILL.md** reads FEATURE.md, loads phase-specific context from state files, dispatches a fresh orchestrator per phase, handles interactive checkpoints between phases, and advances `current_phase`.
+- **Orchestrator** executes one phase (or one milestone within EXECUTE), dispatches subagents, writes phase artifacts to state files, and updates `phase_status` (approved, blocked, in_review). It does NOT advance `current_phase`.
+
+**Context freshness:** Each phase orchestrator gets a fresh context window with only the data that phase needs. This eliminates context exhaustion from accumulating all phase outputs in a single orchestrator.
+
+**EXECUTE granularity:** SKILL.md dispatches one orchestrator per milestone. Each milestone orchestrator gets its task bundles and milestone scope. Milestones with no file overlap run in parallel.
+
 ## Context Management
 
 /do is a long-running workflow that dispatches many subagents.
 Start with a fresh context (`/clear`) before invoking /do.
-The orchestrator manages its own context through subagent isolation —
-each subagent gets a fresh context with only the data it needs.
-If the orchestrator hits context limits, it uses state files as external memory
-and can re-load context from disk after compaction.
+Each phase runs in a fresh orchestrator context — no single orchestrator spans the full workflow.
+Within a phase, the orchestrator manages subagent isolation as before.
 
-At each MILESTONE_COMPLETE, the orchestrator should assess context usage.
-If approaching limits: write full state to disk, rely on auto-compact,
-then re-read FEATURE.md + PLAN.md + SESSION.log tail to restore.
+State files are the handoff mechanism between phases. All inter-phase context
+passes through `~/docs/plans/do/<short-name>/` files, not through orchestrator memory.
 
 ## Adversarial Execution
 

@@ -13,6 +13,10 @@ Reference for the /do skill's state file format. Load when creating or parsing s
   VALIDATION.md           # Validation results with evidence (written after VALIDATE)
   SESSION.log             # Append-only activity log (written from EXECUTE onward)
   HANDOFF.md              # Workspace handoff (written in DONE phase for workspace mode, optional)
+  tasks/                  # Pre-computed task execution bundles (written after PLAN_REVIEW)
+    TASK-001.md           # Self-contained bundle for T-001
+    TASK-002.md           # Self-contained bundle for T-002
+    ...
 ```
 
 ## FEATURE.md (main state file)
@@ -390,3 +394,102 @@ Each task MUST be broken into bite-sized steps (one action per step). Tasks intr
 ### Rollback Plan
 - How to revert if needed
 ```
+
+## TASK-XXX.md (Task Execution Bundle)
+
+Generated after PLAN_REVIEW approval. Each file is a self-contained execution packet —
+an implementer reading only this file should have everything needed to execute the task.
+
+```markdown
+---
+task_id: T-001
+milestone: M-001
+status: pending          # pending | in_progress | complete | blocked | skipped
+risk: Low                # Low | Medium | High
+max_adversarial_rounds: 1  # Derived from risk: Low=1, Medium=2, High=3
+depends_on: []           # Task IDs that must complete before this task
+adversarial_rounds: 0    # Updated during execution
+verdict: null            # null | ACCEPT | ACCEPT_WITH_CAVEATS | BLOCKED
+commit_sha: null         # Set at milestone boundary after /atcommit
+---
+
+# Task: T-001 — <short description>
+
+## Description
+
+<Full task text from PLAN.md — what to implement and why>
+
+## Files
+
+| File | Change Type | Risk |
+|-|-|-|
+| `path/to/file.ts` | New / Modify / Extend | Low / Medium / High |
+| `tests/path/to/file.test.ts` | New | Low |
+
+## Steps
+
+<Full TDD or direct steps from PLAN.md>
+
+1. Write failing test: <complete test code>
+2. Run test → `<exact command>` → expected: FAIL with `<message>`
+3. Implement: <precise instructions or code>
+4. Run test → `<exact command>` → expected: PASS
+5. (Do NOT commit — changes accumulate until milestone boundary)
+
+## Task Contract
+
+### Scope
+<Task description>
+
+### Acceptance Criteria (pass/fail)
+1. Build passes with zero errors after changes
+2. All existing tests pass
+3. Lint and type check pass with zero violations
+4. <AC from plan — concrete and testable>
+
+### Mandatory Invariants
+1. Error handling: errors at system boundaries are caught, logged, and propagated
+2. Compatibility: no breaking changes to public APIs unless task explicitly requires it
+3. Observability: existing logging/metrics/tracing preserved or extended
+4. Security: no new injection vectors, exposed secrets, auth gaps
+5. Codebase conventions: new code follows patterns in comparable files
+
+### Out of Scope
+- Changes to files not listed above
+- Pre-existing issues in unrelated modules
+- Improvements beyond stated requirements
+
+## Architectural Context
+
+<Relevant excerpts from RESEARCH.md for this task's files>
+<Entry points, key types/functions, integration points>
+<Conventions relevant to this area of the codebase>
+
+## Pattern References
+
+<Actual code snippets from comparable files in the codebase, with file:line citations>
+
+### Pattern: <name>
+**Found in**: `path/to/comparable.ts:45-67`
+```<language>
+<actual code from the file>
+```
+**Mirror**: Follow this structure for naming, error handling, and return patterns.
+
+## Prior Task Summary
+
+<What preceding tasks accomplished, if this task depends on them. Omit if no dependencies.>
+
+## Verification Commands
+
+| Command | Expected Output |
+|-|-|
+| `<exact command>` | `<expected result>` |
+```
+
+**Bundle lifecycle:**
+1. **Created** by the bundle generator after PLAN_REVIEW approval
+2. **Read** by the milestone orchestrator when dispatching the implementer
+3. **Updated** by the milestone orchestrator after each adversarial round (status, adversarial_rounds, verdict)
+4. **Finalized** at milestone boundary (commit_sha set after /atcommit)
+5. **Read by outer loop** for resume (find first pending task) and progress tracking

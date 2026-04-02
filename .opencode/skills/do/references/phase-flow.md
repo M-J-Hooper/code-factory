@@ -2,6 +2,55 @@
 
 Reference for detailed phase behaviors. Loaded by the orchestrator when executing phases.
 
+## Phase Dispatch Protocol
+
+The SKILL.md outer loop dispatches a fresh orchestrator per phase. Each dispatch includes
+only the context that phase needs, loaded from state files.
+
+### Context Payloads (what SKILL.md loads per phase)
+
+| Phase | Context Loaded from State Files | Context Size |
+|-|-|-|
+| REFINE | feature_request, repo_root, brainstorm_context, hydrated_context | Small |
+| RESEARCH | FEATURE.md (refined spec section), repo_root | Small |
+| PLAN_DRAFT | FEATURE.md (spec + criteria), full RESEARCH.md | Medium |
+| PLAN_REVIEW | full PLAN.md, full RESEARCH.md, FEATURE.md (criteria) | Medium |
+| BUNDLE_GENERATION | full PLAN.md, full RESEARCH.md, FEATURE.md (criteria) | Medium |
+| EXECUTE (per milestone) | milestone task bundles, FEATURE.md (progress), SESSION.log tail | Medium |
+| VALIDATE | FEATURE.md (criteria), PLAN.md (validation strategy), git diff output | Medium |
+| DONE | full FEATURE.md, VALIDATION.md, SESSION.log summary | Small |
+
+### Return Contract (what SKILL.md reads after each dispatch)
+
+| Phase | SKILL.md Reads | Decision |
+|-|-|-|
+| REFINE | FEATURE.md phase_status | approved → advance; blocked → re-dispatch |
+| RESEARCH | FEATURE.md phase_status, RESEARCH.md exists | approved → advance |
+| PLAN_DRAFT | FEATURE.md phase_status, PLAN.md exists | approved → advance |
+| PLAN_REVIEW | FEATURE.md phase_status (approved or blocked) | approved → bundle + EXECUTE; blocked → PLAN_DRAFT |
+| BUNDLE_GENERATION | tasks/ directory populated | verified → EXECUTE |
+| EXECUTE (milestone) | FEATURE.md progress, task bundle statuses | all complete → next milestone or VALIDATE |
+| VALIDATE | FEATURE.md phase_status (approved or blocked) | approved → DONE; blocked → EXECUTE |
+| DONE | FEATURE.md (outcomes, PR URL) | report to user |
+
+### Phase Loop Conditions
+
+| Loop | Trigger | Max Iterations |
+|-|-|-|
+| PLAN_REVIEW → PLAN_DRAFT | Required changes or critical red-team findings | 3 |
+| VALIDATE → EXECUTE | Validation failures or quality gate fails | 2 |
+| EXECUTE milestone retry | Task adversarial stalemate requiring re-plan | 1 (then escalate) |
+
+### Milestone Dispatch Protocol (EXECUTE)
+
+SKILL.md reads PLAN.md to build the milestone dependency graph and reads task bundle statuses.
+
+1. Identify ready milestones: all dependencies complete, has pending tasks
+2. Check File Impact Map for file overlap between ready milestones
+3. No overlap → dispatch in parallel (multiple Task calls in one message)
+4. Shared files → dispatch sequentially
+5. After each milestone completes: re-read task bundles, update dependency graph, identify next ready milestones
+
 ## EXECUTE Batch Loop
 
 ```
@@ -70,19 +119,12 @@ Tests pass -> /atcommit (remaining) -> git push -> /pr (create PR) -> /pr-fix (v
 
 ## PLAN_REVIEW Phase
 
-**Three-step review: consistency check → parallel substantive review + red-team + Codex plan challenge.**
+**Single-step parallel review: reviewer + red-teamer + Codex plan challenge.**
 
-1. Spawn `consistency-checker` to fix internal inconsistencies in PLAN.md before substantive review:
-   - Iteratively scans for contradictions, mismatched task IDs, file path inconsistencies, count mismatches, terminology drift, dangling references
-   - **Fixes issues directly** (Edit tool) — does not report them for the planner to fix
-   - One fix at a time, re-reads from the top after each fix, max 10 iterations
-   - Never changes plan substance — only fixes internal contradictions
-   - Flags substantive issues in a Consistency Notes section for the reviewer
-   - Uses `sonnet` model (mechanical task, not reasoning-heavy)
+Consistency checking is now the planner's responsibility (self-consistency pass in planner Step 5).
+No separate consistency-checker dispatch is needed.
 
-2. Re-read PLAN.md after consistency checker completes (it may have been edited).
-
-3. Spawn `reviewer`, `red-teamer`, AND `codex:codex-rescue` (plan challenge) **in parallel** (all in a single message):
+1. Spawn `reviewer`, `red-teamer`, AND `codex:codex-rescue` (plan challenge) **all in parallel** (single message):
    - All three read the same PLAN.md and RESEARCH.md — they are independent
    - Codex plan challenge is optional: skip if codex unavailable, log `CODEX_SKIPPED: plan_review`
    - `reviewer`: substantive critique (coverage, path verification, research cross-check, dependency analysis, safety, executability)
@@ -94,7 +136,7 @@ Tests pass -> /atcommit (remaining) -> git push -> /pr (create PR) -> /pr-fix (v
      - Assesses blast radius of shared code changes
      - Output: Red Team Plan Review with Critical / High / Medium findings
 
-4. After all complete (reviewer + red-teamer + Codex if available), merge findings:
+2. After all complete (reviewer + red-teamer + Codex if available), merge findings:
    - Codex plan concerns → append to REVIEW.md under `## Codex Plan Challenge`
    - If reviewer has required changes → loop back to PLAN_DRAFT (discard red-team + Codex results)
    - **Critical red-team findings** → loop back to PLAN_DRAFT (must address before execution)
@@ -172,10 +214,20 @@ The adversarial loop replaces the previous sequential spec-review → quality-re
 A single `task-critic` agent evaluates both spec compliance AND code quality with escalating depth per round.
 The implementer and task-critic compete until the critic ACCEPTs or the safety valve triggers.
 
-**Step 4a: Extract Task Contract**
+**Risk-Proportional Round Budget:**
 
-Before the first critic dispatch, the orchestrator extracts concrete acceptance criteria from PLAN.md
-and formalizes them as a task contract:
+| Task Risk | Max Rounds | Scrutiny Depth | Red Team |
+|-|-|-|-|
+| Low | 1 | Correctness only | Skip |
+| Medium | 2 | Correctness + design | Skip |
+| High | 3 | Full escalating | Yes |
+
+Read `max_adversarial_rounds` from the task bundle frontmatter.
+
+**Step 4a: Task Contract (Pre-Computed in Bundle)**
+
+The task contract is pre-computed in each TASK-XXX.md bundle during bundle generation.
+The orchestrator does not extract it at runtime. The format is:
 
 ```markdown
 ## Task Contract for T-XXX
@@ -211,9 +263,10 @@ even if the plan omitted them.
 **Step 4b: Adversarial Loop**
 
 ```
+max_rounds = task_bundle.max_adversarial_rounds  # Low=1, Medium=2, High=3
 Round = 1
-while Round <= 3:
-  1. Dispatch task-critic with: task contract, round number, previous verdicts (round 2+)
+while Round <= max_rounds:
+  1. Dispatch task-critic with: task contract, round number, max_rounds, previous verdicts (round 2+)
   2. If VERDICT: ACCEPT → break loop, proceed to step 5 (red-team or mark complete)
   3. If VERDICT: REJECT:
      a. Stalemate check (round 2+ only, see below)
@@ -224,10 +277,11 @@ while Round <= 3:
      c. Re-run shift-left validation after fixes
      d. Round++, loop back to step 1
 
-Safety valve (BLOCKING — both modes): if Round > 3 and not accepted:
+Safety valve (BLOCKING — both modes): if Round > max_rounds and not accepted:
   - Codex rescue attempt (if available)
   - If still unresolved: STOP. Require explicit user acceptance of residual risk.
   - Autonomous mode does NOT silently convert critical flaws to tracked risks — it stops and waits.
+  - Special case: Low-risk task rejected twice → escalate (may be mis-classified risk level).
   - Classify stagnation for reporting context (does not auto-resolve)
 ```
 

@@ -90,7 +90,7 @@ After preferences (Step 1), determine intent from the user's query:
 
 1. **Analyze the query**: Does it reference a state file/short-name (resume) or provide a new feature description (fresh start)?
 2. **If fresh start**: Set up workdir (Step 4), create new run, proceed through REFINE phase.
-3. **If resuming**: Parse state file, reconcile git state, continue from current phase (Step 6).
+3. **If resuming**: Parse state file, reconcile git state, continue from current phase (Step 5a).
 4. **If iterating**: User is providing feedback on existing work. Address the feedback directly within the current phase.
 
 ## Step 1: Ask Preferences (ALWAYS FIRST)
@@ -188,7 +188,7 @@ For each discovered `FEATURE.md`, read it and check whether `current_phase: DONE
 
 1. **State file reference** — `$ARGUMENTS` contains `FEATURE.md` or is a path to an existing `~/docs/plans/do/` state file (but NOT a URL starting with `http://` or `https://`):
    - Verify file exists
-   - Parse phase status and route to **Resume Mode** (Step 6)
+   - Parse phase status and route to **Resume Mode** (Step 5a)
    - Inherit `interaction_mode` from state file unless overridden in Step 1
 
 2. **Feature description, no active runs** — `$ARGUMENTS` is a feature description (including arguments containing URLs) and no active runs exist:
@@ -332,52 +332,145 @@ This brainstorm feeds into a /do workflow — the sharpened problem will inform 
 4. Store the brainstorm content to include as `<brainstorm_context>` in the orchestrator dispatch.
 5. Proceed to Step 5.
 
-## Step 5: Dispatch Orchestrator (New Mode)
+## Step 5: Phase Execution Loop
 
-**If `analysis_only` is true** (detected in Step 3 rule 0), use the analysis-only dispatch:
+Both new and resume modes converge here. This loop drives the state machine by dispatching
+a **fresh, phase-scoped orchestrator** for each phase. Each orchestrator gets only the context
+it needs, writes results to state files, and returns. The SKILL.md outer loop reads state
+and dispatches the next phase — eliminating context exhaustion from a single long-running orchestrator.
+
+### 5a: Resume Preamble (Resume Mode Only)
+
+If entering from Resume Mode (Step 3 classified as state file reference):
+
+1. Read the state file to determine current phase, status, and workdir configuration
+2. Run git reconciliation:
+   - If `worktree_path` is set: verify the worktree exists and `cd` into it
+   - Check if on correct branch
+   - Handle dirty working tree per `uncommitted_policy` in state
+3. Set `WORKDIR_PATH` from the state file's `worktree_path` (or `repo_root` if null)
+4. **State-Reality Verification:**
+   - Compare FEATURE.md Progress section against actual git history
+   - For each "complete" task with a commit SHA: verify `git log --oneline | grep <SHA>` exists
+   - For each completed milestone: verify milestone commit exists in log
+   - If `tasks/` directory exists: check task bundle statuses against git reality
+   - Store discrepancies as `state_drift` for inclusion in the next orchestrator dispatch
+
+### 5b: Phase Loop
+
+Read `references/workflow-rules.md` once and store its content as `WORKFLOW_RULES` for all dispatches.
+
+```
+Read FEATURE.md frontmatter → extract current_phase, phase_status, interaction_mode, analysis_only
+
+while current_phase not in [DONE, ANALYSIS_COMPLETE]:
+
+  Match current_phase:
+
+    REFINE:
+      Load context: feature_request, repo_root, brainstorm_context (if any), hydrated_context (if any)
+      Dispatch phase orchestrator (see 5c) with <current_phase>REFINE</current_phase>
+      Read updated FEATURE.md
+      If interactive:
+        Present refined spec to user
+        AskUserQuestion: approve / adjust specification / refine further
+        If adjust/refine: update FEATURE.md with feedback, re-dispatch REFINE
+      Advance: update FEATURE.md current_phase → RESEARCH
+
+    RESEARCH:
+      Load context: FEATURE.md (refined spec section), repo_root
+      Dispatch phase orchestrator (see 5c) with <current_phase>RESEARCH</current_phase>
+      Read updated FEATURE.md + RESEARCH.md
+      If analysis_only: advance current_phase → DONE, skip remaining phases
+      If interactive:
+        Present research findings to user
+        AskUserQuestion: proceed to planning / adjust scope / more research needed
+        If adjust/more: re-dispatch RESEARCH
+      Advance: update FEATURE.md current_phase → PLAN_DRAFT
+
+    PLAN_DRAFT:
+      Load context: FEATURE.md (spec + criteria), RESEARCH.md (full content)
+      Dispatch phase orchestrator (see 5c) with <current_phase>PLAN_DRAFT</current_phase>
+      Read updated PLAN.md
+      If interactive:
+        Present plan to user
+        AskUserQuestion: approve plan / adjust plan
+        If adjust: re-dispatch PLAN_DRAFT
+      Advance: update FEATURE.md current_phase → PLAN_REVIEW
+
+    PLAN_REVIEW:
+      Load context: PLAN.md, RESEARCH.md, FEATURE.md (criteria)
+      Dispatch phase orchestrator (see 5c) with <current_phase>PLAN_REVIEW</current_phase>
+      Read updated REVIEW.md + FEATURE.md
+      If phase_status == blocked (required changes or critical findings):
+        Advance: update FEATURE.md current_phase → PLAN_DRAFT (loop back)
+        Continue loop
+      If interactive:
+        Present review + red-team findings to user
+        AskUserQuestion: start implementation / address findings / hold
+        If address/hold: update FEATURE.md, re-dispatch or pause
+      Advance: update FEATURE.md current_phase → EXECUTE
+
+      **Task Bundle Generation** (between PLAN_REVIEW approval and EXECUTE entry):
+      If tasks/ directory does not exist in state directory:
+        Dispatch bundle generator (see 5e)
+        Verify all tasks in PLAN.md have corresponding bundle files
+
+    EXECUTE:
+      Read PLAN.md → extract milestones and dependency graph
+      Read tasks/*.md → build milestone status map
+      Initialize SESSION.log if not exists (first EXECUTE entry)
+
+      Identify ready milestones: all dependencies complete, status != complete
+      Group ready milestones by file overlap (from File Impact Map in PLAN.md):
+        - No file overlap → dispatch in parallel (multiple Task calls in one message)
+        - Shared files → dispatch sequentially
+
+      For each ready milestone (or parallel group):
+        Dispatch milestone orchestrator (see 5d)
+        Read updated FEATURE.md + task bundle statuses + SESSION.log
+        If interactive:
+          Present milestone report (tasks completed, test status, discoveries, token usage)
+          AskUserQuestion: continue / adjust / review code / stop here
+          If stop: pause loop, user can resume later
+
+      After all milestones complete:
+        Advance: update FEATURE.md current_phase → VALIDATE
+
+    VALIDATE:
+      Load context: FEATURE.md (criteria), PLAN.md (validation strategy),
+                    git diff --name-only <base_ref>..HEAD
+      Dispatch phase orchestrator (see 5c) with <current_phase>VALIDATE</current_phase>
+      Read updated VALIDATION.md + FEATURE.md
+      If phase_status == blocked (validation failures or quality gate fails):
+        Advance: update FEATURE.md current_phase → EXECUTE (loop back with fix tasks)
+        Continue loop (max 2 VALIDATE→EXECUTE loops)
+      If interactive:
+        Present validation results + quality scorecard to user
+        AskUserQuestion: create PR / run more tests / review changes
+      Advance: update FEATURE.md current_phase → DONE
+
+    DONE:
+      Load context: FEATURE.md, VALIDATION.md, SESSION.log summary
+      Dispatch phase orchestrator (see 5c) with <current_phase>DONE</current_phase>
+      Read updated FEATURE.md (outcomes, PR URL)
+      Report final outcome to user
+
+  Update FEATURE.md frontmatter: current_phase, last_checkpoint
+```
+
+### 5c: Phase Orchestrator Dispatch Template
+
+Each non-EXECUTE phase dispatch follows this template:
 
 ```
 Task(
   subagent = "orchestrator",
-  description = "Analyze: <short description>",
+  description = "<phase>: <short-name>",
   prompt = "
-<feature_request>
-<the user's feature description>
-</feature_request>
-
-<state_path>
-~/docs/plans/do/<short-name>/FEATURE.md
-</state_path>
-
-<repo_root>
-<REPO_ROOT>
-</repo_root>
-
-<hydrated_context>
-<contents of all files in ~/docs/plans/do/<short-name>/CONTEXT/, if any>
-</hydrated_context>
-
-<task>
-This is an analysis-only task.
-Route through: REFINE -> RESEARCH -> EXECUTE (write analysis document) -> DONE
-Skip PLAN_DRAFT, PLAN_REVIEW, and VALIDATE.
-The EXECUTE phase writes the output document, not code.
-No git workflow, no commits, no PR.
-</task>
-"
-)
-```
-
-**Otherwise**, dispatch the full workflow orchestrator:
-
-```
-Task(
-  subagent = "orchestrator",
-  description = "Start feature: <short description>",
-  prompt = "
-<feature_request>
-<the user's feature description>
-</feature_request>
+<current_phase>
+<PHASE_NAME>
+</current_phase>
 
 <state_path>
 ~/docs/plans/do/<short-name>/FEATURE.md
@@ -390,70 +483,60 @@ Task(
 <workdir_path>
 <WORKDIR_PATH>
 </workdir_path>
-
-<brainstorm_context>
-<contents of ~/docs/brainstorms/<slug>.md if brainstorming was done in Step 4d, otherwise omit this block>
-Pre-brainstormed problem analysis. The user already sharpened this idea — use it to accelerate REFINE.
-</brainstorm_context>
-
-<hydrated_context>
-<contents of all files in ~/docs/plans/do/<short-name>/CONTEXT/, if any>
-Pre-fetched external context from the feature description. Use this to inform all phases.
-</hydrated_context>
 
 <interaction_mode>
 <interactive|autonomous>
 </interaction_mode>
 
+<feature_request>
+<the user's feature description — included for REFINE phase, omitted for later phases>
+</feature_request>
+
+<phase_context>
+<Phase-specific context loaded from state files — varies by phase:
+  REFINE: feature_request + brainstorm_context + hydrated_context
+  RESEARCH: FEATURE.md refined spec section
+  PLAN_DRAFT: FEATURE.md spec + criteria, full RESEARCH.md
+  PLAN_REVIEW: full PLAN.md, full RESEARCH.md, FEATURE.md criteria
+  VALIDATE: FEATURE.md criteria, PLAN.md validation strategy, git diff output
+  DONE: full FEATURE.md, VALIDATION.md, SESSION.log summary>
+</phase_context>
+
+<state_drift>
+<Discrepancies from state-reality verification, if any — resume mode only>
+</state_drift>
+
 <task>
-Start a new feature development workflow.
-Working directory is already set up — work from <WORKDIR_PATH>.
-State files live in ~/docs/plans/do/<short-name>/ (outside the repo).
-Begin with REFINE phase to clarify and detail the feature description.
-Route through: REFINE -> RESEARCH -> PLAN_DRAFT -> PLAN_REVIEW -> EXECUTE -> VALIDATE -> DONE
+Execute the <PHASE_NAME> phase. Work from <WORKDIR_PATH>.
+State files are in ~/docs/plans/do/<short-name>/.
+Write phase outputs to the appropriate state file.
+Update FEATURE.md phase_status when complete (approved, blocked, or in_review).
+Do NOT advance current_phase — the outer loop handles phase transitions.
 </task>
 
 <workflow_rules>
-Read references/workflow-rules.md and include its full contents here.
-The workflow rules contain dispatch-specific directives for: approach exploration, state management,
-input isolation, writing style, grounding rules, and interaction mode rules.
-All execution rules (TDD, git workflow, subagent coordination, milestone parallelism, reviews,
-deviation handling, bounded iterations, shift-left validation, deterministic vs agentic operations)
-are defined in the orchestrator agent and do not need to be repeated here.
+<WORKFLOW_RULES content>
 </workflow_rules>
 "
 )
 ```
 
-## Step 6: Resume Mode
+### 5d: Milestone Orchestrator Dispatch (EXECUTE Phase)
 
-Read the state file to determine current phase, status, and workdir configuration.
-
-Run git reconciliation:
-1. If `worktree_path` is set: verify the worktree exists and `cd` into it
-2. Check if on correct branch
-3. Handle dirty working tree per `uncommitted_policy` in state
-
-Set `WORKDIR_PATH` from the state file's `worktree_path` (or `repo_root` if null).
-
-### State-Reality Verification
-
-Compare FEATURE.md Progress section against actual git history:
-1. For each "complete" task with a commit SHA: verify `git log --oneline | grep <SHA>` exists
-2. For each completed milestone: verify milestone commit exists in log
-3. Check if files from PLAN.md File Impact Map actually exist on disk
-4. If discrepancies found: include them in `<state_drift>` tags in the orchestrator dispatch prompt
-
-Dispatch to orchestrator with resume context:
+For EXECUTE, dispatch one orchestrator per milestone (or parallel group):
 
 ```
 Task(
   subagent = "orchestrator",
-  description = "Resume feature: <short-name>",
+  description = "Execute M-XXX: <milestone-name>",
   prompt = "
-<state_content>
-<full FEATURE.md content>
-</state_content>
+<current_phase>
+EXECUTE
+</current_phase>
+
+<milestone>
+M-XXX
+</milestone>
 
 <state_path>
 ~/docs/plans/do/<short-name>/FEATURE.md
@@ -463,35 +546,118 @@ Task(
 <WORKDIR_PATH>
 </workdir_path>
 
-<resume_context>
-<last 10 entries from SESSION.log, if it exists>
-<output of: git log --oneline <base_ref>..HEAD from workdir>
-<output of: git status --porcelain from workdir>
-</resume_context>
+<interaction_mode>
+<interactive|autonomous>
+</interaction_mode>
 
-<phase_artifacts>
-RESEARCH.md: <first 20 lines or "## Problem Statement" section, if file exists>
-PLAN.md: <milestones list + current task progress, if file exists>
-</phase_artifacts>
+<task_bundles>
+<Full contents of each TASK-XXX.md file for this milestone>
+</task_bundles>
+
+<feature_progress>
+<FEATURE.md Progress section — shows completed tasks/milestones>
+</feature_progress>
+
+<session_tail>
+<Last 10 entries from SESSION.log, or empty if first milestone>
+</session_tail>
 
 <task>
-Resume an interrupted feature development workflow.
-Work from <WORKDIR_PATH>. State files are in ~/docs/plans/do/<short-name>/ (outside the repo).
-The phase_artifacts above provide compressed context from prior phases.
-Read full phase artifacts from disk only if more detail is needed.
-Reconcile git state (branch, working tree), then continue from the current phase and task.
+Execute milestone M-XXX. Process each task sequentially using the task bundles.
+For each task: dispatch implementer → shift-left → adversarial loop → update task bundle.
+At milestone boundary: run /atcommit for atomic commits.
+Append TASK_COMPLETE and MILESTONE_COMPLETE entries to SESSION.log.
+Update task bundle frontmatter (status, verdict, adversarial_rounds, commit_sha).
+Update FEATURE.md Progress section with completed tasks and commit SHAs.
+Do NOT advance current_phase — the outer loop handles that after all milestones complete.
+</task>
+
+<workflow_rules>
+<WORKFLOW_RULES content>
+</workflow_rules>
+"
+)
+```
+
+**Parallel milestone dispatch:** When multiple ready milestones have no file overlap
+in the File Impact Map, dispatch them in a single message (multiple Task calls).
+After all return, read updated state and proceed to the next group.
+
+### 5e: Task Bundle Generation
+
+Dispatched once between PLAN_REVIEW approval and EXECUTE entry.
+If `tasks/` directory already exists (resume scenario), skip this step.
+
+```
+Task(
+  subagent = "orchestrator",
+  description = "Generate task bundles: <short-name>",
+  prompt = "
+<current_phase>
+BUNDLE_GENERATION
+</current_phase>
+
+<state_path>
+~/docs/plans/do/<short-name>/FEATURE.md
+</state_path>
+
+<workdir_path>
+<WORKDIR_PATH>
+</workdir_path>
+
+<plan_content>
+<Full PLAN.md content>
+</plan_content>
+
+<research_context>
+<Full RESEARCH.md content>
+</research_context>
+
+<feature_spec>
+<FEATURE.md acceptance criteria section>
+</feature_spec>
+
+<task>
+Generate individual task execution bundles.
+Create the directory ~/docs/plans/do/<short-name>/tasks/.
+For each task in PLAN.md, create a TASK-XXX.md file using the task bundle schema
+from state-file-schema.md.
+
+For each task:
+1. Extract full task description, steps, and acceptance criteria from PLAN.md
+2. Pre-compute the task contract (concrete pass/fail criteria including mandatory invariants)
+3. Read relevant codebase files from <workdir_path> and extract architectural context
+4. Find pattern references with actual code snippets (file:line citations)
+5. Set max_adversarial_rounds based on risk level (Low=1, Medium=2, High=3)
+6. Include verification commands with expected output
+7. Summarize prior task outputs for tasks with dependencies
+
+Each bundle must be self-contained — an implementer reading only that file
+should have everything needed to execute the task without reading PLAN.md or RESEARCH.md.
 </task>
 "
 )
 ```
 
-## Step 7: Status Mode
+After generation, verify: count task files in `tasks/` matches task count in PLAN.md.
 
-If user asks for status without wanting to resume, dispatch the orchestrator with the state path and a read-only task: "Report status without making changes. Read FEATURE.md and report: current phase, progress percentage, last checkpoint, any blockers. Do not modify state or code."
+## Step 6: Status Mode
+
+If user asks for status without wanting to resume, dispatch the orchestrator with the state path
+and a read-only task: "Report status without making changes. Read FEATURE.md and report:
+current phase, progress percentage, last checkpoint, any blockers. Do not modify state or code."
 
 ## Phase Flow
 
-`REFINE -> RESEARCH -> PLAN_DRAFT -> PLAN_REVIEW -> EXECUTE -> VALIDATE -> DONE`
+`REFINE -> RESEARCH -> PLAN_DRAFT -> PLAN_REVIEW -> [BUNDLE] -> EXECUTE -> VALIDATE -> DONE`
+
+**Phase-level dispatch:** Each phase runs in a fresh orchestrator context.
+The SKILL.md outer loop (Step 5b) owns phase transitions. The orchestrator owns within-phase execution.
+
+**EXECUTE sub-loop:** Dispatches one orchestrator per milestone for maximum context freshness.
+Milestones with no file overlap run in parallel.
+
+**Task bundles:** Generated once after PLAN_REVIEW, providing self-contained execution context for each task.
 
 The EXECUTE phase uses an **adversarial review loop** between the implementer and a task-critic agent.
 The task-critic evaluates against a concrete task contract with escalating scrutiny per round
@@ -503,8 +669,10 @@ EXECUTE batch loop, DONE finalization sequence, and all agent dispatch details.
 
 - **State file not found**: List discovered runs or prompt for new feature
 - **Git branch conflict**: Report and offer resolution options
-- **Phase failure**: Mark phase as `blocked`, record blocker, offer manual intervention
-- **Subagent failure**: Log to agent-outputs, update state with failure context
+- **Phase failure**: Mark phase as `blocked` in FEATURE.md, record blocker, offer manual intervention
+- **Subagent failure**: Log failure, mark phase as `blocked`, re-dispatch on next loop iteration
+- **Phase loop stuck**: Track PLAN_REVIEW→PLAN_DRAFT and VALIDATE→EXECUTE loop counts; max 3 loops each before escalating to user
+- **Resume after crash**: SKILL.md reads FEATURE.md current_phase and re-enters the loop at that phase; task bundles enable task-level resume within EXECUTE
 
 ## State File Schema
 
