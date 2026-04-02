@@ -13,12 +13,15 @@ only the context that phase needs, loaded from state files.
 |-|-|-|
 | REFINE | feature_request, repo_root, brainstorm_context, hydrated_context | Small |
 | RESEARCH | FEATURE.md (refined spec section), repo_root | Small |
-| PLAN_DRAFT | FEATURE.md (spec + criteria), full RESEARCH.md | Medium |
-| PLAN_REVIEW | full PLAN.md, full RESEARCH.md, FEATURE.md (criteria) | Medium |
-| BUNDLE_GENERATION | full PLAN.md, full RESEARCH.md, FEATURE.md (criteria) | Medium |
-| EXECUTE (per milestone) | milestone task bundles, FEATURE.md (progress), SESSION.log tail | Medium |
-| VALIDATE | FEATURE.md (criteria), PLAN.md (validation strategy), git diff output | Medium |
+| PLAN_DRAFT | FEATURE.md (spec + criteria), full RESEARCH.md, CONVENTIONS.md | Medium |
+| PLAN_REVIEW | full PLAN.md, CONVENTIONS.md, FEATURE.md (criteria) | Medium |
+| BUNDLE_GENERATION | full PLAN.md, full RESEARCH.md, FEATURE.md (criteria), CONVENTIONS.md | Medium |
+| EXECUTE (per milestone) | milestone task bundles, FEATURE.md (progress), SESSION.log tail, CONVENTIONS.md | Medium |
+| VALIDATE | FEATURE.md (criteria), PLAN.md (validation strategy), git diff output, CONVENTIONS.md | Medium |
 | DONE | full FEATURE.md, VALIDATION.md, SESSION.log summary | Small |
+
+Note: PLAN_REVIEW reviewer gets CONVENTIONS.md (compressed conventions) instead of full RESEARCH.md.
+Red-teamer still receives RESEARCH.md for assumption attacks.
 
 ### Return Contract (what SKILL.md reads after each dispatch)
 
@@ -56,7 +59,7 @@ See state-file-schema.md for the full schema.
 2. Read task bundle statuses to find the next pending task
 3. Read that task's TASK-XXX.md for contract, files, steps
 4. Extract relevant decisions from FEATURE.md Decisions Made
-5. Extract relevant conventions from RESEARCH.md (only those affecting the next task's files)
+5. Include relevant sections from CONVENTIONS.md (only patterns affecting the next task's files)
 6. Summarize completed tasks (one line each: task ID, milestone, what it produced)
 7. Include active deviations and plan amendments
 8. Include budget status if `token_budget_usd` is set
@@ -136,6 +139,30 @@ Tests pass -> /atcommit (remaining) -> git push -> /pr (create PR) -> /pr-fix (v
 - **Both sources are mandatory** - do not skip Confluence search
 - **Interactive**: Present research summary, ask user to confirm assumptions and scope
 - **Autonomous**: Proceed with best interpretation, log assumptions in Decisions Made
+
+### Conventions Extraction (end of RESEARCH phase)
+
+After explorer and researcher return,
+the orchestrator extracts project conventions into `CONVENTIONS.md` —
+an immutable artifact that all downstream agents inherit.
+
+**Why this exists**: Conventions scattered across RESEARCH.md get re-derived by every agent,
+causing drift (one agent uses one pattern, another uses a different one)
+and wasting tokens on redundant deliberation.
+CONVENTIONS.md front-loads these decisions once.
+
+**Extraction protocol:**
+1. Read explorer's Conventions section and pattern catalog
+2. Read explorer's Build Environment section for exact commands
+3. Read explorer's Key Types/Functions for naming patterns
+4. Synthesize into CONVENTIONS.md using the schema from state-file-schema.md
+5. Every convention MUST cite a specific `file:line` as evidence
+6. Write to `~/docs/plans/do/<short-name>/CONVENTIONS.md`
+
+**Immutability rule**: CONVENTIONS.md is not updated during EXECUTE.
+If a convention proves wrong,
+the deviation is handled through the Plan Amendment Protocol
+(update PLAN.md task contracts and FEATURE.md deviations, not CONVENTIONS.md).
 
 ## PLAN_DRAFT Phase
 - Spawn `planner` to create plan (references both codebase findings AND Confluence context)

@@ -121,6 +121,31 @@ Within a phase, the orchestrator manages subagent isolation as before.
 State files are the handoff mechanism between phases. All inter-phase context
 passes through `~/docs/plans/do/<short-name>/` files, not through orchestrator memory.
 
+## Context Isolation
+
+Each agent receives only the context it needs.
+This table documents both what agents receive and what they must NOT receive.
+Preventing context bloat is as important as providing context.
+
+| Agent | Receives | Does NOT Receive |
+|-|-|-|
+| Refiner | feature_request, repo_root | Research, plans, prior runs |
+| Explorer | feature spec, repo_root | Prior plans, reviewer feedback |
+| Researcher | feature spec | Codebase map (explorer handles that) |
+| Planner | feature spec, full RESEARCH.md, CONVENTIONS.md | Previous failed plans, reviewer reasoning chains |
+| Reviewer | PLAN.md, CONVENTIONS.md, feature spec | Full RESEARCH.md (uses CONVENTIONS.md instead), planner reasoning |
+| Red-Teamer | PLAN.md, RESEARCH.md, feature spec | Reviewer findings (independent assessment) |
+| Implementer | task bundle (self-contained), CONVENTIONS.md | Full PLAN.md, RESEARCH.md, planning/review history |
+| Task-Critic | task contract, implementation, CONVENTIONS.md | Implementer reasoning chain, planning history |
+| Validator | acceptance criteria, PLAN.md validation strategy, CONVENTIONS.md, git diff | Full RESEARCH.md, implementation reasoning |
+
+**CONVENTIONS.md is the compression layer.**
+Instead of passing RESEARCH.md to every downstream agent,
+extract conventions once and pass the compact artifact.
+Only agents that need raw research findings
+(planner for grounding, red-teamer for assumption attacks)
+receive the full RESEARCH.md.
+
 ## Adversarial Execution
 
 The EXECUTE phase uses an adversarial loop between the implementer and a task-critic agent,

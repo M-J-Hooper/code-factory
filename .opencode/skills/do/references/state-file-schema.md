@@ -8,6 +8,7 @@ Reference for the /do skill's state file format. Load when creating or parsing s
 ~/docs/plans/do/<short-name>/
   FEATURE.md              # Canonical state and living document
   RESEARCH.md             # Codebase map + research brief (written after RESEARCH)
+  CONVENTIONS.md          # Immutable project conventions (extracted after RESEARCH)
   PLAN.md                 # Milestones, tasks, validation strategy (written after PLAN_DRAFT)
   REVIEW.md               # Review feedback (written after PLAN_REVIEW)
   VALIDATION.md           # Validation results with evidence (written after VALIDATE)
@@ -180,6 +181,59 @@ last_plan_amendment: null  # ISO timestamp of most recent PLAN.md amendment (nul
 ## Open Questions
 - (Questions that need answers before or during planning)
 - (Mark as BLOCKING if it prevents planning)
+```
+
+## CONVENTIONS.md (Immutable Project Conventions)
+
+Extracted once after the RESEARCH phase completes.
+All downstream agents (planner, reviewer, implementer, task-critic, validator) inherit this document
+instead of re-deriving conventions from RESEARCH.md.
+Immutable for the feature lifecycle —
+staleness during EXECUTE is handled by the Plan Amendment Protocol.
+
+```markdown
+# Project Conventions
+
+> Extracted from RESEARCH phase. Immutable for this feature.
+> If conventions change during EXECUTE, log a DEVIATION_MINOR and update PLAN.md task contracts.
+
+## Tech Stack
+- Language: <primary language>
+- Framework: <primary framework>
+- Key libraries: <list>
+
+## Code Patterns
+
+### Error Handling
+- Pattern: <describe> (cite `file:line`)
+
+### Logging & Observability
+- Pattern: <describe> (cite `file:line`)
+
+### Testing
+- Framework: <name>
+- Structure: <describe> (cite example test `file:line`)
+- Naming: <convention>
+
+### API / Interface
+- Pattern: <describe> (cite `file:line`)
+
+## Naming Conventions
+- Files: <convention>
+- Functions: <convention>
+- Variables: <convention>
+- Types: <convention>
+
+## Build & Test Commands
+- Build: `<exact command>`
+- Test: `<exact command>`
+- Lint: `<exact command>`
+- Type check: `<exact command>`
+
+## Immutable Constraints
+These apply to ALL tasks regardless of what the plan says:
+1. <constraint from codebase analysis>
+2. <constraint from codebase analysis>
 ```
 
 ## SESSION.log
@@ -573,9 +627,9 @@ Extracted from FEATURE.md Decisions Made:
 - D1: JWT for authentication (not session cookies) — stateless, no server-side session store needed
 - D3: Middleware chain pattern from existing codebase — see routes.go:45
 
-## Conventions Established
+## Conventions
 
-Extracted from RESEARCH.md and prior task outputs:
+From CONVENTIONS.md (immutable for this feature):
 
 - Middleware signature: `func(next http.Handler) http.Handler` (from existing RateLimiter)
 - Tests use `testutil.NewTestServer()` pattern — see auth_test.go:12

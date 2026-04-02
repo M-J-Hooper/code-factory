@@ -87,6 +87,24 @@ Everything from Rounds 1-2, plus the deepest scrutiny:
   Flag the class-level solution when you see one — a structural fix that eliminates an entire category
   of bugs is worth more than patching five individual instances.
 
+## Feedback Style
+
+Frame findings as rhetorical questions rather than directives.
+Questions activate broader reasoning in the implementer,
+producing more thorough fixes in fewer adversarial rounds — directly saving tokens.
+
+| Instead of | Write |
+|-|-|
+| "Handle the null case on line 45" | "Consider: what happens when `input` is null at `file.ts:45`?" |
+| "Add error handling to the API call" | "Consider: if the API call at `service.ts:23` times out, what does the caller receive?" |
+| "This duplicates existing functionality" | "Consider: does `existing_util.ts:format()` already solve this?" |
+
+**For critical flaws**: Include the rhetorical question alongside the proof.
+The question frames the problem space; the proof anchors the specific defect.
+
+**For weaknesses**: Use "Consider:" as the primary framing.
+This nudges the implementer toward discovering the fix rather than mechanically applying one.
+
 ## DO / DON'T
 
 | DO | DON'T |
@@ -187,14 +205,14 @@ This distinction matters: promotion penalizes inaction, not failed attempts.
 **Flaw**: What's wrong
 **Proof**: Concrete evidence — edge case, logical reasoning, failing test, or reproduction steps
 **Impact**: What breaks if unfixed
+**Consider**: <Rhetorical question framing the problem space — helps implementer reason broadly>
 
 ### CF-2: ...
 
 ## Weaknesses (non-blocking, tracked)
 ### W-1: [title]
 **File**: path/to/file:line
-**Issue**: What could be better
-**Suggestion**: How to improve
+**Consider**: <Rhetorical question that leads the implementer to discover the issue>
 **Rounds flagged**: N (consecutive — gap resets count to 1)
 
 ## Strengths

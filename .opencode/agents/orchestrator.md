@@ -193,6 +193,7 @@ After each subagent returns, verify the artifact contains expected sections befo
 |-------|----------|------------------|
 | RESEARCH (explorer) | Codebase Map | Entry Points, Key Types/Functions, Integration Points, Conventions, Findings |
 | RESEARCH (researcher) | Research Brief | Findings, Solution Direction, Open Questions |
+| RESEARCH (conventions) | CONVENTIONS.md | Tech Stack, Code Patterns, Naming, Build & Test Commands, Immutable Constraints |
 | PLAN_DRAFT | PLAN.md | Milestones, Task Breakdown, Validation Strategy |
 | PLAN_REVIEW | Review Report | Summary, Approval Status |
 | VALIDATE | Validation Report | Summary (PASS/FAIL), Acceptance Criteria, Quality Scorecard |
@@ -253,6 +254,12 @@ Validation protocol: For each required section, check that the heading exists in
 
 2. Write merged outputs to `RESEARCH.md`: Codebase Map, Research Brief, Assumptions (tagged), Constraints, Risks, Open Questions
 
+3. Extract conventions into `CONVENTIONS.md`:
+   - Read the explorer's Conventions section, pattern catalog, and Build Environment
+   - Synthesize into CONVENTIONS.md using the schema from state-file-schema.md
+   - Every convention must cite a specific `file:line` as evidence
+   - Write to the state directory alongside RESEARCH.md
+
 **User Checkpoint (interactive):** Output full research findings, then ask: proceed to planning / adjust scope / more research needed.
 
 **Autonomous mode:** Log key assumptions in Decisions Made, proceed.
@@ -267,7 +274,7 @@ Validation protocol: For each required section, check that the heading exists in
 
 **Actions:**
 1. Dispatch `productivity:planner`:
-   - Context: `<feature_spec>` (spec + acceptance criteria from FEATURE.md), `<research_context>` (full RESEARCH.md)
+   - Context: `<feature_spec>` (spec + acceptance criteria from FEATURE.md), `<research_context>` (full RESEARCH.md), `<conventions>` (full CONVENTIONS.md)
    - Role: Planning agent producing PLAN.md with milestones, task breakdown, and validation strategy
    - Task: Follow reasoning sequence: GROUND (quote key research findings) → STRATEGIZE (high-level approach) → DECOMPOSE (milestones → tasks with IDs, file refs, deps, acceptance criteria) → VALIDATE (per-milestone commands + final checks) → VERIFY (every criterion maps to a task, every file path references research, deps form valid DAG)
    - Constraints: only reference files from research context, flag missing info as Open Questions, every task references specific files, validation commands must be concrete and runnable
@@ -296,7 +303,7 @@ No separate consistency-checker dispatch is needed.
 1. Dispatch `productivity:reviewer`, `productivity:red-teamer`, and Codex plan challenge **all in parallel** (single message):
 
    **Reviewer dispatch:**
-   - Context: `<plan_content>` (full PLAN.md), `<research_context>` (full RESEARCH.md), `<feature_spec>` (acceptance criteria from FEATURE.md)
+   - Context: `<plan_content>` (full PLAN.md), `<conventions>` (full CONVENTIONS.md), `<feature_spec>` (acceptance criteria from FEATURE.md)
    - Role: Plan review agent producing a Review Report with required changes, improvements, and risk register
    - Task: Follow standard review sequence (coverage → path verification → research cross-check → dependency analysis → safety → executability → self-verify). Quote plan sections and cite evidence.
    - Constraints: issues need cited evidence, distinguish blockers from nice-to-haves, suggest specific fixes, verify validation commands are runnable, explicitly state "Plan approved with no required changes" if none
@@ -379,7 +386,7 @@ Per-task sequence: DISPATCH implementer → SHIFT-LEFT → ADVERSARIAL LOOP [imp
 **Step 1: Dispatch Implementer**
 
 Dispatch `productivity:implementer`:
-- Context: `<task_bundle>` (full TASK-XXX.md content — includes task description, steps, task contract, architectural context, pattern references, and verification commands). The task bundle is self-contained; no additional context extraction is needed.
+- Context: `<task_bundle>` (full TASK-XXX.md content — includes task description, steps, task contract, architectural context, pattern references, and verification commands), `<conventions>` (full CONVENTIONS.md)
 - Role: Implementation agent following TDD-first for behavior changes
 - Constraints: work from `<workdir_path>`, TDD-first for behavior changes, do not add features beyond task scope, self-evaluate against contract before reporting, ask if unclear
 
@@ -475,7 +482,7 @@ Special case: Low-risk task rejected twice → escalate to user (may be mis-clas
 **Step 3a: Dispatch Task Critic**
 
 Dispatch `productivity:task-critic`:
-- Context: `<task_contract>` (concrete pass/fail criteria), `<implementer_report>` (completion report or fix report), `<plan_context>` (architecture, scope from PLAN.md)
+- Context: `<task_contract>` (concrete pass/fail criteria), `<implementer_report>` (completion report or fix report), `<plan_context>` (architecture, scope from PLAN.md), `<conventions>` (full CONVENTIONS.md)
 - For round 2+: also include `<previous_verdicts>` (all prior task-critic verdicts for this task) and `<previous_fix_reports>` (all prior implementer fix reports for this task)
 - Role: Adversarial task critic evaluating implementation against task contract
 - Task: Round N review with escalating scrutiny. Produce structured verdict with proof-based findings.
@@ -643,7 +650,7 @@ Summary:
 
 **Actions:**
 1. Dispatch `productivity:validator`:
-   - Context: `<acceptance_criteria>` (from FEATURE.md), `<validation_plan>` (from PLAN.md), `<changed_files>` (git diff --name-only)
+   - Context: `<acceptance_criteria>` (from FEATURE.md), `<validation_plan>` (from PLAN.md), `<changed_files>` (git diff --name-only), `<conventions>` (full CONVENTIONS.md)
    - Role: Validation agent producing a Validation Report with pass/fail verdicts backed by command output evidence, plus quality scorecard (1-5 per dimension)
    - Task: Execute in order: DISCOVER (find test/lint/typecheck commands) → AUTOMATED CHECKS (lint → typecheck → unit → integration) → ACCEPTANCE VERIFICATION (run each criterion's verification method, capture output) → REGRESSION CHECK (full test suite vs baseline) → QUALITY ASSESSMENT (read changed files, score: Code Quality, Pattern Adherence, Edge Case Coverage, Test Completeness). Evidence protocol: record exact command, output, then form verdict AFTER reviewing evidence.
    - Constraints: work from `<workdir_path>`, every verdict needs command + output, "it works" is never acceptable, untestable criteria = blocker, re-read each criterion text to verify evidence proves it, account for every criterion (no silent skips). Quality gate: all dimensions >= 3.
