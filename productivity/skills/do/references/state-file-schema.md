@@ -188,6 +188,7 @@ date: <ISO date>
 branch: <branch name>
 workdir: <workdir path>
 interaction_mode: <interactive|autonomous>
+codex_available: <true|false>
 ---
 
 [2025-02-12T09:45:00Z] PHASE_ENTER: EXECUTE
@@ -228,6 +229,12 @@ Entry types:
 | `DRIFT_CHECK` | Milestone boundary drift measurement (planned vs actual files, test ratio, scope) |
 | `STAGNATION` | Fix cycle max reached — classification and recovery action taken |
 | `EVOLUTIONARY_LOOP` | Acceptance criteria found to be wrong — looping back to REFINE with evidence |
+| `CODEX_DETECTION` | Codex CLI availability check at EXECUTE setup (available/unavailable) |
+| `CODEX_REVIEW` | Codex code review at milestone boundary (verdict + findings count) |
+| `CODEX_ADVERSARIAL` | Codex adversarial review at validation (verdict + findings count) |
+| `CODEX_RESCUE` | Codex rescue for stagnation recovery (outcome: fixed/failed) |
+| `CODEX_SKIPPED` | Codex step skipped because CLI unavailable |
+| `CODEX_FAILED` | Codex invocation failed at runtime (reason logged) |
 | `SESSION_COMPLETE` | All phases done (includes grand totals) |
 
 Example entries for advanced entry types:
@@ -236,6 +243,11 @@ Example entries for advanced entry types:
 [2025-02-12T10:00:00Z] DRIFT_CHECK: M-001 | planned_files: 5 | actual_files: 7 | unplanned: 2 (config.ts, utils.ts) | test_ratio: 0.4
 [2025-02-12T10:01:00Z] STAGNATION: T-003 | classification: complexity_underestimate | action: split_task
 [2025-02-12T10:02:00Z] EVOLUTIONARY_LOOP: criteria F2 wrong — spec says 404 but system correctly returns 204 for empty | action: loop_to_REFINE
+[2025-02-12T10:03:00Z] CODEX_DETECTION: available
+[2025-02-12T10:04:00Z] CODEX_REVIEW: M-001 | verdict: approve | findings: 0
+[2025-02-12T10:05:00Z] CODEX_ADVERSARIAL: verdict: needs-attention | findings: 2
+[2025-02-12T10:06:00Z] CODEX_RESCUE: T-003 | outcome: fixed
+[2025-02-12T10:07:00Z] CODEX_SKIPPED: plan_review
 ```
 
 Token and duration values are per-agent cumulative (implementer + spec reviewer + code quality reviewer summed for each task).

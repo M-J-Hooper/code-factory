@@ -282,7 +282,7 @@ Validation protocol: For each required section, check that the heading exists in
 4. If required changes exist: log feedback, transition back to PLAN_DRAFT.
 
 5. If plan approved, dispatch `productivity:red-teamer` in plan mode.
-   **Optimization**: Dispatch reviewer and red-teamer in parallel (steps 2 and 5) — both read the same PLAN.md and RESEARCH.md. If reviewer requires changes, discard red-team results and loop back.
+   **Optimization**: Dispatch reviewer, red-teamer, and Codex plan challenge in parallel (steps 2, 5, and 5b) — all read the same PLAN.md and RESEARCH.md. If reviewer requires changes, discard red-team and Codex results and loop back.
 
    **Red-teamer dispatch:**
    - Context: `<plan_content>` (full PLAN.md), `<research_context>` (full RESEARCH.md), `<feature_spec>` (acceptance criteria), `<mode>plan</mode>`
@@ -290,9 +290,30 @@ Validation protocol: For each required section, check that the heading exists in
    - Task: Plan mode review (assumption attacks → failure mode analysis → security vectors → missing recovery → blast radius). Focus on 2-5 highest-impact findings. Do not duplicate reviewer's work.
    - Constraints: work from `<workdir_path>`, cite plan sections/file paths/research findings, few high-impact findings over many low-impact, only Critical findings block execution
 
-6. Process red-team findings:
-   - Append to `REVIEW.md` under `## Red Team Findings`
-   - **Critical findings**: loop back to PLAN_DRAFT
+5b. **Codex Plan Challenge (if codex available):**
+
+   Dispatch in parallel with steps 2 and 5 (all three in a single message):
+
+   ```
+   Task(
+     subagent_type = "codex:codex-rescue",
+     description = "Codex plan challenge: <short-name>",
+     prompt = "Review this software development plan. Challenge the approach, assumptions, and task ordering.
+   Focus on what could go wrong that the plan doesn't address.
+   Report: concerns ranked Critical/High/Medium. Each: issue, why it matters, concrete fix.
+
+   <plan>{PLAN.md milestones and task breakdown}</plan>
+   <research>{RESEARCH.md key findings}</research>
+   <feature_spec>{Acceptance criteria from FEATURE.md}</feature_spec>"
+   )
+   ```
+
+   If Codex unavailable: skip, log `CODEX_SKIPPED: plan_review`.
+
+6. Process red-team and Codex findings:
+   - Append red-team findings to `REVIEW.md` under `## Red Team Findings`
+   - Append Codex findings (if available) to `REVIEW.md` under `## Codex Plan Challenge`
+   - **Critical findings (either source)**: loop back to PLAN_DRAFT
    - **High findings (interactive)**: present to user, ask whether to address now or track as risks
    - **High findings (autonomous)**: log as tracked risks in Decisions Made
    - **Medium findings**: log in FEATURE.md Surprises and Discoveries
@@ -326,6 +347,12 @@ Verify the workdir is ready:
 1. **Plan Critical Review** (ONCE): Re-read PLAN.md. Verify task ordering, dependencies, environment, test baseline.
 2. **Pre-flight Validation Gate** (deterministic): Detect and run build + test + lint + typecheck from `<workdir_path>`.
    Build failure = STOP. Log: `[<timestamp>] PREFLIGHT: build OK | tests: N pass / M fail (Xs) | lint OK | typecheck OK`
+2b. **Codex Detection** (ONCE): Check if the Codex CLI is available for cross-model reviews:
+   ```bash
+   command -v codex >/dev/null 2>&1
+   ```
+   Log: `[<timestamp>] CODEX_DETECTION: available|unavailable`. Store result for gating Codex integration points throughout EXECUTE, VALIDATE, and DONE.
+
 3. **Session Activity Log** (ONCE): Create `SESSION.log` in state directory. Tell user the path. Append-only.
 4. **Context Preparation** (ONCE): Extract all tasks from PLAN.md with full text, acceptance criteria, dependencies, risk levels, File Impact Map. Build milestone dependency graph. Inline context into each dispatch — never make subagents read plan files.
 5. **Milestone-Level Parallelism**: Ready milestones with no file overlap run in parallel (one implementer per milestone in a single response). Shared files → sequential.
@@ -372,7 +399,22 @@ Dispatch `productivity:spec-reviewer`:
 - Task: Read actual code (not report) and verify: what was built correctly, missing requirements, extra work, misunderstandings. Include Communication to Orchestrator section.
 - Constraints: work from `<workdir_path>`, every finding cites file:line, report COMPLIANT or ISSUES, acknowledge strengths before issues, do not suggest improvements
 
-**If spec reviewer finds issues:** Resume implementer to fix gaps. Re-run spec review. **Max 2 fix cycles.** After 2 cycles, classify stagnation:
+**If spec reviewer finds issues:** Resume implementer to fix gaps. Re-run spec review. **Max 2 fix cycles.** After 2 cycles:
+
+**Codex Rescue Attempt (if codex available):** Before classifying stagnation, try Codex as a second opinion:
+
+```
+Task(
+  subagent_type = "codex:codex-rescue",
+  description = "Codex rescue: T-XXX stagnation",
+  prompt = "<task spec + error details + what Claude tried + why it failed + relevant code context>"
+)
+```
+
+If Codex provides a working fix: apply it, re-run shift-left + review pipeline. Log: `CODEX_RESCUE: T-XXX | outcome: fixed`.
+If Codex also fails: proceed to stagnation classification. Log: `CODEX_RESCUE: T-XXX | outcome: failed`.
+
+Classify stagnation:
 
 | Classification | Signal | Recovery Action |
 |---------------|--------|-----------------|
@@ -416,6 +458,18 @@ After all reviews pass (two for normal tasks, three for high-risk):
 At **milestone boundary** (all tasks complete + tests pass):
 - Run `/atcommit` to organize accumulated changes into atomic commits
 - Append: `[<timestamp>] MILESTONE_COMPLETE: M-XXX | milestone_tokens: <N>k | milestone_duration: <N>s | commits: <N>`
+
+**Codex Milestone Review (if codex available):**
+
+After /atcommit at milestone boundary, run Codex code review on the milestone's changes:
+
+```
+Skill(skill="codex:review", args="--wait --base <previous_milestone_commit_or_base_ref>")
+```
+
+If Codex `needs-attention` with Critical findings: dispatch implementer to fix before proceeding to next milestone.
+Other findings: log in SESSION.log as `CODEX_REVIEW: M-XXX | verdict: <approve|needs-attention> | findings: N`.
+If Codex invocation fails: log `CODEX_FAILED: milestone_review`, continue.
 
 **Drift Measurement** (deterministic — at each milestone boundary after committing):
 Compare File Impact Map vs `git diff --name-only <base_ref>..HEAD`. Flag >20% unplanned files, unplanned public APIs, or test ratio <0.3.
@@ -473,7 +527,20 @@ Summary:
 
 2. Write results to `VALIDATION.md`: Test results, acceptance criteria verification with evidence, pass/fail status.
 
-3. If validation fails (tests fail, criteria unmet, OR quality gate fails):
+2b. **Codex Adversarial Gate (if codex available):**
+
+   After validator passes (all criteria met and quality gate >= 3), run Codex adversarial review on the full branch:
+
+   ```
+   Skill(skill="codex:adversarial-review", args="--wait --scope branch")
+   ```
+
+   Append findings to `VALIDATION.md` under `## Codex Adversarial Review`.
+   Critical Codex findings: create fix tasks, transition back to EXECUTE (counts toward the 2-loop limit).
+   Log: `CODEX_ADVERSARIAL: verdict: <approve|needs-attention> | findings: N`.
+   If Codex invocation fails: log `CODEX_FAILED: validate_adversarial`, continue.
+
+3. If validation fails (tests fail, criteria unmet, quality gate fails, OR Critical Codex findings):
    - Create fix tasks in PLAN.md
    - For quality gate failures: targeted tasks for dimensions scoring below 3
    - Transition back to EXECUTE
@@ -568,6 +635,34 @@ When blocked: STOP → update state (`blocked` in frontmatter + Progress) → re
 
 **Deterministic** (run directly, no subagent): lint, format, type-check, test execution, git operations, state file updates, pre-flight checks, shift-left validation.
 **Agentic** (dispatch subagent): implementation, spec review, code quality review, red-team, research, exploration, planning, plan review.
+
+## Cross-Model Review Protocol
+
+When the Codex CLI is available, supplement Claude agent reviews with Codex (GPT-5.4) reviews.
+Model diversity catches blind spots that same-model reviews miss.
+
+**Detection:** At EXECUTE setup, after pre-flight checks:
+
+```bash
+command -v codex >/dev/null 2>&1
+```
+
+Log: `[<timestamp>] CODEX_DETECTION: available|unavailable`.
+If unavailable, skip all Codex steps — log `CODEX_SKIPPED: <step>` entries.
+Claude agent reviews remain the mandatory baseline; Codex is an optional enhancement.
+
+**Finding processing:**
+
+| Codex Verdict | Action |
+|-|-|
+| `approve` / no material findings | Log and continue |
+| `needs-attention` + Critical | Block progression — dispatch implementer to fix (same as Claude Critical) |
+| `needs-attention` + High (interactive) | Present to user alongside Claude findings |
+| `needs-attention` + High (autonomous) | Log as tracked risks |
+| Invocation failure | Log `CODEX_FAILED: <reason>`, continue without Codex |
+
+**Integration points:** PLAN_REVIEW (plan challenge), EXECUTE (milestone review + stagnation rescue), VALIDATE (adversarial final gate).
+See each phase section for dispatch details.
 
 ## Error Handling
 

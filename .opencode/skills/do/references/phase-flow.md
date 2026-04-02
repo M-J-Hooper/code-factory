@@ -70,7 +70,7 @@ Tests pass -> /atcommit (remaining) -> git push -> /pr (create PR) -> /pr-fix (v
 
 ## PLAN_REVIEW Phase
 
-**Three-step review: consistency check → parallel substantive review + red-team.**
+**Three-step review: consistency check → parallel substantive review + red-team + Codex plan challenge.**
 
 1. Spawn `consistency-checker` to fix internal inconsistencies in PLAN.md before substantive review:
    - Iteratively scans for contradictions, mismatched task IDs, file path inconsistencies, count mismatches, terminology drift, dangling references
@@ -82,8 +82,9 @@ Tests pass -> /atcommit (remaining) -> git push -> /pr (create PR) -> /pr-fix (v
 
 2. Re-read PLAN.md after consistency checker completes (it may have been edited).
 
-3. Spawn `reviewer` AND `red-teamer` **in parallel** (both in a single message):
-   - Both read the same PLAN.md and RESEARCH.md — they are independent
+3. Spawn `reviewer`, `red-teamer`, AND `codex:codex-rescue` (plan challenge) **in parallel** (all in a single message):
+   - All three read the same PLAN.md and RESEARCH.md — they are independent
+   - Codex plan challenge is optional: skip if codex unavailable, log `CODEX_SKIPPED: plan_review`
    - `reviewer`: substantive critique (coverage, path verification, research cross-check, dependency analysis, safety, executability)
      - Output: Review report, required changes
    - `red-teamer` in plan mode: adversarial challenge of plan assumptions
@@ -93,8 +94,9 @@ Tests pass -> /atcommit (remaining) -> git push -> /pr (create PR) -> /pr-fix (v
      - Assesses blast radius of shared code changes
      - Output: Red Team Plan Review with Critical / High / Medium findings
 
-4. After both complete, merge findings:
-   - If reviewer has required changes → loop back to PLAN_DRAFT
+4. After all complete (reviewer + red-teamer + Codex if available), merge findings:
+   - Codex plan concerns → append to REVIEW.md under `## Codex Plan Challenge`
+   - If reviewer has required changes → loop back to PLAN_DRAFT (discard red-team + Codex results)
    - **Critical red-team findings** → loop back to PLAN_DRAFT (must address before execution)
    - **High findings (interactive)** → present to user, ask whether to address or track as risks
    - **High findings (autonomous)** → log as tracked risks, proceed
@@ -193,6 +195,7 @@ At milestone boundary (all tasks in milestone complete + tests pass):
 - `/atcommit` builds dependency graphs and groups files that belong together (e.g., package + tests, wiring + config)
 - Typical result: 3-5 commits per feature instead of one per task
 - Append `MILESTONE_COMPLETE` to SESSION.log with milestone totals and commit count
+- **Codex Milestone Review (if available):** Run `Skill(skill="codex:review", args="--wait --base <milestone_base_ref>")` on milestone changes. Critical findings → implementer fixes before next milestone. Others → logged as `CODEX_REVIEW`.
 
 **Mid-batch stop conditions**: missing dependencies, systemic test failures,
 unclear instructions, repeated verification failures,
@@ -255,7 +258,8 @@ Log: `[<timestamp>] DRIFT_CHECK: M-XXX | planned_files: N | actual_files: N | un
 - Spawn `validator` to run automated checks AND quality assessment
 - Output: Validation report with test results, acceptance evidence, and quality scorecard (1-5 per dimension)
 - Quality gate: all dimensions must score >= 3/5 to pass
-- May loop back to EXECUTE for test failures or quality gate failures
+- **Codex Adversarial Gate (if available):** After validator passes, run `Skill(skill="codex:adversarial-review", args="--wait --scope branch")`. Critical findings → loop to EXECUTE. Append to VALIDATION.md under `## Codex Adversarial Review`.
+- May loop back to EXECUTE for test failures, quality gate failures, or Critical Codex findings
 - **Interactive**: Present validation results and quality scorecard, ask user before creating PR
 - **Autonomous**: Auto-proceed to DONE if validation and quality gate pass
 
