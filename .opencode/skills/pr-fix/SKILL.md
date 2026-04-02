@@ -221,7 +221,11 @@ For threads requiring explanations:
 
 For each addressed thread, reply directly to the review comment and resolve the thread.
 
-**Reply** using the REST API (replies to the specific thread, not a generic PR comment). Use the thread's `first_comment_id` and a HEREDOC for the body:
+**Reply** with a two-tier approach: try the threaded reply first, fall back to a top-level PR comment if it fails.
+
+**Tier 1 — Threaded reply** (preferred).
+Use the thread's `first_comment_id` and a HEREDOC for the body.
+Skip this tier if `first_comment_id` is `0`, `null`, or missing.
 
 ```bash
 gh api repos/{owner}/{repo}/pulls/comments/{first_comment_id}/replies \
@@ -230,6 +234,22 @@ gh api repos/{owner}/{repo}/pulls/comments/{first_comment_id}/replies \
 EOF
 )"
 ```
+
+**Tier 2 — PR comment fallback.**
+If Tier 1 was skipped or returned an error (404, 403, rate limit),
+post a top-level PR comment that references the original thread.
+Build the reference from `comments[0].html_url`, `path`, `line`, and `comments[0].author`:
+
+```bash
+gh pr comment {number} --body "$(cat <<'EOF'
+Re: [{path}:{line}]({html_url}) (@{author})
+
+{response text}
+EOF
+)"
+```
+
+Track threads that used the fallback — they are reported in Step 9.
 
 Response format by category:
 
@@ -245,6 +265,8 @@ Response format by category:
 **Bot attribution:** When replying to automated reviewer comments (Codex, etc.), prefix every reply with `*Automated response from Claude:*` to distinguish from human responses.
 
 **Resolve** the thread using the GraphQL mutation from [references/graphql-queries.md](references/graphql-queries.md), passing the thread's `thread_id`.
+Attempt resolution regardless of which reply tier was used — `thread_id` is independent of `first_comment_id`.
+If `thread_id` is also missing (REST fallback data from error handling), skip resolution and note as "replied but not resolved" in Step 9.
 
 **Do NOT resolve:**
 - Threads where the user chose "Discuss further"
@@ -379,6 +401,11 @@ Present the final report:
 - {path}:{line} — {category}: {brief description}
   Reply: "{response summary}"
 
+### Replied via PR Comment ({count})
+{if any threads used the Tier 2 fallback, list them here}
+- {path}:{line} — threaded reply unavailable, posted as PR comment
+{if none, omit this section}
+
 ### Unresolved ({count})
 - {path}:{line} — {reason not resolved}
 
@@ -418,7 +445,7 @@ gh pr edit {number} --add-reviewer {reviewer1},{reviewer2}
 | `get-pr-comments.sh` fails | Fall back to REST: `gh api repos/{owner}/{repo}/pulls/{number}/comments`. Lose thread resolution data but can still categorize and fix. |
 | Large output (>25KB) | Script auto-writes to `/tmp/pr-comments-{owner}-{repo}-{pr}.json`. Use the Read tool on that path. |
 | Thread resolution fails | Report the error. The reply was still posted. Continue with remaining threads. |
-| Reply fails | Report the error. Log the intended response. Continue with remaining threads. |
+| Reply fails | Try Tier 2 fallback (PR comment referencing original thread). If both tiers fail, report the error and log the intended response. Continue with remaining threads. |
 | Edit fails (file not found) | The file may have been renamed or deleted. Report to user. Skip thread. |
 | Push fails | Report the error. Do NOT force-push. Let user decide. |
 | Merge conflict after edits | Report conflicting files. Let user resolve manually. |

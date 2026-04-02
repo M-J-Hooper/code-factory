@@ -61,6 +61,29 @@ Replace:
 - `{databaseId}` — the `first_comment_id` from the script output
 - `{response text}` — the reply body (supports GitHub-flavored markdown)
 
+## Fallback: PR Comment When Threaded Reply Unavailable
+
+When `first_comment_id` is `0`/missing or the threaded reply endpoint returns an error,
+fall back to a top-level PR comment.
+This is not threaded but clearly references the original review comment.
+
+```bash
+gh pr comment {number} --body "$(cat <<'EOF'
+Re: [{path}:{line}]({html_url}) (@{author})
+
+{response text}
+EOF
+)"
+```
+
+Replace:
+- `{number}` — the PR number
+- `{path}` — file path from the thread
+- `{line}` — line number from the thread
+- `{html_url}` — `comments[0].html_url` (direct link to the original review comment)
+- `{author}` — `comments[0].author` (mentions the reviewer for notification)
+- `{response text}` — the reply body (same content as would have been posted as a threaded reply)
+
 ## Request Re-Review
 
 After all threads are addressed, request re-review from specific reviewers:
