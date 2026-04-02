@@ -52,13 +52,42 @@ For best results with /do, set effort level to High:
 
 High effort enables full reasoning across all phases, reducing rework from shallow analysis.
 
-## Budget Awareness
+## Budget Enforcement
 
 If `token_budget_usd` is set in FEATURE.md frontmatter:
-- Track cumulative token cost after each TASK_COMPLETE
-- Warn at 80% of budget, pause at 100%
-- Interactive: ask user whether to continue, increase budget, or stop
-- Autonomous: stop and report "Budget limit reached"
+
+**Tracking:** After each TASK_COMPLETE, update `token_spent_estimate_usd` in FEATURE.md frontmatter.
+Approximate cost per 1k tokens: Opus ~$0.015, Sonnet ~$0.003, Haiku ~$0.0008.
+
+**Pre-dispatch check:** Before dispatching each task, compare remaining budget against estimated task cost
+(Low ~$0.05, Medium ~$0.15, High ~$0.30). If the next task would exceed the budget, surface the constraint.
+
+| Threshold | Interactive | Autonomous |
+|-|-|-|
+| 80% spent | Warn in batch report, log `BUDGET_WARNING` | Log warning, continue |
+| 100% spent | Pause, ask: increase budget / stop at milestone / stop now | Complete current task, stop, log `BUDGET_EXHAUSTED` |
+
+The budget check runs **before** dispatching — not after. Autonomous mode does not silently exceed the budget.
+
+## Plan Amendment Protocol
+
+When a deviation changes the plan's assumptions during EXECUTE,
+the plan itself must be updated — not just the SESSION.log.
+A resuming agent reads the current plan, not the original plan plus unstructured deviation logs.
+
+1. Log the deviation in SESSION.log (existing entry type)
+2. Update affected task contracts in PLAN.md:
+   - Modify preconditions/postconditions of the affected task
+   - Re-validate downstream task preconditions — if a downstream task assumed what changed, update its contract
+   - Add an entry to `## Plan Amendments` with trigger, changes, and downstream impact
+3. Update FEATURE.md: set `last_plan_amendment` to current timestamp
+4. Regenerate SNAPSHOT.md to reflect the amended plan
+
+## Table Formatting
+
+- Markdown tables: use minimum separator (`|-|-|`). Never pad with repeated hyphens (`|---|---|`).
+- Do not use box-drawing / ASCII-art tables (`┌`, `┬`, `─`, `│`, `└`, `┘`, `├`, `┤`, `┼`).
+  These characters render inconsistently across editors and waste tokens.
 
 ## Service Degradation
 

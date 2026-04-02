@@ -41,6 +41,33 @@ only the context that phase needs, loaded from state files.
 | VALIDATE → EXECUTE | Validation failures or quality gate fails | 2 |
 | EXECUTE milestone retry | Task adversarial stalemate requiring re-plan | 1 (then escalate) |
 
+### Resume Snapshot Protocol
+
+The SKILL.md outer loop generates SNAPSHOT.md at every phase transition and milestone completion.
+See state-file-schema.md for the full schema.
+
+**When to regenerate:**
+1. After each phase completes (before advancing `current_phase`)
+2. After each milestone completes during EXECUTE
+3. On resume (Step 5a) — verify snapshot matches reality, regenerate if stale
+
+**How to generate:**
+1. Read FEATURE.md (progress, decisions, open questions)
+2. Read task bundle statuses to find the next pending task
+3. Read that task's TASK-XXX.md for contract, files, steps
+4. Extract relevant decisions from FEATURE.md Decisions Made
+5. Extract relevant conventions from RESEARCH.md (only those affecting the next task's files)
+6. Summarize completed tasks (one line each: task ID, milestone, what it produced)
+7. Include active deviations and plan amendments
+8. Include budget status if `token_budget_usd` is set
+9. Write to `SNAPSHOT.md` in the state directory
+
+**Why snapshots exist:** When a milestone orchestrator starts cold,
+it needs to understand why the plan chose this approach,
+what prior tasks produced, and what conventions apply — not just the task description.
+Twenty lines of RESEARCH.md won't carry that context.
+The snapshot compresses all accumulated decisions into a task-scoped document.
+
 ### Milestone Dispatch Protocol (EXECUTE)
 
 SKILL.md reads PLAN.md to build the milestone dependency graph and reads task bundle statuses.
@@ -49,7 +76,7 @@ SKILL.md reads PLAN.md to build the milestone dependency graph and reads task bu
 2. Check File Impact Map for file overlap between ready milestones
 3. No overlap → dispatch in parallel (multiple Task calls in one message)
 4. Shared files → dispatch sequentially
-5. After each milestone completes: re-read task bundles, update dependency graph, identify next ready milestones
+5. After each milestone completes: regenerate SNAPSHOT.md, re-read task bundles, update dependency graph, identify next ready milestones
 
 ## EXECUTE Batch Loop
 
@@ -320,6 +347,23 @@ Track cumulatively at three levels:
 
 Include token/duration data in batch reports so the user can see resource consumption.
 
+**Budget Enforcement** (when `token_budget_usd` is set in FEATURE.md):
+
+After each TASK_COMPLETE, update `token_spent_estimate_usd` in FEATURE.md frontmatter.
+Use approximate cost: `tokens * $0.000015` for Opus, `$0.000003` for Sonnet, `$0.0000008` for Haiku.
+These are rough estimates — precision matters less than having a running total.
+
+| Threshold | Action |
+|-|-|
+| 80% of budget | Log `BUDGET_WARNING` in SESSION.log, include in batch report |
+| 100% of budget | **Interactive**: pause, ask user to increase budget or stop gracefully at current milestone |
+| 100% of budget | **Autonomous**: complete the current task, then stop. Do not start the next task. Log `BUDGET_EXHAUSTED`. |
+
+The budget check runs before dispatching each task — not after.
+If the remaining budget is less than the estimated cost of the next task
+(based on scope: ~$0.05 for Low risk, ~$0.15 for Medium, ~$0.30 for High),
+surface the budget constraint before starting.
+
 **Batch reporting** (after every batch or parallel round):
 
 Report: tasks completed, test status, discoveries, token usage, duration.
@@ -348,6 +392,19 @@ classify the deviation by severity and handle accordingly:
 |----------|-----------|---------|
 | **Minor** — wrong assumption, step needs adjusting, small addition | Implementer says "this won't work because..." or "this already exists" or reviewer flags plan misalignment as justified | **Interactive**: propose specific PLAN.md edit, show before/after, ask user approval via `AskUserQuestion` before writing. **Autonomous**: log rationale in Decisions Made, apply edit, continue. |
 | **Major** — wrong approach, missing phase, scope change, fundamental rethink | Implementer reports approach is infeasible, or discovery invalidates multiple downstream tasks | **Both modes**: stop the current batch, log with evidence in SESSION.log (`DEVIATION_MAJOR`), present the issue to the user. Recommend re-planning (return to PLAN_DRAFT). |
+
+**Plan Amendment Protocol** (applies to both severity levels):
+
+Deviations that change assumptions feed back into PLAN.md — not just into SESSION.log.
+A resuming agent reads the current plan, not the original plan plus unstructured deviation logs.
+
+1. Log the deviation in SESSION.log (existing format)
+2. Update affected task contracts in PLAN.md:
+   - Modify preconditions/postconditions of the affected task
+   - Re-validate downstream task preconditions — if a downstream task assumed what changed, update its contract too
+   - Add an entry to the `## Plan Amendments` section with trigger, changes, and downstream impact
+3. Update FEATURE.md: set `last_plan_amendment` to current timestamp, log in Surprises and Discoveries
+4. Regenerate SNAPSHOT.md to reflect the amended plan
 
 After resolving a deviation, re-read the latest PLAN.md before resuming — it may have changed.
 Log all deviations in SESSION.log and in the Surprises and Discoveries section of FEATURE.md.

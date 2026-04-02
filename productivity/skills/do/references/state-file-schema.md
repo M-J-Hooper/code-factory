@@ -11,6 +11,7 @@ Reference for the /do skill's state file format. Load when creating or parsing s
   PLAN.md                 # Milestones, tasks, validation strategy (written after PLAN_DRAFT)
   REVIEW.md               # Review feedback (written after PLAN_REVIEW)
   VALIDATION.md           # Validation results with evidence (written after VALIDATE)
+  SNAPSHOT.md             # Task-scoped resume context (regenerated at phase/milestone transitions)
   SESSION.log             # Append-only activity log (written from EXECUTE onward)
   HANDOFF.md              # Workspace handoff (written in DONE phase for workspace mode, optional)
   tasks/                  # Pre-computed task execution bundles (written after PLAN_REVIEW)
@@ -40,6 +41,8 @@ interaction_mode: interactive  # or "autonomous"
 analysis_only: false  # true when task is research/analysis, no code changes
 ambiguity_score: 0.15  # weighted ambiguity from refiner (0.0-1.0, gate: <= 0.2)
 token_budget_usd: null  # optional, set via --budget flag (null = unlimited)
+token_spent_estimate_usd: 0.00  # running total, updated after each TASK_COMPLETE
+last_plan_amendment: null  # ISO timestamp of most recent PLAN.md amendment (null = no amendments)
 ---
 
 # <Feature Name>
@@ -320,6 +323,10 @@ Parallel opportunities: T-003 and T-004 can run concurrently
 Each task MUST be broken into bite-sized steps (one action per step). Tasks introducing new behavior MUST follow TDD-first structure. NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST.
 
 - [ ] T-001 (M-001) Task description
+  - Depends on: [] (or list of task IDs)
+  - Preconditions:
+    - <verifiable condition that must be true before starting>
+    - Verify: `<command>` → expected: <result>
   - Files: `path/to/file.ts` (New/Modify), `tests/path/to/file.test.ts` (New/Modify)
   - Risk: Low | Medium | High
   - Steps (TDD-first — mandatory for behavior changes):
@@ -327,12 +334,19 @@ Each task MUST be broken into bite-sized steps (one action per step). Tasks intr
     2. Run test → `<exact command>` → expected: FAIL with `<specific error message>`
     3. Implement minimal code to pass (include complete code or precise file:line edit instructions)
     4. Run test → `<exact command>` → expected: PASS (and all existing tests still pass)
-    5. Commit → `<commit message>`
+    5. (Do NOT commit — changes accumulate until milestone boundary)
+  - Postconditions:
+    - <verifiable condition that must be true after completion>
+    - Verify: `<command>` → expected: <result>
   - Acceptance: What "done" looks like (observable behavior, not internal state)
 - [ ] T-002 (M-001) Task description
-  - Depends on: T-001
+  - Depends on: [T-001]
+  - Preconditions:
+    - T-001 complete: <what T-001 produces that this task needs>
   - Risk: Medium
-  - Steps: (TDD-first when behavior changes; direct edit → verify → commit for config/refactor)
+  - Steps: (TDD-first when behavior changes; direct edit → verify for config/refactor)
+  - Postconditions:
+    - <what this task produces for downstream tasks>
   - Acceptance: What "done" looks like
 
 ### Milestone M-002
@@ -383,6 +397,18 @@ Each task MUST be broken into bite-sized steps (one action per step). Tasks intr
 - (Questions that must be answered before implementing specific tasks)
 - (Flag which task is blocked by each question)
 
+## Plan Amendments
+
+Tracks deviations that changed the plan during EXECUTE.
+Each amendment updates the affected task contracts so resuming agents read the current plan,
+not the original plan plus unstructured deviation logs.
+
+### A1: <short description> (<ISO timestamp>)
+- **Trigger**: What was discovered and why the plan was wrong
+- **Changed**: Which task preconditions/postconditions/steps were updated
+- **Downstream impact**: Which downstream tasks had their contracts re-validated
+- **Status**: Applied | Pending user review
+
 ## Recovery and Idempotency
 
 ### Safe to Repeat
@@ -418,6 +444,15 @@ commit_sha: null         # Set at milestone boundary after /atcommit
 ## Description
 
 <Full task text from PLAN.md — what to implement and why>
+
+## Preconditions
+
+Check these before starting — if any fail, the task is blocked:
+
+- [ ] <dependency task> complete: <what it produces that this task needs>
+  Verify: `<command>` → expected: <result>
+- [ ] <codebase condition>: <what must exist or be true>
+  Verify: `<command>` → expected: <result>
 
 ## Files
 
@@ -493,3 +528,84 @@ commit_sha: null         # Set at milestone boundary after /atcommit
 3. **Updated** by the milestone orchestrator after each adversarial round (status, adversarial_rounds, verdict)
 4. **Finalized** at milestone boundary (commit_sha set after /atcommit)
 5. **Read by outer loop** for resume (find first pending task) and progress tracking
+
+## SNAPSHOT.md (Resume Context)
+
+Auto-generated at every phase transition and milestone completion.
+Gives a cold-start agent everything it needs to pick up the next task
+without reading RESEARCH.md, PLAN.md, or SESSION.log from scratch.
+
+The snapshot is **task-scoped** — it answers "what does the next agent need to know
+to do this specific task?" rather than summarizing the entire project.
+
+```markdown
+# Resume Snapshot
+
+> Auto-generated — do not edit manually.
+> Regenerated at each phase transition and milestone completion.
+
+## Current State
+
+- **Phase**: EXECUTE
+- **Milestone**: M-002 — Protected Routes
+- **Next Task**: T-004 — Implement auth middleware
+- **Test Baseline**: 42 pass / 0 fail
+- **Branch**: feature/user-auth
+- **Last Commit**: abc123 "feat(auth): add login endpoint"
+- **Uncommitted Changes**: none
+
+## Next Task Contract
+
+- **Preconditions**:
+  - T-001 complete: project structure in place (pkg/, cmd/, tests/)
+  - T-002 complete: login endpoint exists at /api/login
+- **Postconditions**:
+  - Auth middleware applied to /api/* routes
+  - TestAuthMiddleware passes
+- **Files**: pkg/middleware/auth.go (New), cmd/server/routes.go (Modify)
+- **Risk**: Medium
+- **Max Adversarial Rounds**: 2
+
+## Key Decisions (affecting next task)
+
+Extracted from FEATURE.md Decisions Made:
+
+- D1: JWT for authentication (not session cookies) — stateless, no server-side session store needed
+- D3: Middleware chain pattern from existing codebase — see routes.go:45
+
+## Conventions Established
+
+Extracted from RESEARCH.md and prior task outputs:
+
+- Middleware signature: `func(next http.Handler) http.Handler` (from existing RateLimiter)
+- Tests use `testutil.NewTestServer()` pattern — see auth_test.go:12
+- Error responses: `pkg/api/errors.go` ApiError struct
+
+## Completed Work Summary
+
+| Task | Milestone | What it produced |
+|-|-|-|
+| T-001 | M-001 | Project structure: pkg/, cmd/, tests/ directories |
+| T-002 | M-001 | Login endpoint at /api/login with JWT generation |
+| T-003 | M-001 | Unit tests for login (TestLogin, TestLoginInvalidCredentials) |
+
+## Active Deviations
+
+- (none)
+
+## Plan Amendments
+
+- (none)
+
+## Budget Status
+
+- **Budget**: $5.00 (or unlimited)
+- **Spent**: $1.23
+- **Remaining**: $3.77 (75.4%)
+```
+
+**Snapshot lifecycle:**
+1. **Created** on first EXECUTE entry (after PLAN_REVIEW + bundle generation)
+2. **Regenerated** at every phase transition and milestone completion by the SKILL.md outer loop
+3. **Included** in milestone orchestrator dispatch as `<resume_snapshot>` (replaces thin context slices)
+4. **Read** on resume (Step 5a) to reconstruct context without re-reading all state files
