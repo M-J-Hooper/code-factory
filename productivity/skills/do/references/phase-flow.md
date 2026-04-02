@@ -21,7 +21,7 @@ Execute round:
      - Append TASK_COMPLETE to SESSION.log with tokens/duration
   4. At MILESTONE BOUNDARY: Run /atcommit, append MILESTONE_COMPLETE to SESSION.log
 
-STOP on: missing deps, test failures, unclear instructions, repeated failures, plan-invalidating discoveries
+STOP on: missing deps, test failures, unclear instructions, adversarial stalemate on all flaws, plan-invalidating discoveries
 DEVIATION_MINOR: propose plan edit, ask user (interactive) or log and adjust (autonomous)
 DEVIATION_MAJOR: pause execution, recommend re-planning
 ```
@@ -149,25 +149,109 @@ Log parallel milestones in SESSION.log: `MILESTONE_START: M-002 (Title) [paralle
 **Per-task sequence** (same whether running one or multiple milestones):
 
 1. **Dispatch fresh implementer** with full task text + scene-setting context inlined
-   (milestone position, prior task summary, upcoming tasks, relevant discoveries, architectural context)
-2. Implementer asks questions → answers provided → implements → self-reviews → reports (NO commit)
+   (milestone position, prior task summary, upcoming tasks, relevant discoveries, architectural context).
+   Implementer self-evaluates before reporting — catches obvious issues before the adversarial loop.
+2. Implementer asks questions → answers provided → implements → self-evaluates → reports (NO commit)
 3. **Shift-left validation** (deterministic — orchestrator runs directly, no subagent):
    lint + format + type-check. Auto-fix formatting.
    Return to implementer if lint/type errors persist.
-   Only proceed to reviews after shift-left passes.
-4. **Spec compliance review** — fresh reviewer acknowledges strengths,
-   then verifies implementation matches spec (nothing missing, nothing extra, nothing misunderstood)
-5. If issues → implementer fixes → re-review (max 2 fix cycles, then escalate)
-6. **Code quality review** — fresh reviewer receives plan context,
-   reports strengths first, then assesses code quality, architecture, plan alignment, patterns, testing
-7. If critical issues → implementer fixes → re-review (max 2 fix cycles, then escalate)
-8. If plan deviations found → handle per **Structured Deviation Handling** below
-9. **Red-team review (HIGH-RISK TASKS ONLY)** — only for tasks marked `Risk: High` in the plan.
+   Only proceed to the adversarial loop after shift-left passes.
+4. **Adversarial review loop** — the orchestrator runs an adversarial loop between the implementer
+   and a task-critic agent. See **Adversarial Review Loop** section below for full protocol.
+5. **Red-team review (HIGH-RISK TASKS ONLY)** — only for tasks marked `Risk: High` in the plan.
    Adversarially probes for input edge cases, security vulnerabilities, race conditions, failure modes.
    Receives relevant plan-level red-team findings to focus on known risk areas.
    Critical findings → implementer fixes (max 2 cycles). High/Medium → logged as tracked risks.
    Skipped entirely for Low and Medium risk tasks.
-10. Mark task complete, update state, append `TASK_COMPLETE` to SESSION.log with token/duration metrics
+6. Mark task complete (only after ACCEPT verdict — safety valve outcomes are blocking),
+   update state, append `TASK_COMPLETE` to SESSION.log with token/duration/adversarial-round metrics
+
+**Adversarial Review Loop:**
+
+The adversarial loop replaces the previous sequential spec-review → quality-review chain.
+A single `task-critic` agent evaluates both spec compliance AND code quality with escalating depth per round.
+The implementer and task-critic compete until the critic ACCEPTs or the safety valve triggers.
+
+**Step 4a: Extract Task Contract**
+
+Before the first critic dispatch, the orchestrator extracts concrete acceptance criteria from PLAN.md
+and formalizes them as a task contract:
+
+```markdown
+## Task Contract for T-XXX
+
+### Scope
+[Task description from PLAN.md]
+
+### Acceptance Criteria (pass/fail)
+1. Build passes with zero errors after changes
+2. All existing tests pass
+3. Lint and type check pass with zero violations
+4. [AC-1 from plan — made concrete and testable]
+5. [AC-2 from plan — made concrete and testable]
+
+### Mandatory Invariants (always apply, even if not in plan)
+1. Error handling: errors at system boundaries are caught, logged, and propagated
+2. Compatibility: no breaking changes to public APIs unless task explicitly requires it
+3. Observability: existing logging/metrics/tracing preserved or extended
+4. Security: no new injection vectors, exposed secrets, auth gaps
+5. Codebase conventions: new code follows patterns in comparable files
+
+### Out of Scope
+- Changes to files not listed in the task's file impact
+- Pre-existing issues in unrelated modules
+- Improvements beyond stated requirements
+```
+
+Each criterion must be binary pass/fail — not "looks good."
+Include project-level criteria (build, lint, tests) from the pre-flight baseline.
+The Mandatory Invariants ensure the critic can block on non-functional regressions
+even if the plan omitted them.
+
+**Step 4b: Adversarial Loop**
+
+```
+Round = 1
+while Round <= 3:
+  1. Dispatch task-critic with: task contract, round number, previous verdicts (round 2+)
+  2. If VERDICT: ACCEPT → break loop, proceed to step 5 (red-team or mark complete)
+  3. If VERDICT: REJECT:
+     a. Stalemate check (round 2+ only, see below)
+     b. Dispatch implementer to fix critical flaws
+        - Pass all critical flaws with full proof
+        - Pass weaknesses (especially persistent ones about to be promoted)
+        - Implementer applies class-level fixes and self-evaluates before returning
+     c. Re-run shift-left validation after fixes
+     d. Round++, loop back to step 1
+
+Safety valve (BLOCKING — both modes): if Round > 3 and not accepted:
+  - Codex rescue attempt (if available)
+  - If still unresolved: STOP. Require explicit user acceptance of residual risk.
+  - Autonomous mode does NOT silently convert critical flaws to tracked risks — it stops and waits.
+  - Classify stagnation for reporting context (does not auto-resolve)
+```
+
+**Stalemate Detection (orchestrator responsibility, round 2+ only):**
+
+Before dispatching the implementer in step 3b, compare the current critic verdict
+with the immediately preceding critic verdict.
+A critical flaw is the "same flaw" across two consecutive rounds if it meets at least 2 of these 3 criteria:
+1. Flaw titles share key nouns (e.g., "error handling in parse" and "incomplete error handling — parse function")
+2. Flaws reference the same file and line range (within 10 lines)
+3. Flaw descriptions identify the same root cause
+
+When in doubt, treat evolved or narrowed versions of a flaw as distinct —
+false negatives (missing a stalemate) are less harmful than false positives.
+
+If the same flaw appears in both consecutive verdicts AND the implementer's response
+in the intervening round proposed a fix for that flaw, that is a stalemate:
+- Remove the stalemated flaw from the list passed to the implementer
+- Flag it to the user with full context (both rounds' descriptions and the attempted fix)
+- Continue the loop with remaining flaws
+- If ALL remaining critical flaws are stalemated, stop the loop and trigger the safety valve
+
+**Early acceptance:** If the task-critic ACCEPTs on round 1, proceed directly to step 5.
+No adversarial rounds were needed — the implementation was solid on first review.
 
 **Token and Timing Tracking:**
 
@@ -249,10 +333,10 @@ Log: `[<timestamp>] DRIFT_CHECK: M-XXX | planned_files: N | actual_files: N | un
 
 **Never:**
 - Dispatch multiple implementer subagents in parallel (causes conflicts)
-- Skip either review stage (spec compliance OR code quality)
-- Start code quality review before spec compliance passes
-- Proceed to the next task while review issues remain open
+- Skip the adversarial review loop or accept without a proof-based verdict
+- Proceed to the next task while the adversarial loop has unresolved critical flaws
 - Let implementer subagents run git commit — only the orchestrator commits at milestone boundaries
+- Accept a task-critic verdict that lacks proof for its critical flaws — send it back
 
 ## VALIDATE Phase
 - Spawn `validator` to run automated checks AND quality assessment

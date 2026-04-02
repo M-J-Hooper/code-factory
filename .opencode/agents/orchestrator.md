@@ -368,102 +368,196 @@ Verify the workdir is ready:
 5. **Milestone-Level Parallelism**: Ready milestones with no file overlap run in parallel (one implementer per milestone in a single response). Shared files → sequential.
 6. **Batch Execution**: 3 tasks per batch (1 for high-risk). User can adjust at feedback checkpoints.
 
-Per-task sequence: DISPATCH implementer → SHIFT-LEFT → SPEC REVIEW → CODE QUALITY REVIEW → LOG → UPDATE STATE
+Per-task sequence: DISPATCH implementer → SHIFT-LEFT → ADVERSARIAL LOOP [implementer ↔ task-critic] → RED-TEAM (high-risk) → LOG → UPDATE STATE
 
 **Step 1: Dispatch Implementer**
 
 Dispatch `productivity:implementer`:
-- Context: `<task>` (full task text from PLAN.md — paste it, don't reference a file), `<context>` (milestone scope, task position N of M, previously completed work, upcoming tasks, relevant discoveries, architectural context from RESEARCH.md), `<acceptance_criteria>` (task-specific criteria)
+- Context: `<task>` (full task text from PLAN.md — paste it, don't reference a file), `<context>` (milestone scope, task position N of M, previously completed work, upcoming tasks, relevant discoveries, architectural context from RESEARCH.md), `<acceptance_criteria>` (task-specific criteria), `<task_contract>` (concrete pass/fail criteria — see Step 1.5)
 - Role: Implementation agent following TDD-first for behavior changes
-- Constraints: work from `<workdir_path>`, commit atomically via /atcommit (one complete concept per commit), TDD-first for behavior changes, do not add features beyond task scope, self-review before reporting, ask if unclear
+- Constraints: work from `<workdir_path>`, TDD-first for behavior changes, do not add features beyond task scope, self-evaluate against contract before reporting, ask if unclear
 
 If the implementer asks questions, answer clearly with full context, then let it proceed.
 
 **Cost-Aware Model Routing:**
 
-| Task Risk | Implementer | Spec Reviewer | Quality Reviewer |
-|-----------|-------------|---------------|-----------------|
-| Low (single file, config/doc) | sonnet | sonnet | sonnet |
-| Medium (2-3 files, standard) | opus | sonnet | opus |
+| Task Risk | Implementer | Task Critic | Red Teamer |
+|-|-|-|-|
+| Low (single file, config/doc) | sonnet | sonnet | — |
+| Medium (2-3 files, standard) | opus | sonnet | — |
 | High (4+ files, novel, security) | opus | opus | opus |
 
 When in doubt, use the agent's default model.
 
-**Step 1.5: Shift-Left Validation (Deterministic)**
+**Step 1.5: Extract Task Contract**
 
-After implementer reports completion, run fast local checks BEFORE dispatching review subagents. Discover commands from package.json, Makefile, or CI config:
+Before the first shift-left check, extract concrete acceptance criteria from PLAN.md
+and formalize them as a task contract:
+
+```markdown
+## Task Contract for T-XXX
+
+### Scope
+[Task description from PLAN.md]
+
+### Acceptance Criteria (pass/fail)
+1. Build passes with zero errors after changes
+2. All existing tests pass
+3. Lint and type check pass with zero violations
+4. [AC-1 from plan — made concrete and testable]
+5. [AC-2 from plan — made concrete and testable]
+
+### Mandatory Invariants (always apply, even if not in plan)
+1. Error handling: errors at system boundaries are caught, logged, and propagated — not swallowed
+2. Compatibility: no breaking changes to public APIs, config formats, or file schemas unless the task explicitly requires it
+3. Observability: existing logging, metrics, or tracing patterns are preserved or extended — not removed
+4. Security: no new injection vectors, exposed secrets, auth gaps, or unsafe deserialization
+5. Codebase conventions: new code follows established patterns (naming, structure, error handling) found in comparable files
+
+### Out of Scope
+- Changes to files not listed in the task's file impact
+- Pre-existing issues in unrelated modules
+- Improvements beyond stated requirements
+```
+
+Include project-level criteria (build, lint, tests) from the pre-flight baseline.
+The Mandatory Invariants section ensures the critic can block on non-functional regressions
+even if the plan omitted them — a contract that is silent on error handling
+does not grant permission to ship code without it.
+Pass this contract to both the implementer (for self-evaluation) and the task-critic.
+
+**Step 2: Shift-Left Validation (Deterministic)**
+
+After implementer reports completion, run fast local checks BEFORE the adversarial loop.
+Discover commands from package.json, Makefile, or CI config:
 
 | Check | If fails |
-|-------|----------|
+|-|-|
 | Formatter (prettier, black, gofmt, etc.) | Auto-fix and continue |
 | Linter (eslint, flake8, clippy, etc.) | Auto-fix if possible; otherwise return to implementer with specific errors |
 | Type checker (tsc, mypy, cargo check, etc.) | Return to implementer with specific error messages |
 
-Only proceed to spec review after all shift-left checks pass.
+Only proceed to the adversarial loop after all shift-left checks pass.
 
-**Step 2: Spec Compliance Review**
+**Step 3: Adversarial Review Loop**
 
-Dispatch `productivity:spec-reviewer`:
-- Context: `<task_spec>` (full task requirements from PLAN.md), `<implementer_report>` (completion report — changes made, commits, self-review)
-- Role: Spec compliance reviewer verifying implementation matches task specification
-- Task: Read actual code (not report) and verify: what was built correctly, missing requirements, extra work, misunderstandings. Include Communication to Orchestrator section.
-- Constraints: work from `<workdir_path>`, every finding cites file:line, report COMPLIANT or ISSUES, acknowledge strengths before issues, do not suggest improvements
+The adversarial loop replaces the previous sequential spec-review → quality-review chain.
+A single `task-critic` agent evaluates both spec compliance AND code quality
+with escalating depth per round.
 
-**If spec reviewer finds issues:** Resume implementer to fix gaps. Re-run spec review. **Max 2 fix cycles.** After 2 cycles:
+```
+Round = 1
+while Round <= 3:
+  3a. Dispatch task-critic
+  3b. If ACCEPT → break, proceed to Step 4 (red-team or mark complete)
+  3c. If REJECT → stalemate check → dispatch implementer to fix → shift-left → Round++
+Safety valve: Round > 3 → Codex rescue or escalate
+```
 
-**Codex Rescue Attempt (if codex available):** Before classifying stagnation, try Codex as a second opinion:
+**Step 3a: Dispatch Task Critic**
+
+Dispatch `productivity:task-critic`:
+- Context: `<task_contract>` (concrete pass/fail criteria), `<implementer_report>` (completion report or fix report), `<plan_context>` (architecture, scope from PLAN.md)
+- For round 2+: also include `<previous_verdicts>` (all prior task-critic verdicts for this task) and `<previous_fix_reports>` (all prior implementer fix reports for this task)
+- Role: Adversarial task critic evaluating implementation against task contract
+- Task: Round N review with escalating scrutiny. Produce structured verdict with proof-based findings.
+- Constraints: work from `<workdir_path>`, every critical flaw cites file:line with proof, acknowledge strengths before issues, evaluate against contract not vibes
+
+**Step 3b: Process Verdict**
+
+If VERDICT: ACCEPT → proceed to Step 4.
+
+If VERDICT: REJECT:
+
+1. **Stalemate detection (round 2+ only):** Compare current critical flaws with previous round's critical flaws.
+   A flaw is the "same flaw" if it meets at least 2 of 3 criteria:
+   (1) titles share key nouns, (2) same file and line range (within 10 lines), (3) same root cause.
+   If the same flaw appears in both rounds AND the implementer proposed a fix → stalemate on that flaw.
+   - Remove stalemated flaws from the dispatch to the implementer
+   - Flag to user with full context (both rounds' descriptions and the attempted fix)
+   - If ALL critical flaws are stalemated → stop loop, proceed to safety valve
+
+2. **Dispatch implementer to fix:** Pass all non-stalemated critical flaws with full proof,
+   plus weaknesses (especially persistent ones about to be promoted).
+   Include class-level fix guidance and strategic decision context.
+
+3. **Re-run shift-left** after implementer fixes.
+
+4. Increment round, loop back to Step 3a.
+
+**Safety Valve (Round > 3, not accepted):**
+
+**Codex Rescue Attempt (if codex available):** Before classifying stagnation, try Codex:
 
 ```
 Task(
   subagent = "codex-rescue",
-  description = "Codex rescue: T-XXX stagnation",
-  prompt = "<task spec + error details + what Claude tried + why it failed + relevant code context>"
+  description = "Codex rescue: T-XXX adversarial stagnation",
+  prompt = "<task contract + latest critic verdict + what implementer tried + why it failed + relevant code>"
 )
 ```
 
-If Codex provides a working fix: apply it, re-run shift-left + review pipeline. Log: `CODEX_RESCUE: T-XXX | outcome: fixed`.
-If Codex also fails: proceed to stagnation classification. Log: `CODEX_RESCUE: T-XXX | outcome: failed`.
+If Codex provides a working fix: apply it, re-run shift-left + one more critic round. Log: `CODEX_RESCUE: T-XXX | outcome: fixed`.
+If Codex also fails: classify stagnation. Log: `CODEX_RESCUE: T-XXX | outcome: failed`.
 
-Classify stagnation:
+**Safety valve is ALWAYS blocking.** A task that did not receive ACCEPT from the task-critic
+cannot be marked complete without explicit user acceptance of residual risk.
+This applies to BOTH interactive and autonomous modes — autonomous mode does not get
+to silently convert critical flaws into tracked risks and continue.
 
-| Classification | Signal | Recovery Action |
-|---------------|--------|-----------------|
-| Specification gap | Reviewer finds missing requirements not in task | Return to REFINE |
-| Complexity underestimate | Cannot meet quality bar in 2 cycles | Split task, re-plan milestone |
+**Interactive mode:** Present the unresolved flaws and stalemated items to the user with:
+```
+AskUserQuestion(
+  header: "Unresolved flaws",
+  question: "T-XXX has unresolved critical flaws after 3 adversarial rounds. How to proceed?",
+  options: [
+    "Accept residual risk" -- Mark task complete with caveats. Flaws logged in Surprises.,
+    "Split and re-plan" -- Break task into smaller pieces and return to PLAN_DRAFT.,
+    "Skip task" -- Skip this task entirely and continue with the next one.,
+    "Stop execution" -- Halt the batch for manual investigation.
+  ]
+)
+```
+
+**Autonomous mode:** Stop execution and report. Do NOT mark the task complete.
+Log: `SAFETY_VALVE_BLOCKED: T-XXX | awaiting user decision`.
+The user must explicitly resume with one of the options above.
+
+Classify stagnation (for reporting context — does not auto-resolve):
+
+| Classification | Signal | Suggested Action |
+|-|-|-|
+| Specification gap | Critic finds missing requirements not in task | Return to REFINE |
+| Complexity underestimate | Cannot converge in 3 adversarial rounds | Split task, re-plan milestone |
 | Environmental | Tests fail due to infra, not code | Log blocker, skip to next task |
 | Fundamental mismatch | Same issue recurs across multiple tasks | DEVIATION_MAJOR → return to PLAN_DRAFT |
 
-Log classification in SESSION.log: `[<timestamp>] STAGNATION: T-XXX | classification: <type> | action: <taken>`
+Log: `[<timestamp>] STAGNATION: T-XXX | classification: <type> | adversarial_rounds: <N> | action: awaiting_user`
 
-**Step 3: Code Quality Review**
-
-Only after spec compliance passes. Dispatch `productivity:code-quality-reviewer`:
-- Context: `<task_spec>` (full task text), `<plan_context>` (architecture, scope, relevant milestone sections from PLAN.md), `<implementer_report>` (completion report)
-- Role: Senior code quality reviewer assessing clean, tested, maintainable, convention-following, plan-aligned code
-- Task: Follow standard review protocol (baseline → project constitution → plan alignment → code quality → architecture → patterns → tests → docs). Classify issues as Critical or Minor. Report plan deviations.
-- Constraints: work from `<workdir_path>`, every finding cites file:line, report APPROVED or ISSUES, include Strengths and Plan Alignment sections, do not review spec compliance
-
-**If Critical issues:** Resume implementer to fix. Re-run quality review. **Max 2 fix cycles.** After 2: escalate to user (interactive) or log as caveats (autonomous). Minor issues are logged but don't block.
-**If plan updates recommended:** Log in Decisions Made. If deviation affects downstream tasks, update PLAN.md.
-
-**Step 3.5: Red Team Review (HIGH-RISK TASKS ONLY)**
+**Step 4: Red Team Review (HIGH-RISK TASKS ONLY)**
 
 Skip for Low and Medium risk tasks. Dispatch `productivity:red-teamer`:
 - Context: `<task_spec>`, `<implementer_report>`, `<red_team_plan_findings>` (relevant plan-phase findings for this task's area), `<mode>task</mode>`
 - Role: Adversarial red-team reviewer finding ways to break the implementation
 - Task: Task mode review (read code → input fuzzing → error paths → security probing → integration breaking → adversarial tests). Focus on highest-impact vulnerabilities.
-- Constraints: work from `<workdir_path>`, cite file:line, report RED_TEAM_PASS or RED_TEAM_ISSUES, don't duplicate spec/quality findings, only Critical findings require fixes
+- Constraints: work from `<workdir_path>`, cite file:line, report RED_TEAM_PASS or RED_TEAM_ISSUES, don't duplicate task-critic findings, only Critical findings require fixes
 
 **If Critical issues:** Resume implementer to fix. Max 2 cycles. After 2: escalate (interactive) or log as caveats (autonomous).
 **If only High/Medium:** Log in FEATURE.md Surprises and Discoveries. No fixes needed.
 
-**Step 4: Update State and Log**
+**Step 5: Update State and Log**
 
-After all reviews pass (two for normal tasks, three for high-risk):
+After adversarial loop ACCEPTs and red-team passes (or is skipped):
 - Mark task `[x]` with commit SHA in Progress
 - Record review findings in Surprises and Discoveries
 - Update FEATURE.md state file
-- Append to SESSION.log: `[<timestamp>] TASK_COMPLETE: T-XXX | tokens: <N>k | duration: <N>s | spec: <COMPLIANT|ISSUES> | quality: <APPROVED|ISSUES> | red-team: <PASS|ISSUES|SKIPPED>`
+- Append to SESSION.log: `[<timestamp>] TASK_COMPLETE: T-XXX | tokens: <N>k | duration: <N>s | adversarial_rounds: <N> | verdict: ACCEPT | red-team: <PASS|ISSUES|SKIPPED>`
+
+**TASK_COMPLETE is only emitted for tasks that received ACCEPT from the task-critic.**
+Tasks that hit the safety valve are logged as `SAFETY_VALVE_BLOCKED` and do NOT get TASK_COMPLETE
+until the user explicitly resolves them (see Safety Valve section above).
+If the user chooses "Accept residual risk," emit:
+`[<timestamp>] TASK_COMPLETE: T-XXX | ... | verdict: ACCEPT_WITH_CAVEATS | caveats: <list of unresolved flaws>`
 
 At **milestone boundary** (all tasks complete + tests pass):
 - Run `/atcommit` to organize accumulated changes into atomic commits
@@ -506,10 +600,10 @@ Summary:
 
 **Never:**
 - Dispatch multiple implementers for tasks within the SAME milestone in parallel (causes conflicts)
-- Skip either review stage (spec compliance OR code quality)
-- Proceed to next task while review issues remain open
-- Start code quality review before spec compliance passes
-- Let implementer self-review replace external reviews (both needed)
+- Skip the adversarial review loop or accept without a proof-based task-critic verdict
+- Proceed to next task while the adversarial loop has unresolved critical flaws
+- Let implementer self-evaluation replace the adversarial loop (both needed)
+- Accept a task-critic verdict that lacks file:line proof for critical flaws — send it back
 - Continue past a batch boundary without reporting (even in autonomous mode)
 - Continue executing after DEVIATION_MAJOR without user acknowledgment
 

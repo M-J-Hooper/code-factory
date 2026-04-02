@@ -83,6 +83,25 @@ At each MILESTONE_COMPLETE, the orchestrator should assess context usage.
 If approaching limits: write full state to disk, rely on auto-compact,
 then re-read FEATURE.md + PLAN.md + SESSION.log tail to restore.
 
+## Adversarial Execution
+
+The EXECUTE phase uses an adversarial loop between the implementer and a task-critic agent,
+inspired by GAN (Generative Adversarial Network) dynamics.
+
+- **Contract-driven**: Every task gets concrete pass/fail criteria before review begins.
+  The task-critic evaluates against this contract — not vibes, not subjective "looks good."
+- **Escalating scrutiny**: Round 1 focuses on correctness (spec compliance, tests, build).
+  Round 2 adds design (patterns, architecture, naming). Round 3 adds depth (edge cases, security, subtle logic).
+- **Proof-based**: Every critical flaw needs file:line + concrete evidence.
+  If the critic cannot prove a flaw, it is a weakness at most — never critical.
+- **Stalemate detection**: If the same flaw persists across 2 consecutive rounds despite the implementer attempting a fix,
+  escalate to user (interactive) or log as tracked risk (autonomous). Do not burn rounds on circular disputes.
+- **Safety valve**: Max 3 adversarial rounds per task. After 3: Codex rescue attempt, then classify stagnation.
+- **Self-evaluation**: The implementer self-reviews against the task contract before handing off.
+  This catches obvious issues and saves a full adversarial round.
+- **Class-level fixes**: When fixing a finding, the implementer asks whether it is one instance of a broader category
+  and prefers structural fixes that eliminate the class over patching individual instances.
+
 ## Interaction Mode Rules
 
 - If interactive: Present a summary of outputs and STOP at every phase transition checkpoint.
