@@ -142,8 +142,12 @@
     ]
   },
   "model": "opus[1m]",
-  "enabledMcpjsonServers": ["atlassian"],
-  "disabledMcpjsonServers": ["datadog"],
+  "enabledMcpjsonServers": [
+    "atlassian"
+  ],
+  "disabledMcpjsonServers": [
+    "datadog"
+  ],
   "hooks": {
     "PreToolUse": [
       {
@@ -187,7 +191,8 @@
     "dd@datadog-claude-plugins": true,
     "writing@datadog-claude-plugins": true,
     "learning-skills@mrlee-plugins": true,
-    "permissions-setup@mrlee-plugins": true
+    "permissions-setup@mrlee-plugins": true,
+    "codex@openai-codex": true
   },
   "extraKnownMarketplaces": {
     "claude-plugins-official": {
@@ -212,6 +217,12 @@
       "source": {
         "source": "github",
         "repo": "DataDog/mrlee-plugins"
+      }
+    },
+    "openai-codex": {
+      "source": {
+        "source": "github",
+        "repo": "openai/codex-plugin-cc"
       }
     }
   },
