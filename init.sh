@@ -5,10 +5,11 @@
 # This script:
 #   1. Installs rtk (Rust Token Killer) via cargo if not already present.
 #   2. Symlinks configuration files into the user's home directory.
-#   3. Symlinks Claude Code hooks from hooks/ into ~/.claude/hooks/.
-#   4. Updates Claude Code CLI and all installed marketplace plugins.
+#   3. Syncs MCP servers into Claude Code.
+#   4. Symlinks Claude Code hooks, rules, and git hooks.
 #   5. Runs sync-opencode.sh to generate OpenCode assets in the repo.
 #   6. Symlinks .opencode/{skills,agents,commands} into ~/.config/opencode/.
+#   7. Updates Claude Code CLI and all installed marketplace plugins.
 #
 # Behavior:
 #   - If the destination is an existing symlink, it is removed and re-created.
@@ -127,31 +128,6 @@ print(json.dumps(data['mcpServers']['$name']))
         echo "  FAIL  $name"
     fi
 done
-
-# Update Claude Code and marketplace plugins
-echo ""
-echo "Updating Claude Code and marketplace plugins..."
-if command -v claude &>/dev/null; then
-    if claude update 2>&1; then
-        echo "  OK  claude updated"
-    else
-        echo "  WARN  claude update failed (may already be up-to-date)"
-    fi
-    plugin_names=$(claude plugin marketplace list --json 2>/dev/null | jq -r '.[].name' 2>/dev/null || true)
-    if [[ -n "$plugin_names" ]]; then
-        while IFS= read -r plugin; do
-            if claude plugin marketplace update "$plugin" 2>&1; then
-                echo "  OK  plugin $plugin updated"
-            else
-                echo "  WARN  plugin $plugin update failed"
-            fi
-        done <<< "$plugin_names"
-    else
-        echo "  No marketplace plugins installed"
-    fi
-else
-    echo "  SKIP  claude CLI not found"
-fi
 
 # Symlink Claude Code hooks from hooks/ into ~/.claude/hooks/
 echo ""
@@ -322,6 +298,31 @@ for HOOK_SRC in "$SCRIPT_DIR/.githooks"/*; do
         fi
     fi
 done
+
+# Update Claude Code and marketplace plugins (after all setup is complete)
+echo ""
+echo "Updating Claude Code and marketplace plugins..."
+if command -v claude &>/dev/null; then
+    if claude update 2>&1; then
+        echo "  OK  claude updated"
+    else
+        echo "  WARN  claude update failed (may already be up-to-date)"
+    fi
+    plugin_names=$(claude plugin marketplace list --json 2>/dev/null | jq -r '.[].name' 2>/dev/null || true)
+    if [[ -n "$plugin_names" ]]; then
+        while IFS= read -r plugin; do
+            if claude plugin marketplace update "$plugin" 2>&1; then
+                echo "  OK  plugin $plugin updated"
+            else
+                echo "  WARN  plugin $plugin update failed"
+            fi
+        done <<< "$plugin_names"
+    else
+        echo "  No marketplace plugins installed"
+    fi
+else
+    echo "  SKIP  claude CLI not found"
+fi
 
 # In workspace mode, patch settings.json with workspace-specific keys
 if [[ "${IN_WORKSPACE:-}" == "1" ]]; then

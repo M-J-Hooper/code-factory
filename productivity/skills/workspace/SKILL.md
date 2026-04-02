@@ -206,6 +206,9 @@ Then print the join command for the user:
 Workspace "<name>" is ready on branch "<branch-name>".
 
 Join the session with Claude open:
+  ssh -A workspace-<name> -t "tmux new-session -A -s main"
+
+iTerm2 users can add -CC for native window integration:
   ssh -A workspace-<name> -t "tmux -CC new-session -A -s main"
 
 Other commands:
