@@ -126,20 +126,27 @@ AskUserQuestion(
 
 **Skip the branch and automation question if `workdir_mode` is `current_branch` (no new branch is created) — only ask interaction mode.**
 
-First, run `git symbolic-ref --short HEAD` to get the current branch name. Then present a combined question:
+First, run `git symbolic-ref --short HEAD` to get the current branch name.
+Then detect the repo's default branch (`git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@'`, fallback to `main`).
+Present a combined question:
+
+**IMPORTANT: Replace `<name>` in option titles with the actual current branch name.
+Use descriptions EXACTLY as written — do NOT substitute branch names into descriptions.**
 
 ```
 AskUserQuestion(
   header: "Branch and automation",
   question: "Configure the new feature branch:",
   options: [
-    "Default branch, Interactive (Recommended)" -- Feature branch from main/master. Review at each phase.,
-    "Default branch, Autonomous" -- Feature branch from main/master. Proceed without interruption.,
-    "Current branch (<name>), Interactive" -- Feature branch from current branch. Review at each phase.,
-    "Current branch (<name>), Autonomous" -- Feature branch from current branch. Proceed without interruption.
+    "Default branch, Interactive (Recommended)" -- Branch off the repo default. Review at each phase.,
+    "Default branch, Autonomous" -- Branch off the repo default. Proceed without interruption.,
+    "Current branch (<name>), Interactive" -- Branch off your current checkout. Review at each phase.,
+    "Current branch (<name>), Autonomous" -- Branch off your current checkout. Proceed without interruption.
   ]
 )
 ```
+
+**If the current branch IS the default branch:** omit the "Current branch" options (they'd be identical to "Default branch") — show only options 1, 2, and the free-text option.
 
 If the user types a custom branch name, use that as the base and ask interaction mode separately.
 **If `--auto` was in arguments:** Skip the automation question — present only the base branch options.
