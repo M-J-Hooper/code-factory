@@ -6,7 +6,7 @@ description: >
   "start new feature", "resume feature work", or references to FEATURE.md state files.
 argument-hint: "[feature description] [--auto] [--budget <USD>]"
 user-invocable: true
-allowed-tools: Read, Grep, Glob, Bash(git:*), Bash(gh:*), Bash(find:*), AskUserQuestion, WebFetch
+allowed-tools: Read, Grep, Glob, Bash(git:*), Bash(gh:*), Bash(find:*), Bash(workspaces:*), Bash(ssh:*), AskUserQuestion, WebFetch
 ---
 
 # Feature Development Orchestrator
@@ -102,14 +102,25 @@ Check `$ARGUMENTS` for the `--auto` flag. If present, strip it from arguments an
 
 Parse `$ARGUMENTS` for flags before any preferences:
 - `--auto` → strip from arguments, pre-select autonomous mode
+- `--branch` → strip from arguments, pre-select branch-only workdir mode
 - `--budget <USD>` → strip from arguments, validate positive number, store as `token_budget_usd`
 
 If `--budget` value is not a positive number, warn and ignore.
 If not present, `token_budget_usd` remains null (unlimited).
 
+Store the stripped feature description (arguments with all flags removed) as `feature_description` — used for workspace dispatch.
+
 ### 1b: Workspace and Automation Preferences
 
-**CRITICAL: Present ALL four options exactly as written. Never omit the Workspace option.**
+**Fast-path: `--branch` + `--auto`:** If both flags were parsed in Step 1a,
+skip ALL preference questions.
+Set `workdir_mode: branch_only`, `base_branch: default`, `interaction_mode: autonomous`.
+Proceed directly to Step 2.
+
+**Fast-path: `--branch` only:** Skip the "Feature setup" question,
+set `workdir_mode: branch_only`, and jump to the branch and automation question below.
+
+**Otherwise, present ALL four options exactly as written. Never omit the Workspace option.**
 
 ```
 AskUserQuestion(
@@ -119,12 +130,32 @@ AskUserQuestion(
     "Worktree + branch (Recommended)" -- Isolated worktree with a feature branch. Source repo stays completely clean.,
     "Branch only" -- Feature branch in the current directory.,
     "Current branch" -- Work directly on the current branch.,
-    "Workspace" -- Remote cloud dev environment. Creates a feature branch, then spins up a remote CDE on EC2. You SSH in and continue.
+    "Workspace" -- Remote cloud dev environment. Spins up a remote CDE on EC2. Claude starts there with /do to create a branch and work.
   ]
 )
 ```
 
-**Skip the branch and automation question if `workdir_mode` is `current_branch` (no new branch is created) — only ask interaction mode.**
+**If `workdir_mode` is `workspace`:** Skip the branch and automation question below.
+No local branch is created — the remote `/do` session handles branch creation.
+Only ask automation mode if `--auto` was NOT in arguments:
+
+```
+AskUserQuestion(
+  header: "Automation mode",
+  question: "Should the remote workspace session run autonomously?",
+  options: [
+    "Interactive (Recommended)" -- Review at each phase in the workspace,
+    "Autonomous" -- Proceed without interruption in the workspace
+  ]
+)
+```
+
+Record: `workdir_mode: workspace`, `interaction_mode` from above, `base_branch: null`.
+Proceed directly to Step 2 — no branch or automation question needed.
+
+**If `workdir_mode` is `current_branch`:** skip the branch and automation question — only ask interaction mode.
+
+**Otherwise (worktree or branch_only):**
 
 First, run `git symbolic-ref --short HEAD` to get the current branch name.
 Then detect the repo's default branch (`git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@'`, fallback to `main`).
@@ -153,7 +184,7 @@ If the user types a custom branch name, use that as the base and ask interaction
 
 Record choices:
 - `workdir_mode`: `worktree`, `branch_only`, `current_branch`, or `workspace`
-- `base_branch`: `default`, the current branch name, or the user-typed branch name
+- `base_branch`: `default`, the current branch name, or the user-typed branch name (null for workspace)
 - `interaction_mode`: `interactive` or `autonomous`
 
 ### 1c: Source Isolation Rule
@@ -227,7 +258,7 @@ AskUserQuestion(
 | **Worktree + branch** | `Skill(skill="worktree", args="<feature-slug>")` → `Skill(skill="branch", args="<feature-slug>")` → set `WORKDIR_PATH` to worktree path |
 | **Branch only** | `Skill(skill="branch", args="<feature-slug>")` → set `WORKDIR_PATH` to `REPO_ROOT` |
 | **Current branch** | Record current branch → set `WORKDIR_PATH` to `REPO_ROOT` |
-| **Workspace** | `Skill(skill="workspace", args="create <feature-slug>")` (creates branch + remote CDE) → Report SSH instructions → **STOP** (user continues with new `/do` session inside workspace) |
+| **Workspace** | Detect default branch → `workspaces create <ws-prefix>-<feature-slug> --repo <repo> --branch <default-branch> ...` (run_in_background: true) → Continue to **4a-workspace**. No local branch creation, no local git commands. |
 
 **When `base_branch` is NOT `default`:** use direct git commands (the `/branch` and `/worktree` skills auto-detect main, so they cannot be used with a custom base).
 
@@ -235,11 +266,60 @@ AskUserQuestion(
 |--------|---------|
 | **Worktree + branch** | `git fetch origin <base_branch>` → `git worktree add --detach <path> origin/<base_branch>` → `cd <path>` → `git checkout -b <branch-name>` → set `WORKDIR_PATH` to worktree path |
 | **Branch only** | `git fetch origin <base_branch>` → `git checkout -b <branch-name> origin/<base_branch>` → set `WORKDIR_PATH` to `REPO_ROOT` |
-| **Workspace** | `git fetch origin <base_branch>` → `git checkout -b <branch-name> origin/<base_branch>` → `git push -u origin <branch-name>` → `workspaces create <ws-prefix>-<feature-slug> --repo <repo> --branch <branch-name> --region eu-west-3 --instance-type aws:m6gd.4xlarge --dotfiles https://github.com/rtfpessoa/dotfiles --shell fish` (run_in_background: true) → Report SSH instructions → **STOP** |
+| **Workspace** | N/A — workspace mode skips base_branch selection (Step 1b). Uses default branch table above. |
 
 **Naming conventions:**
 - Branch names: `<prefix>/<slug>` where prefix is from `git config user.name` (first token, lowercase)
 - Workspace names: `<ws-prefix>-<slug>` where ws-prefix is from `whoami | cut -d. -f1`
+
+**`workspaces create` flags** (used in both tables above):
+`--region eu-west-3 --instance-type aws:m6gd.4xlarge --dotfiles https://github.com/rtfpessoa/dotfiles --shell fish`
+
+### 4a-workspace: Post-Creation Setup
+
+When the background `workspaces create` task completes successfully:
+
+1. **Construct the remote `/do` command:**
+
+Reconstruct the `/do` invocation for the remote Claude session:
+- Start with the `feature_description` stored in Step 1a (original arguments with flags stripped)
+- Add `--branch` (forces branch-only mode — the remote `/do` skips the workspace question)
+- Add `--auto` if `interaction_mode` is `autonomous`
+- Add `--budget <X>` if `token_budget_usd` is set
+
+Result: `/do <feature_description> --branch [--auto] [--budget <X>]`
+
+2. **SSH in, start tmux with Claude running `/do`:**
+
+```bash
+REMOTE_CMD="/do <feature_description> --branch [--auto] [--budget <X>]"
+ssh -A workspace-<ws-name> "cd /workspaces/<repo> && tmux new-session -d -s main -c /workspaces/<repo> \"claude '$REMOTE_CMD'\""
+```
+
+If SSH fails, run `workspaces ssh-config <ws-name>` first and retry.
+
+Quoting is critical — the feature description may contain spaces and special characters.
+Escape single quotes in the feature description before embedding.
+
+3. **Report the join command and STOP:**
+
+```
+Workspace "<ws-name>" is ready. Claude is running `/do` on the remote session.
+
+Join the session:
+  ssh -A workspace-<ws-name> -t "tmux new-session -A -s main"
+
+iTerm2 users can add -CC for native window integration:
+  ssh -A workspace-<ws-name> -t "tmux -CC new-session -A -s main"
+
+Other commands:
+  IDE:     workspaces connect <ws-name> --editor intellij
+  Status:  workspaces list
+  Delete:  workspaces delete <ws-name>
+```
+
+**STOP here.** The remote Claude session handles branch creation and feature development.
+Do NOT proceed to Step 4b or any further steps locally.
 
 ### 4b: Initialize State Directory
 
