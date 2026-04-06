@@ -332,17 +332,51 @@ if command -v claude &>/dev/null; then
     else
         echo "  WARN  claude update failed (may already be up-to-date)"
     fi
-    plugin_names=$(claude plugin marketplace list --json 2>/dev/null | jq -r '.[].name' 2>/dev/null || true)
-    if [[ -n "$plugin_names" ]]; then
+    marketplace_repos=$(jq -r '.extraKnownMarketplaces | to_entries[].value.source.repo' "$SCRIPT_DIR/settings.json" 2>/dev/null || true)
+    if [[ -n "$marketplace_repos" ]]; then
+        while IFS= read -r repo; do
+            if claude plugin marketplace add "$repo" 2>&1; then
+                echo "  OK  marketplace $repo added"
+            else
+                echo "  WARN  marketplace $repo add failed (may already exist)"
+            fi
+        done <<< "$marketplace_repos"
+    fi
+    enabled_plugins=$(jq -r '.enabledPlugins | keys[]' "$SCRIPT_DIR/settings.json" 2>/dev/null || true)
+    if [[ -n "$enabled_plugins" ]]; then
         while IFS= read -r plugin; do
-            if claude plugin marketplace update "$plugin" 2>&1; then
+            if claude plugin install "$plugin" 2>&1; then
+                echo "  OK  plugin $plugin installed"
+            else
+                echo "  WARN  plugin $plugin install failed (may already be installed)"
+            fi
+        done <<< "$enabled_plugins"
+    fi
+    # Update installed marketplaces
+    marketplace_names=$(claude plugin marketplace list --json 2>/dev/null | jq -r '.[].name' 2>/dev/null || true)
+    if [[ -n "$marketplace_names" ]]; then
+        while IFS= read -r marketplace; do
+            if claude plugin marketplace update "$marketplace" 2>&1; then
+                echo "  OK  marketplace $marketplace updated"
+            else
+                echo "  WARN  marketplace $marketplace update failed"
+            fi
+        done <<< "$marketplace_names"
+    else
+        echo "  No marketplaces installed"
+    fi
+    # Update installed plugins
+    installed_plugins=$(claude plugin list --json 2>/dev/null | jq -r '.[].id' 2>/dev/null || true)
+    if [[ -n "$installed_plugins" ]]; then
+        while IFS= read -r plugin; do
+            if claude plugin update "$plugin" 2>&1; then
                 echo "  OK  plugin $plugin updated"
             else
                 echo "  WARN  plugin $plugin update failed"
             fi
-        done <<< "$plugin_names"
+        done <<< "$installed_plugins"
     else
-        echo "  No marketplace plugins installed"
+        echo "  No plugins installed"
     fi
 else
     echo "  SKIP  claude CLI not found"
