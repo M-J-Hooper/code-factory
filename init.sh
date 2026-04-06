@@ -299,6 +299,30 @@ for HOOK_SRC in "$SCRIPT_DIR/.githooks"/*; do
     fi
 done
 
+# In workspace mode, patch settings.json with workspace-specific keys
+if [[ "${IN_WORKSPACE:-}" == "1" ]]; then
+    settings_file="$HOME/.claude/settings.json"
+    if [[ -f "$settings_file" ]]; then
+        python3 -c "
+import json, os
+path = os.path.expanduser('$settings_file')
+# Resolve symlink so we write to the actual file
+real = os.path.realpath(path)
+with open(real) as f:
+    data = json.load(f)
+data['apiKeyHelper'] = 'workspace_secret ANTHROPIC_APIKEY1'
+data['forceLoginMethod'] = 'console'
+with open(real, 'w') as f:
+    json.dump(data, f, indent=2)
+    f.write('\n')
+"
+        echo "PATCH  $settings_file (workspace: apiKeyHelper, forceLoginMethod)"
+    else
+        errors+=("workspace: $settings_file not found after linking, cannot patch")
+        echo "FAIL  workspace patch: $settings_file not found"
+    fi
+fi
+
 # Update Claude Code and marketplace plugins (after all setup is complete)
 echo ""
 echo "Updating Claude Code and marketplace plugins..."
@@ -322,30 +346,6 @@ if command -v claude &>/dev/null; then
     fi
 else
     echo "  SKIP  claude CLI not found"
-fi
-
-# In workspace mode, patch settings.json with workspace-specific keys
-if [[ "${IN_WORKSPACE:-}" == "1" ]]; then
-    settings_file="$HOME/.claude/settings.json"
-    if [[ -f "$settings_file" ]]; then
-        python3 -c "
-import json, os
-path = os.path.expanduser('$settings_file')
-# Resolve symlink so we write to the actual file
-real = os.path.realpath(path)
-with open(real) as f:
-    data = json.load(f)
-data['apiKeyHelper'] = 'workspace_secret ANTHROPIC_APIKEY1'
-data['forceLoginMethod'] = 'console'
-with open(real, 'w') as f:
-    json.dump(data, f, indent=2)
-    f.write('\n')
-"
-        echo "PATCH  $settings_file (workspace: apiKeyHelper, forceLoginMethod)"
-    else
-        errors+=("workspace: $settings_file not found after linking, cannot patch")
-        echo "FAIL  workspace patch: $settings_file not found"
-    fi
 fi
 
 # Final error summary
