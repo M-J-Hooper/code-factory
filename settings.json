@@ -229,7 +229,9 @@
   "alwaysThinkingEnabled": true,
   "effortLevel": "high",
   "autoUpdatesChannel": "latest",
+  "autoMemoryEnabled": true,
+  "autoDreamEnabled": true,
   "skipDangerousModePermissionPrompt": true,
-  "defaultMode": "default",
+  "defaultMode": "plan",
   "bypassPermissionsModeAccepted": true
 }
