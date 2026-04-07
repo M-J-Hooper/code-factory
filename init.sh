@@ -277,6 +277,92 @@ echo "$sorted_manifest" > "$MANIFEST"
 echo ""
 echo "Linked ${#new_manifest[@]} files to ~/.config/opencode/. Cleaned $cleaned stale files."
 
+# Generate Codex assets in the repo
+echo ""
+echo "Syncing Codex skills and agents..."
+"$SCRIPT_DIR/sync-codex.sh"
+
+# Propagate .codex/{skills,agents} to ~/.codex/
+echo ""
+echo "Linking to ~/.codex/..."
+
+CODEX_GLOBAL_DIR="$HOME/.codex"
+CODEX_LOCAL_DIR="$SCRIPT_DIR/.codex"
+CODEX_MANIFEST="$CODEX_GLOBAL_DIR/.code-factory-managed"
+
+codex_new_manifest=()
+
+# Read old Codex manifest for cleanup
+codex_old_manifest=()
+if [[ -f "$CODEX_MANIFEST" ]]; then
+    while IFS= read -r line; do
+        codex_old_manifest+=("$line")
+    done < "$CODEX_MANIFEST"
+fi
+
+# Symlink each Codex skill directory
+if [[ -d "$CODEX_LOCAL_DIR/skills" ]]; then
+    mkdir -p "$CODEX_GLOBAL_DIR/skills"
+    for skill_src in "$CODEX_LOCAL_DIR/skills"/*/; do
+        [[ -d "$skill_src" ]] || continue
+        skill_name=$(basename "$skill_src")
+        skill_dest="$CODEX_GLOBAL_DIR/skills/$skill_name"
+        if ! ln -sfn "$skill_src" "$skill_dest"; then
+            errors+=("$skill_src -> $skill_dest: ln -sfn failed")
+            echo "  FAIL  skills/$skill_name/"
+        else
+            codex_new_manifest+=("$skill_dest")
+            echo "  LINK  skills/$skill_name/"
+        fi
+    done
+fi
+
+# Symlink each Codex agent file
+if [[ -d "$CODEX_LOCAL_DIR/agents" ]]; then
+    mkdir -p "$CODEX_GLOBAL_DIR/agents"
+    while IFS= read -r agent_src; do
+        agent_name=$(basename "$agent_src")
+        agent_dest="$CODEX_GLOBAL_DIR/agents/$agent_name"
+        if ! ln -sf "$agent_src" "$agent_dest"; then
+            errors+=("$agent_src -> $agent_dest: ln -sf failed")
+            echo "  FAIL  agents/$agent_name"
+        else
+            codex_new_manifest+=("$agent_dest")
+            echo "  LINK  agents/$agent_name"
+        fi
+    done < <(find "$CODEX_LOCAL_DIR/agents" -name "*.toml" | sort)
+fi
+
+# Codex manifest cleanup: remove stale global files
+if [[ ${#codex_new_manifest[@]} -gt 0 ]]; then
+    codex_sorted_manifest=$(printf '%s\n' "${codex_new_manifest[@]}" | sort)
+else
+    codex_sorted_manifest=""
+fi
+codex_cleaned=0
+for old_file in "${codex_old_manifest[@]+"${codex_old_manifest[@]}"}"; do
+    [[ -z "$old_file" ]] && continue
+    if ! echo "$codex_sorted_manifest" | grep -qxF "$old_file"; then
+        if [[ -e "$old_file" || -L "$old_file" ]]; then
+            rm -f "$old_file"
+            echo "  CLEAN  $old_file"
+            codex_cleaned=$((codex_cleaned + 1))
+        fi
+        parent=$(dirname "$old_file")
+        rmdir "$parent" 2>/dev/null || true
+    fi
+done
+
+# Write new Codex manifest
+if [[ -n "$codex_sorted_manifest" ]]; then
+    echo "$codex_sorted_manifest" > "$CODEX_MANIFEST"
+else
+    : > "$CODEX_MANIFEST"
+fi
+
+echo ""
+echo "Linked ${#codex_new_manifest[@]} entries to ~/.codex/. Cleaned $codex_cleaned stale entries."
+
 # Install git hooks from .githooks/
 for HOOK_SRC in "$SCRIPT_DIR/.githooks"/*; do
     [[ -f "$HOOK_SRC" ]] || continue
