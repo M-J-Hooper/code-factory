@@ -48,6 +48,48 @@ else
 fi
 echo ""
 
+# Install Node.js if not available (required by statusLine npx command and hooks)
+echo "Checking Node.js installation..."
+if command -v node &>/dev/null; then
+    echo "  OK  node already installed ($(node --version))"
+else
+    case "$(uname -s)" in
+        Linux)
+            echo "  Installing Node.js..."
+            ARCH=$(uname -m)
+            NODE_ARCH=""
+            case "$ARCH" in
+                x86_64)  NODE_ARCH="x64" ;;
+                aarch64) NODE_ARCH="arm64" ;;
+                *)
+                    errors+=("node: unsupported architecture $ARCH")
+                    echo "  FAIL  unsupported architecture $ARCH"
+                    ;;
+            esac
+            if [[ -n "$NODE_ARCH" ]]; then
+                NODE_VERSION="v22.14.0"
+                NODE_DIST="node-${NODE_VERSION}-linux-${NODE_ARCH}"
+                TMP_DIR=$(mktemp -d)
+                if curl -fsSL "https://nodejs.org/dist/${NODE_VERSION}/${NODE_DIST}.tar.xz" -o "$TMP_DIR/node.tar.xz"; then
+                    tar -xJf "$TMP_DIR/node.tar.xz" -C "$TMP_DIR"
+                    rm -rf "$HOME/.local/node"
+                    mv "$TMP_DIR/$NODE_DIST" "$HOME/.local/node"
+                    export PATH="$HOME/.local/node/bin:$PATH"
+                    echo "  OK  node installed ($(node --version))"
+                else
+                    errors+=("node: download failed")
+                    echo "  FAIL  node download failed"
+                fi
+                rm -rf "$TMP_DIR"
+            fi
+            ;;
+        *)
+            echo "  SKIP  node not found, install manually from https://nodejs.org"
+            ;;
+    esac
+fi
+echo ""
+
 SRCS=(
     "$SCRIPT_DIR/settings.json"
     "$SCRIPT_DIR/opencode.jsonc"
