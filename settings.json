@@ -168,6 +168,17 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/stop-phrase-guard.sh"
+          }
+        ]
+      }
     ]
   },
   "statusLine": {
