@@ -301,7 +301,7 @@ Push to remote:
 git push
 ```
 
-**If push fails due to diverged branch:** inform the user. Do NOT force-push. Let the user decide.
+**If push fails due to diverged branch:** inform the user. Do NOT force-push. Let user decide.
 
 ## Step 8: CI Validation + Automated Reviews
 
