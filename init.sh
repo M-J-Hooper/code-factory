@@ -30,9 +30,26 @@ errors=()
 # Install or update rtk (Rust Token Killer) via cargo
 echo "Checking rtk installation..."
 if ! command -v cargo &>/dev/null; then
-    errors+=("rtk: cargo not found, install Rust toolchain first (https://rustup.rs)")
-    echo "FAIL  rtk requires cargo (install Rust via https://rustup.rs)"
-else
+    case "$(uname -s)" in
+        Linux)
+            echo "  Installing Rust via rustup..."
+            if curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y 2>&1; then
+                # Source cargo env so cargo is available in this session
+                . "$HOME/.cargo/env"
+                echo "  OK  cargo installed ($(cargo --version))"
+            else
+                errors+=("rtk: rustup installation failed")
+                echo "  FAIL  rustup installation failed"
+            fi
+            ;;
+        *)
+            errors+=("rtk: cargo not found, install Rust toolchain first (https://rustup.rs)")
+            echo "FAIL  rtk requires cargo (install Rust via https://rustup.rs)"
+            ;;
+    esac
+fi
+
+if command -v cargo &>/dev/null; then
     if command -v rtk &>/dev/null && rtk gain &>/dev/null; then
         echo "  OK  rtk already installed ($(rtk --version 2>/dev/null || echo 'unknown version'))"
         echo "  Checking for updates..."
