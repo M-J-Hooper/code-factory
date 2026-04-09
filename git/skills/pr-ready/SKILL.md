@@ -29,84 +29,9 @@ gh repo view --json nameWithOwner -q '.nameWithOwner'
 
 **If no open PR exists for this branch:** inform the user and stop.
 
-## Step 2: Integrate Latest Changes from Base Branch
+## Step 2: Fix Conflicts and Review Comments
 
-Ensure the branch is up to date with the PR's base branch to avoid stale CI results and merge conflicts.
-
-### 2.1: Check Freshness
-
-Fetch the latest remote state and determine if the branch is behind the base branch:
-
-```bash
-git fetch origin
-gh pr view <pr-number> --json baseRefName -q '.baseRefName'
-```
-
-Check if the branch is behind:
-
-```bash
-git rev-list --count HEAD..origin/<base-branch>
-```
-
-If the count is **0**, the branch is up to date — skip to Step 3.
-
-### 2.2: Choose Strategy — Merge or Rebase
-
-Use a **merge** if either condition is true:
-- The branch already contains merge commits (commits with more than one parent):
-  ```bash
-  git rev-list --merges origin/<base-branch>..HEAD
-  ```
-- Other open PRs target this branch (it's a shared integration branch):
-  ```bash
-  gh pr list --base <current-branch> --state open --json number -q 'length'
-  ```
-
-Otherwise, use a **rebase**.
-
-### 2.3: Integrate
-
-**If merging:**
-
-```bash
-git merge origin/<base-branch>
-```
-
-If there are conflicts, resolve them by reading the conflicting files, making the correct resolution using Edit, then staging and completing the merge:
-
-```bash
-git add <resolved-files>
-git merge --continue
-```
-
-**If rebasing:**
-
-```bash
-git rebase origin/<base-branch>
-```
-
-If there are conflicts, resolve them one commit at a time — read the conflicting files, fix with Edit, then continue:
-
-```bash
-git add <resolved-files>
-git rebase --continue
-```
-
-Repeat until the rebase completes.
-
-### 2.4: Push
-
-After integrating:
-
-```bash
-git push
-```
-
-If a rebase was used and the push is rejected, force-push with lease:
-
-```bash
-git push --force-with-lease
-```
+Invoke `/pr-fix` with the PR number from Step 1. This resolves merge conflicts with the base branch and addresses any pending review comments.
 
 ## Step 3: CI Checks Loop
 
@@ -194,6 +119,5 @@ Exit the loop when:
 - **`gh` not installed or not authenticated**: inform the user to install and authenticate the `gh` CLI. Stop.
 - **CI checks loop limit reached**: after 3 iterations, report remaining failures to the user and stop the loop.
 - **Infrastructure CI failure**: if a check fails due to runner/infrastructure issues rather than code, report to the user and stop the CI loop.
-- **Merge conflict unresolvable**: if a conflict during merge or rebase cannot be confidently resolved, abort (`git merge --abort` or `git rebase --abort`), report the conflict to the user, and stop.
-- **Push failure**: report the push error. Do NOT force-push (except `--force-with-lease` after a rebase in Step 2). Let the user decide how to proceed.
+- **Push failure**: report the push error. Do NOT force-push. Let the user decide how to proceed.
 - **Network or API failure**: report the error from `gh`. Let the user retry.

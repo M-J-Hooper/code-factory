@@ -17,6 +17,8 @@ M-J-Hooper's personal [Claude Code](https://docs.anthropic.com/en/docs/claude-co
 | `/atcommit` | git | Validate and organize atomic commits |
 | `/pr` | git | Create a GitHub pull request |
 | `/branch` | git | Create a well-named feature branch |
+| `/pr-fix` | git | Fix merge conflicts and address review comments on a PR |
+| `/pr-ready` | git | Get a PR green: fix conflicts, review comments, and CI failures |
 | `/review` | code | Review a pull request with structured feedback |
 | `/tour` | code | Guided code walkthrough (interactive or written) |
 
@@ -58,6 +60,8 @@ Git workflow skills -- structured commits, PR creation, branch management, and a
 - `/commit` -- Create a well-structured git commit with optional Documentation, Motivation, and Summary sections. Analyzes staged changes, detects Jira ticket IDs from branch names, and builds a formatted commit message.
 - `/pr` -- Create a GitHub pull request from the current branch. Collects commits since divergence from the base branch, detects ticket IDs and URLs from commit messages, and builds a structured PR description.
 - `/branch` -- Create a well-named feature branch from a ticket ID or description. Generates branches with the naming convention `<user>/<slug>-<TICKET-ID>` from the default branch (prefix derived from `git config user.name`).
+- `/pr-fix` -- Fix merge conflicts and address code review comments on an open PR. Integrates the latest base branch (merge or rebase), resolves conflicts, fetches pending review comments, applies fixes, and replies to comment threads.
+- `/pr-ready` -- Get a PR to a ready state. Invokes `/pr-fix` to resolve conflicts and review feedback, then enters a CI checks loop (max 3 iterations) to fix test failures, lint errors, and flaky jobs.
 - `/atcommit` -- Validate and organize changes into self-contained atomic commits. Builds a dependency graph across changed files, detects violations (missing deps, mixed concerns, forward references), and proposes commit groups in the correct order.
 
 ### code
