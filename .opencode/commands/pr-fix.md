@@ -1,6 +1,6 @@
 ---
 description: >
-  Use when the user wants to fix merge conflicts, address code review comments,
+  Use when the user wants to address PR review feedback, fix PR comments, resolve review threads,
 ---
 
 Invoke the `pr-fix` skill with explicit syntax:

@@ -6,50 +6,80 @@ M-J-Hooper's personal [Claude Code](https://docs.anthropic.com/en/docs/claude-co
 
 | Command | Plugin | Purpose |
 |---------|--------|---------|
-| `/do` | productivity | Orchestrate feature development with lifecycle tracking |
-| `/debug` | productivity | Systematic debugging with root cause investigation |
-| `/execplan` | productivity | Create, review, execute, or resume execution plans |
-| `/doc` | productivity | Create, update, improve, or audit Markdown docs |
-| `/workspace` | productivity | Set up Claude Code configuration and plugins |
-| `/reflect` | productivity | Capture session learnings and update knowledge files |
-| `/skill-workbench` | productivity | Create and improve skills in this marketplace |
-| `/commit` | git | Create a structured git commit |
-| `/atcommit` | git | Validate and organize atomic commits |
-| `/pr` | git | Create a GitHub pull request |
+| `/do` | productivity | Orchestrate feature delivery with phase/state tracking |
+| `/rfc` | productivity | Write RFCs and design docs with iterative research |
+| `/debug` | productivity | Systematic debugging with root-cause-first workflow |
+| `/doc` | productivity | Create/update/improve/audit Markdown docs |
+| `/workspace` | productivity | Manage Datadog remote development workspaces |
+| `/reflect` | productivity | Capture session learnings into knowledge files |
+| `/wrap-up` | productivity | End-of-session checklist: ship, reflect, publish |
+| `/brag` | productivity | Update brag document with recent accomplishments |
+| `/daily` | productivity | Daily work journal and weekly summaries in Obsidian vault |
+| `/notes` | productivity | Obsidian notes: 1:1s, meetings, career plans, promotions |
+| `/performance-feedback` | productivity | Write evidence-backed performance reviews |
+| `/brainstorm` | productivity | Brainstorm and sharpen ideas into clear problem statements |
+| `/datadog` | productivity | Query Datadog products (logs, metrics, APM, monitors) via pup CLI |
+| `/code-simplify` | productivity | Simplify and refactor code for clarity without changing behavior |
+| `/ai-cli` | productivity | Evaluate and improve CLI design for AI agent usage |
+| `/skill-workbench` | productivity | Create or improve skills and agents |
+| `/review` | productivity | Review a pull request with structured findings |
+| `/tour` | productivity | Guided code walkthroughs (interactive or written) |
+| `/commit` | git | Create structured git commits |
+| `/atcommit` | git | Organize and validate atomic commit sets |
+| `/fixup` | git | Create fixup commits targeting earlier branch commits |
+| `/pr` | git | Create PRs (draft/open) or mark draft as ready |
 | `/branch` | git | Create a well-named feature branch |
 | `/pr-fix` | git | Fix merge conflicts and address review comments on a PR |
 | `/pr-ready` | git | Get a PR green: fix conflicts, review comments, and CI failures |
-| `/review` | code | Review a pull request with structured feedback |
-| `/tour` | code | Guided code walkthrough (interactive or written) |
+| `/fix-conflicts` | git | Resolve merge/rebase/cherry-pick/revert conflicts |
+| `/worktree` | git | Create an isolated git worktree |
 
 ## Plugins
 
 ### productivity
 
-Productivity skills -- feature development lifecycle, systematic debugging, documentation management, execution planning, workspace setup, and skill workbench.
-
 **Skills:**
 
-- `/do` -- Orchestrate feature development with full lifecycle management. Multi-phase workflow (RESEARCH -> PLAN -> EXECUTE -> VALIDATE -> DONE) with resumable state, specialized subagents, and atomic commits. Supports interactive and autonomous modes.
-- `/debug` -- Systematic debugging with enforced root cause investigation. Four-phase workflow (REPRODUCE -> INVESTIGATE -> FIX -> VERIFY) with persistent state, hypothesis tracking, and defense-in-depth validation. Leverages explorer and researcher agents for evidence gathering.
-- `/doc` -- Manage Markdown documentation lifecycle: create, update, improve, maintain, and audit. Supports Confluence sync via ddoc. Includes templates for runbooks, guides, references, tutorials, and ADRs.
-- `/execplan` -- Create, execute, review, or resume an ExecPlan. Supports four modes: author (write a new plan), review (interactive walkthrough with feedback), execute (run a plan from the start), and resume (continue an in-progress plan).
-- `/workspace` -- Set up and manage Claude Code configuration. Bootstraps the code-factory plugin marketplace, symlinks configuration files, and manages MCP server settings.
-- `/reflect` -- Capture session learnings and update knowledge files. Extracts conventions, corrections, patterns, and gotchas from the current session. Uses confidence-based routing: high-confidence learnings are auto-applied, medium-confidence ones are queued for human review.
-- `/skill-workbench` -- Create new skills or improve existing ones in this plugin marketplace. Supports two modes: CREATE (scaffold a new skill with frontmatter, structure, and OpenCode command) and IMPROVE (audit skills for clarity, conciseness, and completeness; apply improvements directly).
+- [`/do`](#do-lifecycle) -- Full lifecycle feature orchestration (see detailed breakdown below).
+- `/rfc` -- RFC authoring workflow with refinement, research, exploration, consistency check, and write phases.
+- `/debug` -- Root-cause-first debugging protocol (`REPRODUCE -> INVESTIGATE -> FIX -> VERIFY`) with persistent state.
+- `/doc` -- Documentation lifecycle management (create, update, improve, maintain, audit, sync, status) with templates.
+
+- `/review` -- Structured PR review across correctness, security, design, testing, and style.
+- `/tour` -- Codebase tours in interactive or written modes.
+- `/workspace` -- Datadog workspace lifecycle management (`create`, `list`, `delete`, `ssh`, `connect`, `validate`).
+- `/reflect` -- Session learning extraction with confidence-based auto-apply/queue behavior. Includes self-improvement analysis for skill gaps, friction, and automation opportunities.
+- `/wrap-up` -- End-of-session checklist: commits via `/atcommit`, deploys if available, cleans up tasks, runs `/reflect` for learnings, and drafts publishable content.
+- `/brag` -- Brag document management: auto-collects work from GitHub, Jira, Confluence, git, and daily logs; asks interactive questions for undiscoverable work; maintains monthly docs at `~/log/YYYY-MM/brag.md`.
+- `/daily` -- Daily work journal and weekly summaries in Obsidian: captures work activity, meetings, achievements, team pulse, travel, learning, and kudos. Weekly summary mode (`/daily summary`) aggregates daily notes with GitHub PRs, Jira tickets, and Confluence pages into dual-format output (Confluence + Slack). Resolves people names via Obsidian People directory with wikilinks and backlinks. Feeds into `/brag` as a data source.
+- `/notes` -- Obsidian notes management: 1:1 records, meeting notes, per-person career plans, promotion proposals, achievements tracking, and general notes. Shares `~/docs/People/` directory with `/daily` for graph integration.
+- `/performance-feedback` -- Evidence-backed performance review writer: gathers data from 1:1 notes, achievements, daily logs, brag docs, GitHub PRs, Jira tickets, and Confluence pages for a specific person over a review period, then synthesizes into structured feedback by dimension (impact, technical quality, collaboration, growth, communication).
+- `/brainstorm` -- Problem-focused brainstorming: sharpens vague ideas into clear problem statements through iterative diagnostic questions. Saves brainstorms to `~/docs/brainstorms/`. Integrated with `/do` as an optional pre-refinement step.
+- `/datadog` -- Datadog product query via pup CLI: APM, logs, metrics, monitors, error tracking, RUM, infrastructure, security signals, incidents, SLOs, synthetics, CI/CD, and 30+ other API domains.
+- `/code-simplify` -- Code simplification across any scope (file, directory, package, branch diff, staged changes, or entire repo). Preserves behavior while improving clarity and maintainability.
+- `/ai-cli` -- CLI design evaluation and improvement for AI agents: scores against 8 Agent DX axes aligned with the AXI (Agent eXperience Interface) framework (machine-readable output, raw payload input, schema introspection, context window discipline, input hardening, safety rails, agent knowledge packaging, efficiency & composition), recommends prioritized improvements, and guides implementation.
+- `/skill-workbench` -- Skill and agent creation/improvement toolkit.
 
 **Agents:**
 
-- `execplan` -- A specialized agent persona for authoring and executing ExecPlans. Resolves ambiguities autonomously, commits frequently, and breaks work into independently verifiable milestones.
-- `orchestrator` -- Orchestrates multi-phase workflows through a state machine. Single writer of FEATURE.md state files.
-- `explorer` -- Read-only codebase exploration. Maps architecture, conventions, and integration points.
-- `researcher` -- Domain research agent. Searches Confluence, documentation, and web resources.
-- `planner` -- Plan authoring. Converts research into actionable execution plans with milestones and tasks.
-- `reviewer` -- Plan review. Critically analyzes plans for completeness, safety, and executability.
-- `spec-reviewer` -- Spec compliance review. Verifies implementation matches task specification — nothing missing, nothing extra.
-- `code-quality-reviewer` -- Code quality review. Assesses code quality, patterns, testing, and maintainability.
-- `implementer` -- Implementation. Executes code changes according to plan tasks with atomic commits.
-- `validator` -- Validation. Runs automated checks and verifies acceptance criteria with evidence.
+- `orchestrator` -- State-machine orchestrator for `/do` lifecycle execution.
+- `refiner` -- Clarifies vague requests into actionable feature specs.
+- `explorer` -- Read-only codebase mapper and extension-point finder.
+- `researcher` -- Internal/external research synthesis.
+- `planner` -- Plan author that converts research into executable tasks.
+- `consistency-checker` -- Iteratively fixes contradictions in planning artifacts.
+- `reviewer` -- Plan quality/completeness reviewer.
+- `implementer` -- Plan-driven implementation agent.
+- `spec-reviewer` -- Verifies implementation matches spec exactly.
+- `code-quality-reviewer` -- Evaluates maintainability/testing/convention quality.
+- `validator` -- Runs checks and validates acceptance criteria with evidence.
+
+- `skill-grader` -- Scores evaluation runs with pass/fail evidence.
+- `skill-comparator` -- Blind A/B output comparator for skill evaluations.
+- `brainstormer` -- Problem-focused thinking partner for brainstorming sessions.
+- `red-teamer` -- Adversarial reviewer finding failure modes, flawed assumptions, and edge cases.
+- `code-simplifier` -- Single-file code simplification agent for clarity, consistency, and maintainability.
+- `memory-extractor` -- Extracts reusable learnings from session transcripts.
 
 ### git
 
@@ -58,58 +88,170 @@ Git workflow skills -- structured commits, PR creation, branch management, and a
 **Skills:**
 
 - `/commit` -- Create a well-structured git commit with optional Documentation, Motivation, and Summary sections. Analyzes staged changes, detects Jira ticket IDs from branch names, and builds a formatted commit message.
+- `/atcommit` -- Validate and organize changes into self-contained atomic commits. Builds a dependency graph across changed files, detects violations (missing deps, mixed concerns, forward references), and proposes commit groups in the correct order.
+- `/fixup` -- Commit matching and autosquash-ready fixup creation.
 - `/pr` -- Create a GitHub pull request from the current branch. Collects commits since divergence from the base branch, detects ticket IDs and URLs from commit messages, and builds a structured PR description.
 - `/branch` -- Create a well-named feature branch from a ticket ID or description. Generates branches with the naming convention `<user>/<slug>-<TICKET-ID>` from the default branch (prefix derived from `git config user.name`).
-- `/pr-fix` -- Fix merge conflicts and address code review comments on an open PR. Integrates the latest base branch (merge or rebase), resolves conflicts, fetches pending review comments, applies fixes, and replies to comment threads.
+- `/pr-fix` -- Fix merge conflicts and address code review comments on an open PR. Integrates the latest base branch (merge or rebase), resolves conflicts, fetches pending review comments, applies fixes, and replies to comment threads. Supports `--auto` for bot/CI automation and `--auto-human` for fully autonomous mode.
 - `/pr-ready` -- Get a PR to a ready state. Invokes `/pr-fix` to resolve conflicts and review feedback, then enters a CI checks loop (max 3 iterations) to fix test failures, lint errors, and flaky jobs.
-- `/atcommit` -- Validate and organize changes into self-contained atomic commits. Builds a dependency graph across changed files, detects violations (missing deps, mixed concerns, forward references), and proposes commit groups in the correct order.
+- `/fix-conflicts` -- Conflict-state-aware conflict resolution workflow.
+- `/worktree` -- Detached worktree creation from the default branch.
 
-### code
+## `/do` Lifecycle
 
-Code understanding skills -- PR review with structured feedback and guided code tours.
+Full lifecycle feature orchestration — from vague idea to merged PR. Supports interactive (approve at each phase) or autonomous (`--auto`) modes. Pre-fetches external references (URLs, tickets, PRs) from the feature description before orchestration begins. All state persists in `~/docs/plans/do/<name>/` for cross-session resume.
 
-**Skills:**
+### Phase Diagram
 
-- `/review` -- Review a pull request with structured feedback across five categories (Correctness, Security, Design, Testing, Style) with severity levels (critical, suggestion, nit). Presents findings to the user without posting automatically.
-- `/tour` -- Guided code walkthroughs to explain architecture, flows, or structure. Supports three modes: interactive (step-by-step with pauses), written (complete markdown document), and PR comment (collapsible sections posted to a GitHub PR).
+```
+REFINE ──→ RESEARCH ──→ PLAN_DRAFT ──→ PLAN_REVIEW ──→ EXECUTE ──→ VALIDATE ──→ DONE
+                            ^               |    |           ^          |
+                            |               v    v           |          v
+                            |          consistency  +--------+-- (fix forward) ──+
+                            |            check      |
+                            |               |       |
+                            |               v       |
+                            +──── (changes requested)
+```
+
+### Phase Details
+
+| Phase | Agents | What Happens | Output |
+|-------|--------|-------------|--------|
+| **REFINE** | `refiner` | Clarify vague requests. Propose 2-3 approaches with trade-offs, get user preference. One question at a time (prefer multiple choice). | Refined spec: problem statement, chosen approach, scope, acceptance criteria |
+| **RESEARCH** | `explorer` + `researcher` (parallel) | Explorer maps local codebase (modules, patterns, conventions). Researcher searches Confluence + external docs. Both mandatory. | Context, assumptions, constraints, risks, open questions |
+| **PLAN_DRAFT** | `planner` | Convert research into milestones and tasks. Plan embeds relevant context inline (not links only). | Milestones, task breakdown (TDD-first), validation strategy, recovery plan |
+| **PLAN_REVIEW** | `consistency-checker` → `reviewer` | **Step 1:** Consistency checker fixes contradictions, mismatched IDs, path inconsistencies, terminology drift (edits directly, max 10 iterations, `sonnet` model). **Step 2:** Reviewer critiques coverage, paths, dependencies, safety, executability. May loop back to PLAN_DRAFT. | Review report, required changes |
+| **EXECUTE** | `implementer` + `spec-reviewer` + `code-quality-reviewer` | Batched execution with shift-left validation and two-stage review (see below). TDD enforced for behavioral tasks. Atomic commits at milestone boundaries via `/atcommit`. | Implemented code, atomic commits |
+| **VALIDATE** | `validator` | Run automated checks + quality scorecard (1-5 per dimension). All dimensions must score ≥ 3/5. May loop back to EXECUTE. | Validation report, acceptance evidence, quality scorecard |
+| **DONE** | — | Write retrospective, run final test suite. Create PR (interactive: user chooses; autonomous: auto-creates). | PR URL or merge commit |
+
+### EXECUTE Phase — Batch Loop
+
+```
+Plan Critical Review → Pre-flight (build + test baseline) → Execute Batch (3 tasks) → Batch Report → Feedback → Next Batch
+                                                                  |                                       ^
+                                                                  v                                       |
+                                                            Per-task loop:                          (loop batches)
+                                                            Dispatch implementer → Shift-left (lint/format/typecheck)
+                                                                  → Spec review (max 2 fix cycles)
+                                                                  → Code quality review (max 2 fix cycles)
+                                                                  → Next task
+                                                            At MILESTONE BOUNDARY:
+                                                            Run /atcommit → group changes by concept → 3-5 atomic commits
+```
+
+**Per-task sequence:**
+
+1. Dispatch fresh `implementer` with full task text + scene-setting context (milestone position, prior task summary, upcoming tasks, discoveries, architecture)
+2. Implementer asks questions → answers provided → implements → self-reviews → reports (no commit)
+3. **Shift-left validation** (deterministic — orchestrator runs directly): lint + format + type-check. Auto-fixes formatting. Returns to implementer if errors persist.
+4. `spec-reviewer` verifies implementation matches spec (nothing missing, nothing extra, nothing misunderstood)
+5. If issues → implementer fixes → re-review (max 2 fix cycles, then escalate)
+6. `code-quality-reviewer` assesses maintainability, testing, conventions, plan alignment
+7. If critical issues → implementer fixes → re-review (max 2 fix cycles, then escalate)
+8. Mark task complete, update state, proceed to next task in batch (no commit yet)
+
+**TDD enforcement** (behavioral tasks only):
+
+1. Write failing test (complete, not placeholder)
+2. Run test — verify it fails for the expected reason
+3. Write minimal implementation to pass the test
+4. Run test — verify it passes and no regressions
+
+Code written before its test is deleted and restarted.
+
+**Milestone boundary commits:** `/atcommit` analyzes file dependencies and groups changes by concept (e.g., package + tests, integration layer, config + wiring). Typical result: 3-5 atomic commits per feature.
+
+**Stop conditions:** missing dependencies, systemic test failures, unclear instructions, repeated verification failures, or plan-invalidating discoveries.
+
+### Workspace Modes
+
+| Mode | Description |
+|------|-------------|
+| Worktree + branch (default) | Isolated git worktree with feature branch — main workspace stays clean |
+| Branch only | Feature branch in current directory |
+| Current branch | Work on the already checked-out branch |
+| Datadog workspace | Remote cloud development environment via `/workspace` |
+
+### State Files
+
+All artifacts live in `~/docs/plans/do/<name>/`:
+
+| File | Written After | Contents |
+|------|---------------|----------|
+| `FEATURE.md` | Creation | YAML frontmatter, acceptance criteria, progress, decisions, outcomes |
+| `RESEARCH.md` | RESEARCH | Codebase map, research brief, findings, open questions |
+| `PLAN.md` | PLAN_DRAFT | Milestones, task breakdown, validation strategy, recovery |
+| `REVIEW.md` | PLAN_REVIEW | Review feedback, required changes |
+| `VALIDATION.md` | VALIDATE | Test results, acceptance evidence, quality scorecard |
+
+### Input Isolation
+
+User descriptions are wrapped in `<feature_request>` tags to prevent prompt injection into subagents.
 
 ## Installation
 
 1. Clone the repository:
 
-       git clone https://github.com/M-J-Hooper/code-factory.git
-       cd code-factory
+   ```bash
+   git clone https://github.com/M-J-Hooper/code-factory.git
+   cd code-factory
+   ```
 
-2. Run the init script to symlink configuration files:
+2. Run bootstrap:
 
-       ./init.sh
+   ```bash
+   ./init.sh
+   ```
 
-   This creates the following symlinks:
+   `init.sh` performs the full local setup:
 
-   | Source | Destination |
-   |--------|-------------|
-   | `mcp.json` | `~/.mcp.json` |
-   | `settings.json` | `~/.claude/settings.json` |
-   | `opencode.jsonc` | `~/.config/opencode/opencode.jsonc` |
+   - Installs or updates `rtk` via `cargo install --git https://github.com/rtk-ai/rtk --config net.git-fetch-with-cli=true`.
+   - Symlinks root configs:
 
-   If a destination already exists as a regular file (not a symlink), the script warns and skips it. If it exists as a symlink, it is replaced.
+     | Source | Destination |
+     |--------|-------------|
+     | `mcp.json` | `~/.mcp.json` |
+     | `settings.json` | `~/.claude/settings.json` |
+     | `opencode.jsonc` | `~/.config/opencode/opencode.jsonc` |
 
-3. The marketplace is registered in `settings.json` under `extraKnownMarketplaces` as `code-factory` pointing to `M-J-Hooper/code-factory` on GitHub. The plugins `productivity@code-factory`, `git@code-factory`, and `code@code-factory` are enabled by default.
+   - Symlinks files from `hooks/` into `~/.claude/hooks/`.
+   - Regenerates `.opencode/` assets by running `./sync-opencode.sh`.
+   - Symlinks generated `.opencode/{skills,agents,commands,plugins}` into `~/.config/opencode/`.
+   - Symlinks `.githooks/*` into `.git/hooks/` for this local clone.
+
+   If a destination already exists as a regular file, bootstrap records an error and exits non-zero so you can fix the conflict explicitly.
+
+3. The marketplace is registered in `settings.json` under `extraKnownMarketplaces` as `code-factory` pointing to `M-J-Hooper/code-factory` on GitHub. The plugins `productivity@code-factory` and `git@code-factory` are enabled by default.
+
+4. Validate the repo state:
+
+   ```bash
+   make all
+   ```
+
+## Development Notes
+
+- Source of truth is under `productivity/` and `git/`; do not edit generated files under `.opencode/` directly.
+- `make all` runs checks (`make check`) and config linting (`make lint`).
+- `make check` also verifies OpenCode sync freshness (`./sync-opencode.sh --check`).
+- Re-run `./init.sh` after changing local bootstrap-managed files.
 
 ## Configuration Files
 
-### settings.json (Claude Code)
+### `settings.json` (Claude Code)
 
-Global settings for Claude Code. Defines tool permissions (which bash commands and tools are auto-allowed), the default model (`opus` -- a Claude Code shorthand for the current Opus model), enabled MCP servers, marketplace references, and enabled plugins.
+Claude Code global configuration: environment flags, permission rules, default model (`opus`), MCP server enablement, installed marketplaces/plugins, and hooks (including Stop-hook invocation of `/reflect`).
 
-### opencode.jsonc (OpenCode)
+### `opencode.jsonc` (OpenCode)
 
-Configuration for the OpenCode CLI. Defines model providers (Anthropic, OpenAI, Google), agent profiles for A/B testing different models, MCP server connections, and a granular permission system. Uses JSONC (JSON with comments).
+OpenCode CLI configuration in JSONC. Includes provider setup (Anthropic, OpenAI, Google, NVIDIA NIM, LM Studio), default model selection (`openai/gpt-5.3-codex`), permission policies, agent presets, and MCP wiring.
 
-### mcp.json (MCP Servers)
+### `mcp.json` (MCP servers)
 
-Declares three MCP (Model Context Protocol) servers:
+Declares Atlassian, Datadog, and chrome-devtools MCP servers for Claude Code.
 
-- **atlassian** -- Connects to Atlassian's hosted MCP service for Jira and Confluence integration.
-- **datadog** -- Connects to Datadog's MCP service for observability tooling (disabled by default in local settings).
-- **chrome-devtools** -- Launches a local Chrome DevTools MCP server via npx for browser debugging.
+### `sync-opencode.sh`
+
+Generates `.opencode/skills`, `.opencode/agents`, and `.opencode/commands` from plugin source definitions, including frontmatter/tool-name transformations and stale-check mode (`--check`).

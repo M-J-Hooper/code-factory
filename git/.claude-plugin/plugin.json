@@ -1,7 +1,7 @@
 {
   "name": "git",
-  "version": "0.4.0",
-  "description": "Git workflow skills: structured commits, atomic commit validation, PR creation, and branch management",
+  "version": "0.8.3",
+  "description": "Git workflow skills: structured commits, atomic commit validation, fixup commits, PR creation, PR review feedback resolution, branch management, isolated worktrees, and merge conflict resolution",
   "author": {
     "name": "Matt Hooper",
     "email": "matthew.hooper@datadoghq.com"

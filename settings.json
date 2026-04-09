@@ -4,7 +4,8 @@
     "ENABLE_TOOL_SEARCH": "true",
     "CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY": "1",
     "DISABLE_NON_ESSENTIAL_MODEL_CALLS": "1",
-    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1"
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
   },
   "attribution": {
     "commit": "",
@@ -12,104 +13,122 @@
   },
   "permissions": {
     "allow": [
-      "Bash(grep:*)",
-      "Bash(ls:*)",
-      "Bash(cat:*)",
-      "Bash(head:*)",
-      "Bash(sort:*)",
-      "Bash(tail:*)",
-      "Bash(wc:*)",
-      "Bash(stat:*)",
-      "Bash(tree:*)",
-      "Bash(find:*)",
-      "Bash(echo:*)",
-      "Bash(rg:*)",
-      "Bash(awk:*)",
-      "Bash(BZL_TEST_RESULTS_VIEWER_ENABLED=true bzl:*)",
-      "Bash(bzl:*)",
-      "Bash(bun:*)",
-      "Bash(go:*)",
-      "Bash(jq:*)",
-      "Bash(yq:*)",
-      "Bash(rapid:*)",
-      "Bash(xargs:*)",
-      "Bash(rapid-bin:*)",
-      "Bash(ddtool:*)",
-      "Bash(ddr:*)",
-      "Bash(tar:*)",
-      "Bash(if:*)",
-      "Bash(for:*)",
-      "Bash(while:*)",
-      "Bash(do:*)",
-      "Bash(then:*)",
-      "Bash(fi)",
-      "Bash(done)",
-      "Bash(sed:*)",
-      "Bash(tee:*)",
-      "Bash(test:*)",
-      "Bash(date:*)",
-      "Bash(mkdir:*)",
-      "Bash(tr:*)",
-      "Bash(which:*)",
-      "Bash(file:*)",
-      "Bash(diff:*)",
-      "Bash(shellcheck:*)",
-      "Bash(lsof:*)",
-      "Bash(xxd:*)",
-      "Bash(git add:*)",
-      "Bash(git commit:*)",
-      "Bash(git status:*)",
-      "Bash(git log:*)",
-      "Bash(git diff:*)",
-      "Bash(git tag:*)",
-      "Bash(git branch:*)",
-      "Bash(git remote:*)",
-      "Bash(git symbolic-ref:*)",
-      "Bash(git merge-base:*)",
-      "Bash(git rev-parse:*)",
-      "Bash(gh auth:*)",
-      "Bash(gh pr create:*)",
-      "Bash(gh pr view:*)",
-      "Bash(gh pr list:*)",
-      "Bash(gh pr diff:*)",
-      "Bash(gh api:*)",
-      "Bash(git grep:*)",
-      "Bash(git show:*)",
-      "Bash(git ls-files:*)",
-      "Bash(git stash list:*)",
-      "Bash(git check-ignore:*)",
-      "Bash(git show-ref:*)",
-      "Bash(gh repo view:*)",
-      "Bash(gh pr checks:*)",
-      "WebSearch",
-      "WebFetch",
-      "MultiEdit",
-      "Edit",
-      "Glob",
-      "Grep",
-      "NotebookEdit",
-      "Read",
-      "SlashCommand",
-      "Task",
-      "TodoWrite",
-      "Write",
-      "Bash(paste:*)",
-      "Bash(uniq:*)",
-      "Bash(python -m pytest:*)",
-      "mcp__github__get_pull_request",
-      "mcp__atlassian__getJiraIssue",
+      "Bash(*)",
+      "Read(*)",
+      "Glob(*)",
+      "Grep(*)",
+      "Edit(*)",
+      "Write(*)",
+      "MultiEdit(*)",
+      "NotebookEdit(*)",
+      "WebSearch(*)",
+      "Skill(do)",
+      "Skill(rfc)",
+      "Skill(debug)",
+      "Skill(doc)",
+      "Skill(workspace)",
+      "Skill(datadog)",
+      "Skill(reflect)",
+      "Skill(brag)",
+      "Skill(daily)",
+      "Skill(notes)",
+      "Skill(skill-workbench)",
+      "Skill(review)",
+      "Skill(tour)",
+      "Skill(performance-feedback)",
+      "Skill(brainstorm)",
+      "Skill(wrap-up)",
+      "Skill(code-simplify)",
+      "Skill(commit)",
+      "Skill(atcommit)",
+      "Skill(fixup)",
+      "Skill(pr)",
+      "Skill(branch)",
+      "Skill(pr-fix)",
+      "Skill(fix-conflicts)",
+      "Skill(worktree)",
+      "Task(*)",
+      "TodoWrite(*)",
+      "AskUserQuestion(*)",
+      "TaskOutput(*)",
+      "TaskStop(*)",
+      "WebFetch(domain:docs.rs)",
+      "WebFetch(domain:docs.google.com)",
+      "WebFetch(domain:docs.api.nvidia.com)",
+      "WebFetch(domain:datadoghq.atlassian.net)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:gist.github.com)",
+      "WebFetch(domain:platform.claude.com)",
+      "WebFetch(domain:code.claude.com)",
+      "WebFetch(domain:opencode.ai)",
+      "WebFetch(domain:www.anthropic.com)",
+      "WebFetch(domain:resources.anthropic.com)",
+      "WebFetch(domain:agentskills.io)",
+      "WebFetch(domain:deepwiki.com)",
+      "WebFetch(domain:arxiv.org)",
+      "WebFetch(domain:developers.openai.com)",
+      "mcp__atlassian__atlassianUserInfo",
+      "mcp__atlassian__fetchAtlassian",
+      "mcp__atlassian__getAccessibleAtlassianResources",
+      "mcp__atlassian__getConfluenceCommentChildren",
       "mcp__atlassian__getConfluencePage",
       "mcp__atlassian__getConfluencePageDescendants",
+      "mcp__atlassian__getConfluencePageFooterComments",
+      "mcp__atlassian__getConfluencePageInlineComments",
       "mcp__atlassian__getConfluenceSpaces",
+      "mcp__atlassian__getIssueLinkTypes",
+      "mcp__atlassian__getJiraIssue",
+      "mcp__atlassian__getJiraIssueRemoteIssueLinks",
+      "mcp__atlassian__getJiraIssueTypeMetaWithFields",
+      "mcp__atlassian__getJiraProjectIssueTypesMetadata",
       "mcp__atlassian__getPagesInConfluenceSpace",
-      "mcp__atlassian__atlassianUserInfo",
-      "mcp__atlassian__getAccessibleAtlassianResources",
-      "mcp__atlassian__search",
+      "mcp__atlassian__getTransitionsForJiraIssue",
+      "mcp__atlassian__getVisibleJiraProjects",
+      "mcp__atlassian__lookupJiraAccountId",
+      "mcp__atlassian__searchAtlassian",
       "mcp__atlassian__searchConfluenceUsingCql",
-      "mcp__atlassian__fetch",
-      "mcp__atlassian__searchJiraIssuesUsingJql"
+      "mcp__atlassian__searchJiraIssuesUsingJql",
+      "mcp__slack__slack_read_channel",
+      "mcp__slack__slack_read_thread",
+      "mcp__slack__slack_read_user_profile",
+      "mcp__slack__slack_search_channels",
+      "mcp__slack__slack_search_users",
+      "mcp__slack__slack_search_public",
+      "mcp__slack__slack_search_public_and_private",
+      "mcp__slack__slack_read_canvas"
     ],
-    "defaultMode": "bypassPermissions",
+    "ask": [
+      "Bash(sudo *)",
+      "Bash(dd if= *)",
+      "Bash(dd of= *)",
+      "Bash(mkfs *)",
+      "Bash(fdisk *)",
+      "Bash(diskutil erase *)",
+      "Bash(diskutil partitionDisk *)",
+      "Bash(shutdown *)",
+      "Bash(reboot *)",
+      "Bash(nvram *)",
+      "Bash(csrutil *)",
+      "Bash(launchctl *)",
+      "Bash(systemsetup *)",
+      "Bash(networksetup *)",
+      "Bash(rm -r *)",
+      "Bash(rm -fr *)",
+      "Bash(chmod -R *)",
+      "Bash(chown -R *)",
+      "Bash(git push --force *)",
+      "Bash(git push -f *)",
+      "Bash(git reset --hard *)",
+      "Bash(git clean -f *)",
+      "Bash(git branch -D *)",
+      "Bash(git checkout --  *)",
+      "Bash(git rebase *)",
+      "Bash(git stash drop *)",
+      "Bash(brew install *)",
+      "Bash(npm install -g *)",
+      "Bash(defaults write *)"
+    ],
     "additionalDirectories": [
       "/Users/matthew.hooper/go",
       "/Users/matthew.hooper/workspace",
@@ -131,6 +150,26 @@
     "datadog"
   ],
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/rtk-rewrite.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/command-safety-scanner.sh"
+          }
+        ]
+      }
+    ],
     "Notification": [
       {
         "matcher": "",
@@ -141,35 +180,42 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/stop-phrase-guard.sh"
+          }
+        ]
+      }
     ]
   },
   "statusLine": {
     "type": "command",
-    "command": "npx -y ccstatusline@latest",
+    "command": "PATH=\"$HOME/.local/node/bin:$PATH\" npx -y ccstatusline@latest",
     "padding": 0
   },
   "enabledPlugins": {
     "productivity@code-factory": true,
     "git@code-factory": true,
-    "code@code-factory": true,
     "code-review@claude-plugins-official": true,
     "code-simplifier@claude-plugins-official": true,
-    "superpowers@claude-plugins-official": true,
-    "commit-commands@claude-plugins-official": true,
     "pr-review-toolkit@claude-plugins-official": true,
     "gopls-lsp@claude-plugins-official": false,
     "rust-analyzer-lsp@claude-plugins-official": true,
+    "playground@claude-plugins-official": true,
+    "skill-creator@claude-plugins-official": true,
     "dual-agents-review@datadog-claude-plugins": true,
     "osx-notifications@datadog-claude-plugins": true,
     "skills@datadog-claude-plugins": true,
     "dd@datadog-claude-plugins": true,
     "writing@datadog-claude-plugins": true,
-    "common-mistakes@mat-brown-contrib": true,
-    "git-mergetool@mat-brown-contrib": true,
-    "git-split-branch@mat-brown-contrib": true,
-    "permissions@mat-brown-contrib": true,
-    "pr-description@mat-brown-contrib": true,
-    "playground@claude-plugins-official": true
+    "learning-skills@mrlee-plugins": true,
+    "permissions-setup@mrlee-plugins": true,
+    "codex@openai-codex": true
   },
   "extraKnownMarketplaces": {
     "claude-plugins-official": {
@@ -184,21 +230,31 @@
         "repo": "DataDog/claude-marketplace"
       }
     },
-    "mat-brown-contrib": {
-      "source": {
-        "source": "github",
-        "repo": "DataDog/mat-brown-claude-plugins"
-      }
-    },
     "code-factory": {
       "source": {
         "source": "github",
         "repo": "M-J-Hooper/code-factory"
       }
+    },
+    "mrlee-plugins": {
+      "source": {
+        "source": "github",
+        "repo": "DataDog/mrlee-plugins"
+      }
+    },
+    "openai-codex": {
+      "source": {
+        "source": "github",
+        "repo": "openai/codex-plugin-cc"
+      }
     }
   },
   "alwaysThinkingEnabled": true,
+  "effortLevel": "high",
   "autoUpdatesChannel": "latest",
+  "autoMemoryEnabled": true,
+  "autoDreamEnabled": true,
   "skipDangerousModePermissionPrompt": true,
+  "defaultMode": "plan",
   "bypassPermissionsModeAccepted": true
 }

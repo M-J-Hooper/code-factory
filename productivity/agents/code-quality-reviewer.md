@@ -1,7 +1,6 @@
 ---
 name: code-quality-reviewer
 description: "Code quality reviewer. Assesses whether implementation is well-built: clean, tested, maintainable, following codebase conventions. Includes plan alignment and architecture review. Dispatched after spec compliance passes during EXECUTE phase."
-model: "opus"
 allowed_tools: ["Read", "Grep", "Glob", "Bash"]
 memory: "project"
 ---
@@ -53,6 +52,18 @@ Before reviewing the new code, understand the codebase conventions through targe
 | Testing | Describe blocks per method, assertion style | `file:line` |
 
 4. **Use these patterns as your review standard.** Compare the new code against what THIS codebase does, with concrete `file:line` evidence — not against general best practices.
+
+### 1.5 Project Constitution Check
+
+Read the project's declared conventions and rules:
+1. Check for `CLAUDE.md` at repo root — read if present
+2. Check for `.claude/rules/*.md` — read all files if directory exists
+3. Extract declared conventions, required patterns, and prohibited practices
+
+For each convention found, verify the implementation follows it.
+Report violations as HIGH severity (project-declared rules take precedence over general best practices).
+
+If no CLAUDE.md or rules files exist, skip this step.
 
 ### 2. Plan Alignment Analysis
 

@@ -4,7 +4,7 @@ Instructions for AI coding agents working in this repository.
 
 ## Project Overview
 
-Claude Code and OpenCode plugin marketplace. Three plugins — **productivity**, **git**, **code** — each containing skills and optionally agents. Tech stack: Markdown skill definitions, JSON configs, Makefile, shell scripts.
+Claude Code and OpenCode plugin marketplace. Two plugins — **productivity** and **git** — each containing skills and optionally agents. Tech stack: Markdown skill definitions, JSON configs, Makefile, shell scripts.
 
 ## Repository Structure
 
@@ -18,6 +18,13 @@ Claude Code and OpenCode plugin marketplace. Three plugins — **productivity**,
     {name}/SKILL.md
 Makefile                          # all, check, lint, and install targets
 init.sh                           # Bootstrap script
+sync-opencode.sh                  # Regenerates .opencode/ from plugin sources
+sync-codex.sh                     # Regenerates .codex/ from plugin sources
+rules/                            # Claude Code rules linked into ~/.claude/rules/ by init.sh
+hooks/                            # Claude Code hook scripts linked by init.sh
+.githooks/                        # Git hooks linked into .git/hooks by init.sh
+.opencode/                        # Generated OpenCode assets (do not edit directly)
+.codex/                           # Generated Codex assets (do not edit directly)
 settings.json                     # Claude Code global settings
 mcp.json                          # MCP server configuration
 opencode.jsonc                    # OpenCode CLI configuration
@@ -96,7 +103,7 @@ Run after every implementation:
 make all
 ```
 
-- `make check` verifies skill frontmatter, agent frontmatter, skill cross-references, agent skill references, description conventions, skill structure, and plugin manifest references.
+- `make check` verifies skill frontmatter, agent frontmatter, skill cross-references, agent skill references, description conventions, skill structure, plugin manifest references, OpenCode sync freshness, and Codex sync freshness.
 - `make lint` validates all JSON and JSONC files.
 
 All checks must pass before proceeding.
@@ -109,10 +116,44 @@ If changes affect functionality, configuration, or behavior:
 - Update metadata files:
   - `plugin.json` in the affected plugin's `.claude-plugin/` directory.
   - `.claude-plugin/marketplace.json` if plugins are added or removed.
+- Keep `settings.json` skill permissions in sync:
+  - When adding a new skill: add a `Skill(<name>)` entry to `permissions.allow`.
+  - When removing a skill: remove its `Skill(<name>)` entry from `permissions.allow`.
+  - Only repo-defined skills get entries — never use `Skill(*)`.
 - Bump version numbers following [semantic versioning](https://semver.org/):
   - **patch** — bug fixes, typo corrections.
   - **minor** — new skills, new features, backward-compatible changes.
   - **major** — breaking changes to skill interfaces or plugin structure.
+
+## Context Efficiency
+
+### Subagent Discipline
+
+**Context-aware delegation:**
+- Under ~50k context: prefer inline work for tasks under ~5 tool calls.
+- Over ~50k context: prefer subagents for self-contained tasks, even simple ones —
+  the per-call token tax on large contexts adds up fast.
+
+When using subagents, include output rules: "Final response under 2000 characters. List outcomes, not process."
+Never call TaskOutput twice for the same subagent. If it times out, increase the timeout — don't re-read.
+
+### File Reading
+
+Read files with purpose. Before reading a file, know what you're looking for.
+Use Grep to locate relevant sections before reading entire large files.
+Never re-read a file you've already read in this session.
+For files over 500 lines, use offset/limit to read only the relevant section.
+
+### Responses
+
+Don't echo back file contents you just read — the user can see them.
+Don't narrate tool calls ("Let me read the file..." / "Now I'll edit..."). Just do it.
+Keep explanations proportional to complexity. Simple changes need one sentence, not three paragraphs.
+
+**Tables — STRICT RULES (apply everywhere, always):**
+- Markdown tables: use minimum separator (`|-|-|`). Never pad with repeated hyphens (`|---|---|`).
+- NEVER use box-drawing / ASCII-art tables with characters like `┌`, `┬`, `─`, `│`, `└`, `┘`, `├`, `┤`, `┼`. These are completely banned.
+- No exceptions. Not for "clarity", not for alignment, not for terminal output.
 
 ## Boundaries
 
@@ -133,6 +174,9 @@ If changes affect functionality, configuration, or behavior:
 
 - Commit secrets, tokens, or credentials.
 - Force-push to `main`.
+- Push with `git push` directly — always use `./push.sh`.
 - Delete existing skills or plugins without explicit approval.
 - Skip validation (`make all`).
 - Modify files in `~/.claude/plugins/cache/`. This directory is a read-only deployment artifact managed by Claude Code's plugin system. Always make changes in the source repo — they propagate to the cache on the next plugin update.
+- Edit files in `.opencode/` directly. This directory is generated by `sync-opencode.sh` (run via `make all`). Always edit the source files in `{plugin}/skills/` and `{plugin}/agents/` — changes propagate to `.opencode/` automatically.
+- Edit files in `.codex/` directly. This directory is generated by `sync-codex.sh` (run via `make all`). Always edit the source files in `{plugin}/skills/` and `{plugin}/agents/` — changes propagate to `.codex/` automatically.

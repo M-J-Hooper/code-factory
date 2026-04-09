@@ -1,4 +1,4 @@
-.PHONY: all install lint check check-frontmatter check-agents check-refs check-agent-refs check-descriptions check-structure check-versions check-opencode-sync sync-opencode help
+.PHONY: all install lint check check-frontmatter check-agents check-refs check-agent-refs check-descriptions check-structure check-versions check-opencode-sync sync-opencode check-codex-sync sync-codex check-mcp-sync sync-mcp help
 
 all: check lint ## Run all checks (frontmatter, agents, refs, structure, plugins, lint)
 
@@ -12,7 +12,7 @@ install: ## Symlink configuration files into the home directory
 lint: ## Validate JSON and JSONC files
 	@echo "Validating JSON files..."
 	@ok=true; \
-	for f in $$(find . -name '*.json' -not -path './.git/*' | sort); do \
+	for f in $$(find . -name '*.json' -not -path './.git/*' -not -path './.plans/*' -not -path './.codex/*' | sort); do \
 		if python3 -m json.tool "$$f" > /dev/null 2>&1; then \
 			echo "  OK  $$f"; \
 		else \
@@ -24,7 +24,7 @@ lint: ## Validate JSON and JSONC files
 	if [ "$$ok" = false ]; then exit 1; fi
 	@echo "Validating JSONC files..."
 	@ok=true; \
-	jsonc_files=$$(find . -name '*.jsonc' -not -path './.git/*' | sort); \
+	jsonc_files=$$(find . -name '*.jsonc' -not -path './.git/*' -not -path './.plans/*' -not -path './.codex/*' | sort); \
 	if [ -z "$$jsonc_files" ]; then \
 		echo "  SKIP  no JSONC files found"; \
 	elif command -v node > /dev/null 2>&1; then \
@@ -44,7 +44,7 @@ lint: ## Validate JSON and JSONC files
 check-frontmatter: ## Validate SKILL.md files have required YAML frontmatter fields
 	@echo "Checking skill frontmatter..."
 	@ok=true; \
-	for skill in $$(find . -path '*/skills/*/SKILL.md' -not -path './.git/*' | sort); do \
+	for skill in $$(find . -path '*/skills/*/SKILL.md' -not -path './.git/*' -not -path './.plans/*' -not -path './.codex/*' | sort); do \
 		missing=""; \
 		if ! head -20 "$$skill" | grep -q '^name:'; then \
 			missing="$$missing name"; \
@@ -71,7 +71,7 @@ check-frontmatter: ## Validate SKILL.md files have required YAML frontmatter fie
 check-agents: ## Validate agent files have required YAML frontmatter fields
 	@echo "Checking agent frontmatter..."
 	@ok=true; \
-	agents=$$(find . -path '*/agents/*.md' -not -path './.git/*' | sort); \
+	agents=$$(find . -path '*/agents/*.md' -not -path '*/agents/references/*' -not -path './.git/*' -not -path './.plans/*' -not -path './.codex/*' | sort); \
 	if [ -z "$$agents" ]; then \
 		echo "  SKIP  no agent files found"; \
 	else \
@@ -97,10 +97,10 @@ check-agents: ## Validate agent files have required YAML frontmatter fields
 check-refs: ## Validate skill cross-references (e.g. /commit, /branch) resolve to real skills
 	@echo "Checking skill cross-references..."
 	@ok=true; \
-	for skill in $$(find . -path '*/skills/*/SKILL.md' -not -path './.git/*' | sort); do \
+	for skill in $$(find . -path '*/skills/*/SKILL.md' -not -path './.git/*' -not -path './.plans/*' -not -path './.codex/*' | sort); do \
 		refs=$$(grep -oE '`/[a-z][-a-z0-9]+`' "$$skill" | sed 's/`//g;s|^/||' | sort -u); \
 		for ref in $$refs; do \
-			found=$$(find . -path "*/skills/$$ref/SKILL.md" -not -path './.git/*' 2>/dev/null); \
+			found=$$(find . -path "*/skills/$$ref/SKILL.md" -not -path './.git/*' -not -path './.plans/*' -not -path './.codex/*' 2>/dev/null); \
 			if [ -z "$$found" ]; then \
 				echo "  FAIL  $$skill references /$$ref but no skill found at */skills/$$ref/SKILL.md"; \
 				ok=false; \
@@ -113,7 +113,7 @@ check-refs: ## Validate skill cross-references (e.g. /commit, /branch) resolve t
 check-descriptions: ## Validate skill descriptions start with "Use when" (convention)
 	@echo "Checking skill description conventions..."
 	@ok=true; \
-	for skill in $$(find . -path '*/skills/*/SKILL.md' -not -path './.git/*' | sort); do \
+	for skill in $$(find . -path '*/skills/*/SKILL.md' -not -path './.git/*' -not -path './.plans/*' -not -path './.codex/*' | sort); do \
 		desc=$$(awk '/^description:/{found=1; sub(/^description:[[:space:]]*>?[[:space:]]*/, ""); if(NF) print; next} found && /^[[:space:]]/{sub(/^[[:space:]]+/, ""); print; next} found{exit}' "$$skill" | head -1); \
 		if echo "$$desc" | grep -q '^Use when'; then \
 			echo "  OK  $$skill"; \
@@ -126,14 +126,14 @@ check-descriptions: ## Validate skill descriptions start with "Use when" (conven
 check-agent-refs: ## Validate skill references in agent files resolve to real skills
 	@echo "Checking agent skill cross-references..."
 	@ok=true; \
-	agents=$$(find . -path '*/agents/*.md' -not -path './.git/*' | sort); \
+	agents=$$(find . -path '*/agents/*.md' -not -path '*/agents/references/*' -not -path './.git/*' -not -path './.plans/*' -not -path './.codex/*' | sort); \
 	if [ -z "$$agents" ]; then \
 		echo "  SKIP  no agent files found"; \
 	else \
 		for agent in $$agents; do \
 			refs=$$(grep -oE '`/[a-z][-a-z0-9]+`' "$$agent" | sed 's/`//g;s|^/||' | sort -u); \
 			for ref in $$refs; do \
-				found=$$(find . -path "*/skills/$$ref/SKILL.md" -not -path './.git/*' 2>/dev/null); \
+				found=$$(find . -path "*/skills/$$ref/SKILL.md" -not -path './.git/*' -not -path './.plans/*' -not -path './.codex/*' 2>/dev/null); \
 				if [ -z "$$found" ]; then \
 					echo "  FAIL  $$agent references /$$ref but no skill found at */skills/$$ref/SKILL.md"; \
 					ok=false; \
@@ -147,7 +147,7 @@ check-agent-refs: ## Validate skill references in agent files resolve to real sk
 check-structure: ## Validate SKILL.md files have required structure (Announce, Steps, Error Handling)
 	@echo "Checking skill structure..."
 	@ok=true; \
-	for skill in $$(find . -path '*/skills/*/SKILL.md' -not -path './.git/*' | sort); do \
+	for skill in $$(find . -path '*/skills/*/SKILL.md' -not -path './.git/*' -not -path './.plans/*' -not -path './.codex/*' | sort); do \
 		missing=""; \
 		if ! grep -q '^Announce:' "$$skill"; then \
 			missing="$$missing Announce"; \
@@ -196,13 +196,21 @@ sync-opencode: ## Sync skills and agents to OpenCode config directory
 	@./sync-opencode.sh
 
 check-opencode-sync: ## Validate OpenCode sync is up-to-date
-	@if [ ! -d "$$HOME/.config/opencode/skills" ]; then \
-		echo "  SKIP  OpenCode sync (not installed, run 'make install')"; \
-	else \
-		./sync-opencode.sh --check; \
-	fi
+	@./sync-opencode.sh --check
 
-check: check-frontmatter check-agents check-refs check-agent-refs check-descriptions check-structure check-versions check-opencode-sync ## Run all validation checks (frontmatter, agents, refs, structure, plugins)
+sync-codex: ## Sync skills and agents to Codex config directory
+	@./sync-codex.sh
+
+check-codex-sync: ## Validate Codex sync is up-to-date
+	@./sync-codex.sh --check
+
+sync-mcp: ## Sync MCP servers from mcp.json to Claude Code and opencode.jsonc
+	@./sync-mcp.sh
+
+check-mcp-sync: ## Validate opencode.jsonc MCP block is up-to-date with mcp.json
+	@./sync-mcp.sh --check
+
+check: check-frontmatter check-agents check-refs check-agent-refs check-descriptions check-structure check-versions check-opencode-sync check-codex-sync check-mcp-sync ## Run all validation checks (frontmatter, agents, refs, structure, plugins)
 	@echo "Checking plugin references..."
 	@ok=true; \
 	for source in $$(python3 -c "import json; data=json.load(open('.claude-plugin/marketplace.json')); print('\n'.join(p['source'] for p in data['plugins']))"); do \

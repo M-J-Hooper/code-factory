@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
 #
-# sync-opencode.sh -- Sync Claude Code skills and agents to OpenCode-compatible paths.
+# sync-opencode.sh -- Generate OpenCode-compatible skills, agents, and commands from plugins.
 #
 # This script:
 #   1. Discovers plugins from .claude-plugin/marketplace.json
-#   2. Copies skills as-is to ~/.config/opencode/skills/{name}/SKILL.md
-#   3. Transforms agent frontmatter (model aliases, tools format, mode) and copies to ~/.config/opencode/agents/{name}.md
-#   4. Rewrites subagent_type and MCP tool references in body text
-#   5. Generates .opencode/commands/{name}.md for user-invocable skills
-#   6. Cleans up stale files via a manifest
+#   2. Copies skills (with body rewrites) to .opencode/skills/{name}/SKILL.md
+#   3. Transforms agent frontmatter and copies to .opencode/agents/{name}.md
+#   4. Generates .opencode/commands/{name}.md for user-invocable skills
+#
+# All output stays within the repo (.opencode/ directory).
+# Run `make install` to propagate to ~/.config/opencode/.
 #
 # Usage:
 #   ./sync-opencode.sh          # Full sync
@@ -21,10 +22,10 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MARKETPLACE="$SCRIPT_DIR/.claude-plugin/marketplace.json"
 
-SKILLS_DIR="$HOME/.config/opencode/skills"
-AGENTS_DIR="$HOME/.config/opencode/agents"
-COMMANDS_DIR="$SCRIPT_DIR/.opencode/commands"
-MANIFEST="$HOME/.config/opencode/.code-factory-managed"
+OPENCODE_DIR="$SCRIPT_DIR/.opencode"
+SKILLS_DIR="$OPENCODE_DIR/skills"
+AGENTS_DIR="$OPENCODE_DIR/agents"
+COMMANDS_DIR="$OPENCODE_DIR/commands"
 
 CHECK_MODE=false
 if [[ "${1:-}" == "--check" ]]; then
@@ -172,7 +173,7 @@ transform_agent() {
 
     # Validate transformed output
     local valid=true
-    for field in "name:" "description:" "mode:" "model:" "tools:"; do
+    for field in "name:" "description:" "mode:" "tools:"; do
         if ! head -30 "$dest" | grep -q "^${field}" 2>/dev/null; then
             # tools: may be absent if agent had no allowed_tools
             if [[ "$field" == "tools:" ]]; then continue; fi
@@ -207,6 +208,10 @@ rewrite_body() {
     sed "${sed_i[@]}" 's/subagent_type=\([A-Za-z0-9_-]*\)/subagent=\1/g' "$file"
     # MCP tool name references: mcp__<server>__<tool> -> <server>_<tool>
     sed "${sed_i[@]}" 's/mcp__\([^_]*\)__/\1_/g' "$file"
+    # CLAUDE_PLUGIN_ROOT paths: ${CLAUDE_PLUGIN_ROOT}/skills/<name>/<rest> -> ./<rest>
+    # Handles both ${CLAUDE_PLUGIN_ROOT} and $CLAUDE_PLUGIN_ROOT forms
+    sed "${sed_i[@]}" 's|\${CLAUDE_PLUGIN_ROOT}/skills/[^/]*/|./|g' "$file"
+    sed "${sed_i[@]}" 's|\$CLAUDE_PLUGIN_ROOT/skills/[^/]*/|./|g' "$file"
 }
 
 # ---------------------------------------------------------------------------
@@ -214,7 +219,6 @@ rewrite_body() {
 # ---------------------------------------------------------------------------
 
 main() {
-    local new_manifest=()
     local skill_count=0
     local agent_count=0
     local command_count=0
@@ -229,19 +233,42 @@ main() {
         local real_skills_dir="$SKILLS_DIR"
         local real_agents_dir="$AGENTS_DIR"
         local real_commands_dir="$COMMANDS_DIR"
-        SKILLS_DIR="$tmpdir/global/skills"
-        AGENTS_DIR="$tmpdir/global/agents"
+        SKILLS_DIR="$tmpdir/skills"
+        AGENTS_DIR="$tmpdir/agents"
         COMMANDS_DIR="$tmpdir/commands"
+    else
+        # Clear and regenerate — no manifest needed since output is in-repo
+        rm -rf "$SKILLS_DIR" "$AGENTS_DIR" "$COMMANDS_DIR"
     fi
 
     mkdir -p "$SKILLS_DIR" "$AGENTS_DIR" "$COMMANDS_DIR"
 
-    # Read old manifest for cleanup
-    local old_manifest=()
-    if [[ -f "$MANIFEST" ]] && [[ "$CHECK_MODE" != "true" ]]; then
-        while IFS= read -r line; do
-            old_manifest+=("$line")
-        done < "$MANIFEST"
+    # Update vendored rtk files from upstream source.
+    # Skipped in check mode (read-only). Fails silently if offline.
+    if [[ "$CHECK_MODE" != "true" ]]; then
+        _sync_rtk_file() {
+            local label="$1" url="$2" dest="$3"
+            if fetched=$(curl -fsSL "$url" 2>/dev/null); then
+                if [[ "$fetched" != "$(cat "$dest" 2>/dev/null)" ]]; then
+                    printf '%s\n' "$fetched" > "$dest"
+                    echo "  SYNC  $label (updated)"
+                else
+                    echo "  SYNC  $label (up-to-date)"
+                fi
+            else
+                echo "  SKIP  $label (offline or fetch failed)"
+            fi
+        }
+
+        _sync_rtk_file \
+            "rtk Claude Code hook" \
+            "https://raw.githubusercontent.com/rtk-ai/rtk/latest/hooks/rtk-rewrite.sh" \
+            "$SCRIPT_DIR/hooks/rtk-rewrite.sh"
+
+        _sync_rtk_file \
+            "rtk OpenCode plugin" \
+            "https://raw.githubusercontent.com/rtk-ai/rtk/latest/hooks/opencode-rtk.ts" \
+            "$OPENCODE_DIR/plugins/rtk.ts"
     fi
 
     # Discover and sync
@@ -251,12 +278,12 @@ main() {
         # --- Skills ---
         if [[ -d "$plugin_dir/skills" ]]; then
             while IFS= read -r skill_path; do
-                local skill_name
+                local skill_name skill_src_dir
                 skill_name=$(basename "$(dirname "$skill_path")")
-                mkdir -p "$SKILLS_DIR/$skill_name"
-                cp "$skill_path" "$SKILLS_DIR/$skill_name/SKILL.md"
+                skill_src_dir=$(dirname "$skill_path")
+                cp -R "$skill_src_dir" "$SKILLS_DIR/$skill_name"
                 rewrite_body "$SKILLS_DIR/$skill_name/SKILL.md"
-                new_manifest+=("$SKILLS_DIR/$skill_name/SKILL.md")
+
                 skill_count=$((skill_count + 1))
 
                 if [[ "$CHECK_MODE" != "true" ]]; then
@@ -280,7 +307,7 @@ Invoke the \`$skill_name\` skill with explicit syntax:
 
 skill({ name: "$skill_name" })
 CMDEOF
-                    new_manifest+=("$COMMANDS_DIR/$skill_name.md")
+
                     command_count=$((command_count + 1))
 
                     if [[ "$CHECK_MODE" != "true" ]]; then
@@ -297,7 +324,7 @@ CMDEOF
                 agent_name=$(basename "$agent_path" .md)
                 if transform_agent "$agent_path" "$AGENTS_DIR/$agent_name.md"; then
                     rewrite_body "$AGENTS_DIR/$agent_name.md"
-                    new_manifest+=("$AGENTS_DIR/$agent_name.md")
+
                     agent_count=$((agent_count + 1))
 
                     if [[ "$CHECK_MODE" != "true" ]]; then
@@ -309,50 +336,28 @@ CMDEOF
 
     done < <(discover_plugins)
 
-    # --check mode: compare temp output against real output (file-by-file, only managed files)
+    # --check mode: compare temp output against real output
     if [[ "$CHECK_MODE" == "true" ]]; then
         local stale=false
 
-        if [[ ! -d "$real_skills_dir" ]]; then
-            echo "STALE  $real_skills_dir does not exist (run ./sync-opencode.sh)"
-            exit 1
-        fi
+        # Compare generated dirs recursively
+        for dir_pair in "$SKILLS_DIR:$real_skills_dir" "$AGENTS_DIR:$real_agents_dir" "$COMMANDS_DIR:$real_commands_dir"; do
+            local tmp_dir="${dir_pair%%:*}"
+            local real_dir="${dir_pair##*:}"
 
-        # Compare each managed file individually (avoids false positives from unmanaged files)
-        for tmp_file in "${new_manifest[@]}"; do
-            # Map temp path back to real path using sed (bash substitution has quoting issues)
-            local real_file
-            real_file=$(echo "$tmp_file" | sed \
-                -e "s|^${SKILLS_DIR}|${real_skills_dir}|" \
-                -e "s|^${AGENTS_DIR}|${real_agents_dir}|" \
-                -e "s|^${COMMANDS_DIR}|${real_commands_dir}|")
-
-            if [[ ! -f "$real_file" ]]; then
-                echo "STALE  missing: $real_file"
+            if [[ ! -d "$real_dir" ]]; then
+                echo "STALE  $real_dir does not exist (run ./sync-opencode.sh)"
                 stale=true
-            elif ! diff -q "$tmp_file" "$real_file" > /dev/null 2>&1; then
-                echo "STALE  differs: $real_file"
+                continue
+            fi
+
+            if ! diff -rq "$tmp_dir" "$real_dir" > /dev/null 2>&1; then
+                diff -rq "$tmp_dir" "$real_dir" 2>&1 | while IFS= read -r line; do
+                    echo "STALE  $line"
+                done
                 stale=true
             fi
         done
-
-        # Check for orphaned files: entries in old manifest that are no longer in new manifest
-        if [[ -f "$MANIFEST" ]]; then
-            local new_sorted
-            new_sorted=$(printf '%s\n' "${new_manifest[@]}" | sed \
-                -e "s|^${SKILLS_DIR}|${real_skills_dir}|" \
-                -e "s|^${AGENTS_DIR}|${real_agents_dir}|" \
-                -e "s|^${COMMANDS_DIR}|${real_commands_dir}|" | sort)
-            while IFS= read -r old_entry; do
-                [[ -z "$old_entry" ]] && continue
-                if ! echo "$new_sorted" | grep -qxF "$old_entry"; then
-                    if [[ -f "$old_entry" ]]; then
-                        echo "STALE  orphaned: $old_entry"
-                        stale=true
-                    fi
-                fi
-            done < "$MANIFEST"
-        fi
 
         if [[ "$stale" == "true" ]]; then
             exit 1
@@ -362,34 +367,8 @@ CMDEOF
         exit 0
     fi
 
-    # --- Manifest cleanup ---
-    # Sort new manifest
-    local sorted_manifest
-    sorted_manifest=$(printf '%s\n' "${new_manifest[@]}" | sort)
-
-    # Delete stale files
-    local cleaned=0
-    for old_file in "${old_manifest[@]+"${old_manifest[@]}"}"; do
-        [[ -z "$old_file" ]] && continue
-        if ! echo "$sorted_manifest" | grep -qxF "$old_file"; then
-            if [[ -f "$old_file" ]]; then
-                rm -f "$old_file"
-                echo "  CLEAN  $old_file"
-                cleaned=$((cleaned + 1))
-            fi
-            # Remove empty skill directories
-            local parent
-            parent=$(dirname "$old_file")
-            rmdir "$parent" 2>/dev/null || true
-        fi
-    done
-
-    # Write new manifest
-    mkdir -p "$(dirname "$MANIFEST")"
-    echo "$sorted_manifest" > "$MANIFEST"
-
     echo ""
-    echo "Synced $skill_count skills, $agent_count agents, $command_count commands. Cleaned $cleaned stale files."
+    echo "Synced $skill_count skills, $agent_count agents, $command_count commands."
 }
 
 main

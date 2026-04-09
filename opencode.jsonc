@@ -1,11 +1,12 @@
 {
   "$schema": "https://opencode.ai/config.json",
-
-  "theme": "system",
   "autoupdate": true,
   "enabled_providers": ["anthropic", "google", "openai", "nvidia", "lmstudio"],
   "disabled_providers": ["opencode", "gitlab", "gemini"],
   "share": "disabled",
+
+  // Global rules loaded as additional instructions (symlinked by init.sh).
+  "instructions": ["rules/*.md"],
 
   // Keep long sessions usable during large refactors.
   "compaction": { "auto": true, "prune": true },
@@ -36,12 +37,16 @@
         "setCacheKey": true,
       },
       "models": {
-        "gpt-5.3-codex": {
+        "gpt-5.4": {
+          "limit": {
+            "context": 1048576,
+            "output": 32768,
+          },
           "options": {
             "reasoningEffort": "high",
             "temperature": 0.2,
             "top_p": 1,
-            "max_completion_tokens": 8192,
+            "max_completion_tokens": 32768,
           },
         },
       },
@@ -60,7 +65,7 @@
             },
           },
         },
-        "claude-sonnet-4-5": {
+        "claude-sonnet-4-6": {
           "options": {
             "thinking": {
               "type": "enabled",
@@ -76,7 +81,7 @@
         "setCacheKey": true,
       },
       "models": {
-        "gemini-3-pro-preview": {
+        "gemini-3.1-pro-preview": {
           "options": {
             "generationConfig": {
               "temperature": 0.7,
@@ -256,13 +261,14 @@
 
   // --- Models ---
   // Default “daily driver” for coding-agent workflows.
-  "model": "anthropic/claude-opus-4-6",
-  // "model": "openai/gpt-5.3-codex",
-  // "model": "anthropic/claude-sonnet-4-5",
+  "model": "openai/gpt-5.4",
+  // "model": "openai/gpt-5.4",
+  // "model": "anthropic/claude-sonnet-4-6",
 
   // Used for lightweight tasks (e.g., titles).
-  // "small_model": "anthropic/claude-sonnet-4-5",
-  // "small_model": "google/gemini-3-pro-preview",
+  // "small_model": "anthropic/claude-sonnet-4-6",
+  // "small_model": "anthropic/claude-haiku-4-5",
+  // "small_model": "google/gemini-3.1-pro-preview",
 
   // "mode": {
   //   "plan": {
@@ -275,42 +281,24 @@
 
   // --- Agents (easy A/B/C testing) ---
   // Switch agents quickly (Tab / Shift+Tab by default).
-  "default_agent": "plan",
-  "agent": {
-    "codex": {
-      "description": "Go/Python/Java coding agent (gpt-5.3-codex). Best for implementation + tool-heavy workflows.",
-      "model": "openai/gpt-5.3-codex",
-      "prompt": "You are a senior software engineer working primarily in Go, Python, and Java.\n\nWorking style:\n- Navigate like a human: use repo search (rg/grep), and prefer LSP-style jumps (defs/refs) when available.\n- Before editing, locate the minimal set of files/types involved and summarize a short plan.\n- Implement in small, reviewable diffs; preserve existing architecture and conventions.\n- Run the smallest relevant tests/linters; report commands + results.\n- Keep output concise: focus on what changed, why, and how to validate.",
-    },
+  "default_agent": "build",
 
-    "opus": {
-      "description": "Architecture + tricky refactors (Claude Opus 4.5). Great for deep reasoning on design and invariants.",
-      "model": "anthropic/claude-opus-4-6",
-      "prompt": "You are a principal engineer. Prioritize correctness, invariants, and clean design in Go/Python/Java.\n\nWorking style:\n- First build a mental model (key types, flows, and boundaries).\n- Propose a robust plan, then implement with minimal churn.\n- Prefer clear interfaces, strong tests, and careful edge-case handling.",
-    },
-
-    "gemini": {
-      "description": "Large-repo navigation + long-context reasoning (Gemini 3 Pro Preview).",
-      "model": "google/gemini-3-pro-preview",
-      "prompt": "You are a senior engineer optimized for long-context repo understanding in Go/Python/Java.\n\nWorking style:\n- Be systematic: search first, confirm call paths, then change code.\n- Prefer incremental edits with good tests and clear validation steps.",
-    },
-  },
-
-  // --- MCP Servers ---
+  // --- MCP Servers (generated from mcp.json) ---
   "mcp": {
     "atlassian": {
       "type": "remote",
-      "url": "https://mcp.atlassian.com/v1/sse",
+      "url": "https://mcp.atlassian.com/v1/sse"
     },
-    // "datadog": {
-    //   "type": "remote",
-    //   "url": "https://mcp.datadoghq.com/api/unstable/mcp-server/mcp?toolsets=core,software-delivery"
-    // },
     "chrome-devtools": {
       "type": "local",
-      "command": ["npx", "-y", "chrome-devtools-mcp@latest", "--isolated=true"],
+      "command": ["npx", "-y", "chrome-devtools-mcp@latest", "--isolated=true"]
     },
+    "slack": {
+      "type": "remote",
+      "url": "https://mcp.slack.com/mcp"
+    }
   },
+  // --- End MCP Servers ---
 
   // --- Permissions ---
   // OpenCode permissions support allow/ask/deny, and pattern matching where the last match wins.
@@ -431,6 +419,7 @@
       "git show *": "allow",
       "git blame *": "allow",
       "git branch *": "allow",
+      "git branch -D *": "ask",
       "git rev-parse *": "allow",
       "git remote *": "allow",
       "git symbolic-ref *": "allow",

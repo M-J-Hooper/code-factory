@@ -7,11 +7,20 @@ description: >
   "root cause", "debug this", "what's causing", "track down", "bisect".
 argument-hint: "[bug description, error message, or failing test]"
 user-invocable: true
+allowed-tools: Read, Grep, Glob, Bash(git:*), Bash(make:*), Bash(npm:*), Bash(cargo:*), Bash(go:*), Bash(python3:*), Bash(pytest:*), AskUserQuestion
 ---
 
 # Systematic Debugging
 
 Announce: "I'm using the /debug skill to systematically investigate this issue before proposing fixes."
+
+## Routing
+
+| If you need... | Use instead |
+|----------------|-------------|
+| Implement a new feature or change | `/do` — full lifecycle with REFINE → EXECUTE phases |
+| Fix a specific bug with known root cause | `/debug` — you're here |
+| Address PR review comments | `/pr-fix` |
 
 ## The Iron Law
 
@@ -66,12 +75,15 @@ Determine from `$ARGUMENTS` and conversation whether to start a new session or r
 ### New Session
 
 ```bash
-mkdir -p ~/workspace/plans/debug
+STATE_ROOT=~/workspace/plans/debug
+mkdir -p "$STATE_ROOT"
 ```
 
 Generate a session ID: `<timestamp>-<slug>` (slug from the bug description, kebab-case, max 30 chars).
 
-Create `~/workspace/plans/debug/<session-id>/DEBUG.md`:
+Format all Markdown written to state files with semantic line breaks: one sentence per line, break after clause-separating punctuation (commas, semicolons, colons). Target 120 characters per line.
+
+Create `$STATE_ROOT/<session-id>/DEBUG.md`:
 
 ```markdown
 ---
@@ -255,10 +267,19 @@ Update `DEBUG.md`:
 
 **Goal:** Understand the fix context before writing code.
 
-1. **Find similar working code** in the codebase — use Glob and Grep to locate analogous patterns that work correctly.
-2. **Compare working vs broken** — Identify all differences between the working and failing code paths.
-3. **Check for wider impact** — Does this root cause affect other code paths? Search for the same pattern elsewhere.
-4. **Understand dependencies** — What else depends on the code you'll change?
+1. **Find similar working code** — Search the codebase for analogous patterns that work correctly:
+   - `Grep` for the function/method name with different arguments or callers
+   - `Glob` for sibling modules that implement similar logic (e.g., other handlers, other adapters)
+   - Check test files for the broken code path — they may reveal the intended behavior
+
+2. **Compare working vs broken** — Read both code paths side by side. Identify every difference: argument order, error handling, null checks, type conversions, initialization. The root cause is often one of these differences.
+
+3. **Check for wider impact** — Search for the same broken pattern elsewhere in the codebase:
+   - `Grep` for the function/API that caused the bug — other callers may have the same issue
+   - `Grep` for the same variable name or pattern in the same package
+   - Check if the broken code was copy-pasted from somewhere (search for distinctive strings)
+
+4. **Understand dependencies** — What else depends on the code you'll change? Use `Grep` for imports of the affected module and callers of the affected function.
 
 Log findings in the Investigation Log.
 
@@ -308,7 +329,7 @@ Task(
   1. The failing test already exists (or write one first)
   2. Implement the minimal fix to make the test pass
   3. Verify all existing tests still pass
-  4. Commit via /commit skill
+  4. Commit via /atcommit skill
   </task>
 
   <constraints>
@@ -347,9 +368,11 @@ Update `DEBUG.md`:
 
 ### Failure Protocol
 
+An "attempt" is one cycle of: hypothesis → fix → verification failure. Each attempt gets logged in the Investigation Log with what was tried and why it failed.
+
 If the fix doesn't work:
-- **Attempt < 3:** Return to Phase 1 (Step 2). The root cause analysis was incomplete.
-- **Attempt >= 3:** Question the architecture. The bug may be structural — escalate to the user.
+- **Attempt < 3:** Return to Phase 1 (Step 2). The root cause analysis was incomplete — re-examine rejected hypotheses and gather new evidence.
+- **Attempt >= 3:** Question the architecture. The bug may be structural — escalate to the user with all investigation findings.
 
 Log each attempt in the Investigation Log.
 

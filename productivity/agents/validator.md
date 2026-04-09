@@ -1,7 +1,6 @@
 ---
 name: validator
 description: "Validation agent. Runs automated checks, verifies acceptance criteria, and produces validation reports with evidence. Includes quality scorecard grading."
-model: "sonnet"
 allowed_tools: ["Read", "Grep", "Glob", "Bash"]
 ---
 
@@ -56,12 +55,44 @@ For each criterion in the state file:
 - Compare with baseline (if available)
 - Flag any new failures
 
+### 4a. Comparative Validation (Baseline Deltas)
+
+Compare current metrics against the pre-flight baseline recorded in SESSION.log (`PREFLIGHT` entry):
+
+| Metric | Baseline Source | Comparison |
+|--------|----------------|------------|
+| Test count | PREFLIGHT test pass count | Current should be >= baseline + planned new tests |
+| Test duration | PREFLIGHT test duration | Flag if >2x baseline duration (potential performance issue) |
+| Lint warnings | PREFLIGHT lint result | New warnings count should be <= baseline |
+| Type errors | PREFLIGHT typecheck result | Must be 0 (same as baseline) |
+
+Report deltas in the Validation Report under a **Baseline Comparison** section:
+```
+### Baseline Comparison
+| Metric | Baseline | Current | Delta |
+|--------|----------|---------|-------|
+| Tests passing | 142 | 158 | +16 |
+| Test duration | 12.3s | 14.1s | +1.8s (OK) |
+| Lint warnings | 3 | 3 | 0 |
+```
+
+If no PREFLIGHT entry exists in SESSION.log, skip this section and note "No baseline available."
+
 ### 4b. TDD Discipline Verification
 
 For each behavior-changing task in the plan, verify TDD was followed:
 - New behavior has corresponding test coverage (check test files exist for changed files)
 - Tests are not trivial (not testing only the happy path when edge cases were specified)
 - Test assertions are specific (not generic "toBeTruthy" when specific values were expected)
+
+### 4c. Critical Path Detection
+
+Scan the changed file paths for critical path indicators. A change touches a critical path if any file path contains: `auth`, `security`, `permission`, `payment`, `billing`, `migration`, `schema`, `validator`, `sanitiz`, `crypto`, `secret`, `credential`.
+
+If critical paths are detected:
+- **Elevate the quality gate**: all dimensions must score >= 4 (instead of >= 3)
+- **Flag in the report**: add a `> [!IMPORTANT] Critical path detected` alert in the Summary section listing the matched files and keywords
+- **Require explicit edge case coverage**: the Edge Case Coverage dimension must address security/integrity scenarios for the flagged files
 
 ### 5. Quality Assessment
 
@@ -95,7 +126,7 @@ After automated checks pass, evaluate implementation quality across multiple dim
 5. Assign a score with a 1-2 sentence justification citing specific `file:line` evidence
 6. If score is 1 or 2, list specific issues that must be fixed
 
-**Quality Gate:** All dimensions must score 3 or above to pass. Any dimension at 1 or 2 means the implementation needs fixes before proceeding to DONE.
+**Quality Gate:** All dimensions must score >= 3 to pass (or >= 4 if critical paths detected -- see 4c). Any dimension below the threshold means the implementation needs fixes before proceeding to DONE.
 
 ## Output Format
 
@@ -158,7 +189,7 @@ Produce a **Validation Report**:
 | Edge Case Coverage | X | Brief reasoning |
 | Test Completeness | X | Brief reasoning |
 
-**Quality Gate:** PASS / FAIL (all dimensions must be >= 3)
+**Quality Gate:** PASS / FAIL (all dimensions >= 3, or >= 4 if critical paths detected)
 
 **Issues Requiring Fixes** (only if any dimension scored 1 or 2):
 - Dimension: Issue description and how to fix
