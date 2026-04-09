@@ -449,8 +449,9 @@ When a task introduces or changes behavior, follow this exact sequence — no ex
 ### DONE Phase
 - Write Outcomes & Retrospective
 - Run the full test suite one final time to confirm everything passes
-- **Interactive**: Present completion options: Create PR (recommended), Merge to base, Keep branch, or Discard work
-- **Autonomous**: Create PR automatically via `/pr` skill
+- **Interactive**: Present completion options: Create draft PR (recommended), Merge to base, Keep branch, or Discard work
+- **Autonomous**: Create draft PR automatically via `/pr` skill
+- PRs must always be created in draft mode (`--draft`). The user will mark it ready for review after their own inspection.
 - Report outcome (PR URL, merge commit, or branch status) to user
 - Archive run state
 
