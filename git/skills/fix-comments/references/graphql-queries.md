@@ -1,6 +1,6 @@
 # GraphQL Mutations for PR Review Threads
 
-Reference for the `pr-fix` skill. Contains GraphQL mutations for resolving threads and REST commands for replying.
+Reference for the `fix-comments` skill. Contains GraphQL mutations for resolving threads and REST commands for replying.
 
 **Fetching threads** is handled by `get-pr-comments.sh` (see Step 2 in SKILL.md). The script returns structured JSON with `thread_id` (GraphQL node ID) and `first_comment_id` (REST API ID) ready for the mutations below.
 

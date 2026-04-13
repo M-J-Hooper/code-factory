@@ -39,16 +39,16 @@ AGENTS_MD=$REPO_ROOT/AGENTS.md
 CLAUDE_MD=$REPO_ROOT/CLAUDE.md
 CLAUDE_LOCAL_MD=$REPO_ROOT/CLAUDE.local.md
 RULES_DIR=$REPO_ROOT/.claude/rules
-# Resolve project memory directory (Claude Code encodes repo path as slash-to-dash)
-PROJECT_DIR=$(ls -d ~/.claude/projects/*"$(basename "$REPO_ROOT")"* 2>/dev/null | head -1)
-MEMORY_MD=$PROJECT_DIR/memory/MEMORY.md
-PENDING_FILE=$PROJECT_DIR/pending-learnings.md
+MEMORY_MD=~/workspace/memory/MEMORY.md
+PENDING_FILE=~/workspace/memory/pending-learnings.md
 ```
 
-If `PROJECT_DIR` is empty, fall back to searching `~/.claude/projects/` for a directory containing `memory/MEMORY.md`.
+Create the `~/workspace/memory/` directory if it doesn't exist.
 
 Read all knowledge files to understand current content.
 Also scan `$RULES_DIR/*.md` if the directory exists — these are scoped rule files.
+
+**Important — skill files vs plugin cache:** If a learning involves updating a skill file (e.g., changing a timeout, fixing a workflow step), the edit must be made in the source repo at `~/workspace/code-factory/`, **never** in the plugin cache at `~/.claude/plugins/cache/`. The cache is a read-only deployment artifact that gets overwritten on sync.
 
 ### 2A.2: Analyze Session
 

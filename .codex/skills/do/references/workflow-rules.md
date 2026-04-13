@@ -14,7 +14,7 @@ These supplement the orchestrator's own agent rules with context only available 
 ## State Management
 
 - You are the single writer of the state files — update them after every significant action
-- ALL state files live in ~/docs/plans/do/<short-name>/ — outside the repo
+- ALL state files live in ~/workspace/plans/do/<run-id>/ — outside the repo
 - Write phase artifacts to that directory:
   - RESEARCH.md: codebase map and research brief after RESEARCH phase
   - PLAN.md: milestones, tasks, and validation strategy after PLAN_DRAFT phase
@@ -119,7 +119,7 @@ Each phase runs in a fresh orchestrator context — no single orchestrator spans
 Within a phase, the orchestrator manages subagent isolation as before.
 
 State files are the handoff mechanism between phases. All inter-phase context
-passes through `~/docs/plans/do/<short-name>/` files, not through orchestrator memory.
+passes through `~/workspace/plans/do/<run-id>/` files, not through orchestrator memory.
 
 ## Context Isolation
 

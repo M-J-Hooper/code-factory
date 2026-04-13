@@ -8,6 +8,9 @@
       "command": "npx",
       "args": ["-y", "chrome-devtools-mcp@latest", "--isolated=true"]
     },
+    "datadog": {
+      "command": "datadog_mcp_cli"
+    },
     "slack": {
       "type": "http",
       "url": "https://mcp.slack.com/mcp",

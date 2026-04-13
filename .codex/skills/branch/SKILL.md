@@ -35,23 +35,23 @@ AskUserQuestion(
 
 ## Step 3: Build Branch Name
 
-Determine the branch prefix from `git config user.name` (lowercase, first token, e.g., "Rodrigo Fernandes" becomes `rodrigo`). Fall back to `feature` if git config is not set.
+Construct the branch name using the pattern `m-j-hooper/<slug>-<TICKET-ID>`
+where `<slug>` is the description converted to lowercase, with spaces replaced by hyphens,
+non-alphanumeric characters removed.
 
 Construct the branch name using this pattern:
 
-- If ticket ID and description: `<prefix>/<slug>-<TICKET-ID>`
-- If ticket ID only (no description): `<prefix>/<TICKET-ID>`
-- If description only (no ticket ID): `<prefix>/<slug>`
+- If ticket ID and description: `m-j-hooper/<slug>-<TICKET-ID>`
+- If ticket ID only (no description): `m-j-hooper/<TICKET-ID>`
+- If description only (no ticket ID): `m-j-hooper/<slug>`
 
-Where:
-- `<prefix>` is the user prefix derived above
-- `<slug>` is the description converted to lowercase, with spaces replaced by hyphens, non-alphanumeric characters removed, and truncated to 50 characters.
+Where `<slug>` is the description converted to lowercase, with spaces replaced by hyphens, non-alphanumeric characters removed, and truncated to 50 characters.
 
-Examples (assuming prefix `rodrigo`):
-- `add user authentication PROJ-1234` -> `rodrigo/add-user-authentication-PROJ-1234`
-- `PROJ-1234` -> `rodrigo/PROJ-1234`
-- `fix login timeout bug` -> `rodrigo/fix-login-timeout-bug`
-- `refactor database layer CORE-99` -> `rodrigo/refactor-database-layer-CORE-99`
+Examples:
+- `add user authentication PROJ-1234` -> `m-j-hooper/add-user-authentication-PROJ-1234`
+- `PROJ-1234` -> `m-j-hooper/PROJ-1234`
+- `fix login timeout bug` -> `m-j-hooper/fix-login-timeout-bug`
+- `refactor database layer CORE-99` -> `m-j-hooper/refactor-database-layer-CORE-99`
 
 ## Step 4: Create the Branch
 

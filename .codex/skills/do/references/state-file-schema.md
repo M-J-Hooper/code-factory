@@ -5,7 +5,7 @@ Reference for the /do skill's state file format. Load when creating or parsing s
 ## Directory Structure
 
 ```
-~/docs/plans/do/<short-name>/
+~/workspace/plans/do/<run-id>/
   FEATURE.md              # Canonical state and living document
   RESEARCH.md             # Codebase map + research brief (written after RESEARCH)
   CONVENTIONS.md          # Immutable project conventions (extracted after RESEARCH)

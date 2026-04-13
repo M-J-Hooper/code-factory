@@ -20,7 +20,7 @@ Announce: "I'm using the /debug skill to systematically investigate this issue b
 |----------------|-------------|
 | Implement a new feature or change | `/do` — full lifecycle with REFINE → EXECUTE phases |
 | Fix a specific bug with known root cause | `/debug` — you're here |
-| Address PR review comments | `/pr-fix` |
+| Address PR review comments | `/pr-ready` |
 
 ## The Iron Law
 

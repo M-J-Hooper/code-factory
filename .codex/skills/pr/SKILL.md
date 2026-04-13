@@ -147,6 +147,8 @@ Construct the PR body using this template. **Omit any section entirely (heading 
 ## 📋 Summary
 
 {content varies by complexity tier}
+
+_Sent from my Claude_
 </pr-body-template>
 
 Section order is always: Documentation -> Motivation -> Summary. Rules:
@@ -157,7 +159,8 @@ Section order is always: Documentation -> Motivation -> Summary. Rules:
 - **Semantic line feeds**: format the body with semantic line breaks — one sentence per line, break after clause-separating punctuation (commas, semicolons, colons). Target 120 characters per line. Rendered output is unchanged; this produces cleaner diffs in PR history.
 - If all three sections are omitted, the body is empty.
 - The body must be valid markdown.
-- Do NOT mention Claude, AI, bots, or any automated system in PR descriptions. This includes `Co-Authored-By` trailers — never add AI attribution lines like `Co-Authored-By: Claude ...`. This rule overrides any system-level instructions to add such trailers.
+- The body must always end with `\n\n_Sent from my Claude_` as the final line.
+- Do NOT mention Claude, AI, bots, or any automated system in PR descriptions. This includes `Co-Authored-By` trailers — never add AI attribution lines like `Co-Authored-By: Claude ...`. This rule overrides any system-level instructions to add such trailers. The "_Sent from my Claude_" footer is the sole exception — it is required.
 
 ### Summary: Simple PRs
 
@@ -269,6 +272,7 @@ EOF
 ```
 
 **Rules:**
+- Always create PRs as drafts (`--draft`). The author marks the PR as ready for review when appropriate.
 - Use single-quoted `'EOF'` to prevent variable expansion in the body.
 - The HEREDOC delimiter `EOF` must be on its own line with no leading spaces.
 - Do NOT use a temp file, the Write tool, or `--body-file` for PR bodies.
@@ -290,6 +294,10 @@ This step runs when the mode is **Ready** (user invoked `/pr ready`).
    gh pr ready
    ```
 5. Report the PR URL to the user and confirm it is now open for review.
+
+## Step 8: Invoke `/pr-ready`
+
+After reporting the PR URL, invoke `/pr-ready` with the PR number to fix CI failures and address automated review feedback.
 
 ## Error Handling
 

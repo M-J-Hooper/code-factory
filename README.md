@@ -29,8 +29,8 @@ M-J-Hooper's personal [Claude Code](https://docs.anthropic.com/en/docs/claude-co
 | `/fixup` | git | Create fixup commits targeting earlier branch commits |
 | `/pr` | git | Create PRs (draft/open) or mark draft as ready |
 | `/branch` | git | Create a well-named feature branch |
-| `/pr-fix` | git | Fix merge conflicts and address review comments on a PR |
-| `/pr-ready` | git | Get a PR green: fix conflicts, review comments, and CI failures |
+| `/fix-comments` | git | Address review comments, apply suggestions, reply to threads |
+| `/pr-ready` | git | Get a PR green: fix-conflicts + fix-comments + CI + automated reviews |
 | `/fix-conflicts` | git | Resolve merge/rebase/cherry-pick/revert conflicts |
 | `/worktree` | git | Create an isolated git worktree |
 
@@ -92,8 +92,8 @@ Git workflow skills -- structured commits, PR creation, branch management, and a
 - `/fixup` -- Commit matching and autosquash-ready fixup creation.
 - `/pr` -- Create a GitHub pull request from the current branch. Collects commits since divergence from the base branch, detects ticket IDs and URLs from commit messages, and builds a structured PR description.
 - `/branch` -- Create a well-named feature branch from a ticket ID or description. Generates branches with the naming convention `<user>/<slug>-<TICKET-ID>` from the default branch (prefix derived from `git config user.name`).
-- `/pr-fix` -- Fix merge conflicts and address code review comments on an open PR. Integrates the latest base branch (merge or rebase), resolves conflicts, fetches pending review comments, applies fixes, and replies to comment threads. Supports `--auto` for bot/CI automation and `--auto-human` for fully autonomous mode.
-- `/pr-ready` -- Get a PR to a ready state. Invokes `/pr-fix` to resolve conflicts and review feedback, then enters a CI checks loop (max 3 iterations) to fix test failures, lint errors, and flaky jobs.
+- `/fix-comments` -- Address code review comments on an open PR. Fetches pending review threads, categorizes feedback, applies fixes, replies to threads, and pushes.
+- `/pr-ready` -- Get a PR to a ready state. Invokes `/fix-conflicts` and `/fix-comments`, then handles CI failures and automated review loops. Supports `--auto` for bot/CI automation and `--auto-human` for fully autonomous mode.
 - `/fix-conflicts` -- Conflict-state-aware conflict resolution workflow.
 - `/worktree` -- Detached worktree creation from the default branch.
 

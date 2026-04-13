@@ -44,7 +44,8 @@
       "Skill(fixup)",
       "Skill(pr)",
       "Skill(branch)",
-      "Skill(pr-fix)",
+      "Skill(pr-ready)",
+      "Skill(fix-comments)",
       "Skill(fix-conflicts)",
       "Skill(worktree)",
       "Task(*)",
@@ -144,9 +145,7 @@
   },
   "model": "opus[1m]",
   "enabledMcpjsonServers": [
-    "atlassian"
-  ],
-  "disabledMcpjsonServers": [
+    "atlassian",
     "datadog"
   ],
   "hooks": {
@@ -204,7 +203,7 @@
     "code-review@claude-plugins-official": true,
     "code-simplifier@claude-plugins-official": true,
     "pr-review-toolkit@claude-plugins-official": true,
-    "gopls-lsp@claude-plugins-official": false,
+    "gopls-lsp@claude-plugins-official": true,
     "rust-analyzer-lsp@claude-plugins-official": true,
     "playground@claude-plugins-official": true,
     "skill-creator@claude-plugins-official": true,

@@ -249,6 +249,7 @@ Explanation with inline code snippets:
 - Include inline code snippets showing the key lines — don't make the reader expand every diff
 - Link to specific diff regions so readers can click through to full context
 - End with a data flow summary showing how the pieces connect
+- The comment must always end with `\n\n_Sent from my Claude_` as the final line.
 - Write the comment to a temp file and post with `gh pr comment {number} --body-file /tmp/file.md`
 
 #### When to use this mode

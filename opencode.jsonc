@@ -293,6 +293,10 @@
       "type": "local",
       "command": ["npx", "-y", "chrome-devtools-mcp@latest", "--isolated=true"]
     },
+    "datadog": {
+      "type": "local",
+      "command": ["datadog_mcp_cli"]
+    },
     "slack": {
       "type": "remote",
       "url": "https://mcp.slack.com/mcp"

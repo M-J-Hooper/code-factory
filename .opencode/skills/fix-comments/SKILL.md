@@ -1,30 +1,26 @@
 ---
-name: pr-fix
+name: fix-comments
 description: >
-  Use when the user wants to address PR review feedback, fix PR comments, resolve review threads,
-  fix merge conflicts, or respond to code review suggestions on a pull request.
-  Supports --auto for bot/CI automation and --auto-human for fully autonomous mode.
-  Also invoked by /pr-ready before CI loops.
-  Triggers: "fix pr feedback", "address pr comments", "resolve pr reviews", "pr fix",
-  "address review feedback", "fix review comments", "handle pr feedback",
-  "respond to pr review", "address pr feedback", "pr fix --auto",
-  "fix conflicts", "resolve conflicts", "reply to comments".
-argument-hint: "[PR number, URL, or comment URL, optional --reviewer <name>, optional --auto, optional --auto-human]"
+  Use when the user wants to address code review comments, apply suggestions,
+  reply to review threads, or resolve review feedback on a pull request.
+  Triggers: "fix review comments", "address feedback", "reply to comments",
+  "address pr comments", "resolve pr reviews", "fix comments".
+argument-hint: "[PR number, URL, or comment URL, optional --reviewer <name>, optional --auto-human]"
 user-invocable: true
-allowed-tools: Bash(git:*), Bash(gh:*), Bash(get_ddci_logs.sh:*), Bash(./scripts/*), Read, Write, Edit, Grep, Glob, AskUserQuestion, Task
+allowed-tools: Bash(git:*), Bash(gh:*), Bash(./scripts/*), Read, Write, Edit, Grep, Glob, AskUserQuestion
 ---
 
-# Fix PR Feedback
+# Fix Review Comments
 
-Announce: "I'm using the pr-fix skill to address PR review feedback."
+Announce: "I'm using the fix-comments skill to address review feedback on this PR."
 
 ## Routing
 
 | If you need... | Use instead |
 |----------------|-------------|
+| Get a PR fully green (conflicts + comments + CI + automated reviews) | `/pr-ready` |
 | Review a PR and produce feedback | `/review` — read-only analysis with structured findings |
-| Address existing PR review comments | `/pr-fix` — you're here |
-| Fix CI failures not tied to review feedback | Use the CI validation loop directly (see references) |
+| Resolve merge/rebase/cherry-pick conflicts | `/fix-conflicts` — standalone conflict resolution |
 
 ## Step 1: Gather Context
 
@@ -36,12 +32,9 @@ Parse `$ARGUMENTS` for:
 | PR URL | `github.com/.*/pull/\d+` | `https://github.com/org/repo/pull/42` |
 | Comment URL | `github.com/.*/pull/\d+#discussion_r\d+` | `https://github.com/org/repo/pull/42#discussion_r123` |
 | Reviewer filter | `--reviewer <name>` | `--reviewer alice` |
-| Autonomous mode | `--auto` | `--auto` |
 | Full autonomous mode | `--auto-human` | `--auto-human` |
 
-**Autonomous mode (`--auto`):** Skips prompts for CI monitoring and automated (bot) review feedback only. Human review threads always require explicit user approval — prompts are never skipped for those. Use when you want CI and bot reviews handled hands-off while retaining control over human feedback.
-
-**Full autonomous mode (`--auto-human`):** Implies `--auto` and additionally skips prompts for human review threads. Defaults: "Fix all" for non-disagreements, "Explain and keep" for disagreements (code stays unchanged, reviewer gets a reasoned explanation). Use when you want a fully hands-off run across all feedback types.
+**Full autonomous mode (`--auto-human`):** Skips prompts for human review threads. Defaults: "Fix all" for non-disagreements, "Explain and keep" for disagreements.
 
 Run in parallel:
 
@@ -60,30 +53,25 @@ gh pr view --json number -q '.number' 2>/dev/null
 
 **If still no PR:** ask the user for the PR number. Stop.
 
-Once the PR is identified, capture context for failure classification and conflict detection:
+Capture the changed-files list for pattern scanning in Step 4:
 
 ```bash
-# Run in parallel
-gh pr view {number} --json baseRefName,mergeable,mergeStateStatus
+gh pr view {number} --json baseRefName -q '.baseRefName'
 git diff --name-only origin/{base}...HEAD
 ```
-
-Save the changed-files list — it is used throughout for CI failure classification (PR-related vs pre-existing) and pattern scanning in Step 5.
-
-**If `mergeable` is `CONFLICTING`:** resolve conflicts before proceeding. Invoke `/fix-conflicts`, then push the resolved merge commit. Re-fetch the changed-files list after resolution since the diff may have grown.
 
 ## Step 2: Fetch Unresolved Review Threads
 
 Fetch actionable review threads using the `get-pr-comments.sh` script. The script handles GraphQL pagination, structured output, and large-output fallback automatically.
 
 ```bash
-./get-pr-comments.sh -a {number}
+./scripts/get-pr-comments.sh -a {number}
 ```
 
 For comment URLs, pass the full URL instead of the PR number:
 
 ```bash
-./get-pr-comments.sh -a "https://github.com/org/repo/pull/42#discussion_r123"
+./scripts/get-pr-comments.sh -a "https://github.com/org/repo/pull/42#discussion_r123"
 ```
 
 **If output exceeds 25KB:** the script writes to `/tmp/pr-comments-{owner}-{repo}-{pr}.json` and prints a message to stderr. Use the Read tool to load the data from that path.
@@ -107,7 +95,7 @@ The script returns a JSON array of threads. Each thread contains:
 echo "$THREADS" | jq '[.[] | select(.comments[0].author == "{reviewer}")]'
 ```
 
-**If no threads returned:** all review threads are resolved. Skip to Step 8 (CI validation and automated reviews always run).
+**If no threads returned:** all review threads are resolved. Report and stop.
 
 ## Step 3: Categorize and Prioritize
 
@@ -129,8 +117,6 @@ Assign priority:
 | **P1** | Refactoring with clear benefit, naming/clarity, type safety, missing error handling |
 | **P2** | Nits, style preferences, minor optimizations, "for next time" suggestions |
 
-## Step 4: Present Summary and Get Direction
-
 Show the user a concise summary:
 
 ```
@@ -148,7 +134,7 @@ Proposed actions:
 - Need your decision: {count} (disagreements)
 ```
 
-**If `--auto-human` mode:** Skip all prompts. Default to "Fix all" for non-disagreements and "Explain and keep" for disagreements. Proceed to Step 5.
+**If `--auto-human` mode:** Skip all prompts. Default to "Fix all" for non-disagreements and "Explain and keep" for disagreements. Proceed to Step 4.
 
 **For disagreements**, present each one explicitly:
 
@@ -179,7 +165,7 @@ AskUserQuestion(
 
 If "Let me choose": present each thread with its category and proposed action. Let the user override categories or skip specific threads.
 
-## Step 5: Execute Fixes
+## Step 4: Execute Fixes
 
 Process threads grouped by file. Within each file, sort by line number **descending** (bottom-to-top) to prevent line drift.
 
@@ -207,7 +193,7 @@ After applying a code change, scan the other files in the changed-files list (fr
 
 1. Use Grep to search the changed files for the same pattern.
 2. Fix all occurrences, not just the one the reviewer flagged.
-3. Note the additional fixes in the Step 6 reply: "Fixed here and in {N} other locations: {file1}, {file2}."
+3. Note the additional fixes in the Step 5 reply: "Fixed here and in {N} other locations: {file1}, {file2}."
 
 Only scan for the **exact pattern** the reviewer identified. Do not generalize into a broad lint pass.
 
@@ -220,7 +206,7 @@ For threads requiring explanations:
 3. Format the explanation with semantic line breaks: one sentence per line, break after clause-separating punctuation. Target 120 characters per line. Rendered output is unchanged; this keeps reply diffs clean.
 4. Include links to relevant docs or code if applicable.
 
-## Step 6: Reply and Resolve Threads
+## Step 5: Reply and Resolve Threads
 
 For each addressed thread, reply directly to the review comment and resolve the thread.
 
@@ -252,7 +238,7 @@ EOF
 )"
 ```
 
-Track threads that used the fallback — they are reported in Step 9.
+Track threads that used the fallback — they are reported in Step 7.
 
 Response format by category:
 
@@ -265,17 +251,17 @@ Response format by category:
 | Disagreement (keep) | `{explanation of reasoning}. Let me know if you'd like to discuss further.` |
 | Outdated (addressed) | `This has been addressed in a subsequent update.` |
 
-**Bot attribution:** When replying to automated reviewer comments (Codex, etc.), prefix every reply with `*Automated response from Claude:*` to distinguish from human responses.
+All replies must end with `\n\n_Sent from my Claude_`.
 
 **Resolve** the thread using the GraphQL mutation from [references/graphql-queries.md](references/graphql-queries.md), passing the thread's `thread_id`.
 Attempt resolution regardless of which reply tier was used — `thread_id` is independent of `first_comment_id`.
-If `thread_id` is also missing (REST fallback data from error handling), skip resolution and note as "replied but not resolved" in Step 9.
+If `thread_id` is also missing (REST fallback data from error handling), skip resolution and note as "replied but not resolved" in Step 7.
 
 **Do NOT resolve:**
 - Threads where the user chose "Discuss further"
 - Threads where the reply is a question back to the reviewer
 
-## Step 7: Commit and Push
+## Step 6: Commit and Push
 
 Group changes into logical commits. Strategy:
 
@@ -301,104 +287,14 @@ Push to remote:
 git push
 ```
 
-**If push fails due to diverged branch:** inform the user. Do NOT force-push. Let the user decide.
+**If push fails due to diverged branch:** inform the user. Do NOT force-push. Let user decide.
 
-## Step 8: CI Validation + Automated Reviews
+## Step 7: Summary
 
-**This step ALWAYS runs** — even when no unresolved review threads were found in Step 2.
-
-**Sequencing rule:** Steps 8a → 8b → 8c execute in order. Each substep has its own prompt.
-Do NOT combine them into a single question.
-Do NOT skip 8b or 8c after completing 8a.
-Do NOT write a summary or "Next Steps" until ALL three substeps have completed.
-
-After pushing (or if no push was needed because there were no threads to fix), trigger bot reviews and monitor CI. Bot reviews don't depend on CI — start them early so they complete during CI.
-
-### 8a: Trigger Automated Reviews (if stale)
-
-Check if new commits exist since the last codex comments:
-
-```bash
-# Get the latest bot comment timestamp
-gh api repos/{owner}/{repo}/issues/{number}/comments \
-  --jq '[.[] | select(.user.login | test("codex"; "i")) | .created_at] | sort | last'
-
-# Get the latest commit timestamp on the PR branch
-gh api repos/{owner}/{repo}/pulls/{number}/commits \
-  --jq '[.[].commit.committer.date] | sort | last'
-```
-
-Compare timestamps. If the latest commit is **after** the latest bot comment (or no bot comments exist), reviews are stale.
-
-**If reviews are current:** skip to 8b — no re-trigger needed.
-
-**If `--auto` mode:** Trigger immediately (no prompt).
-
-**Interactive mode:**
-
-<interaction>
-AskUserQuestion(
-  header: "Re-trigger automated reviews?",
-  question: "There are new commits since the last Codex reviews. Re-trigger them?",
-  options: [
-    "Yes — review and fix" — Trigger reviewers, fix actionable feedback after CI (max 3 iterations),
-    "Just trigger" — Post review comments but do not auto-fix,
-    "No" — Skip automated reviews
-  ]
-)
-</interaction>
-
-If triggering: post `@codex` comment now per [references/automated-review-loop.md](references/automated-review-loop.md) Phase 1. **Do NOT wait here** — bots review in background while CI runs in 8b. Step 8c will poll and wait for their responses.
-
-**After 8a completes → proceed to 8b.** Do not skip, summarize, or exit.
-
-### 8b: CI Validation Loop
-
-**If `--auto` mode:** Proceed with "Yes — watch and fix" (no prompt).
-
-**Interactive mode:**
-
-<interaction>
-AskUserQuestion(
-  header: "Watch CI?",
-  question: "Want me to watch CI and auto-fix any failures?",
-  options: [
-    "Yes — watch and fix" — Monitor CI, analyze failures, apply fixes, and loop until green (max 3 iterations),
-    "Just watch" — Monitor CI and report results without auto-fixing,
-    "No" — Skip CI monitoring
-  ]
-)
-</interaction>
-
-**If "No":** skip to 8c.
-
-Follow the CI validation loop in [references/ci-validation-loop.md](references/ci-validation-loop.md).
-
-- **"Yes — watch and fix"**: full loop — wait for CI, analyze failures, fix, commit, push, recheck (max 3 iterations).
-- **"Just watch"**: wait for CI to complete and report results. No fixes applied.
-
-**After 8b completes → proceed to 8c if reviews were triggered in 8a.** Do not skip, summarize, or exit.
-
-### 8c: Process Automated Review Feedback
-
-If bot reviews were triggered in 8a, **you MUST wait for their responses before reporting results**. Do NOT assume reviews are already complete — CI may have finished quickly (or was already green), leaving insufficient time for bots to respond.
-
-Follow [references/automated-review-loop.md](references/automated-review-loop.md) starting from **Phase 2** (Phase 1 trigger already done in 8a). Phase 2 polls for responses with a 15-minute timeout per reviewer — this polling is mandatory, not optional.
-
-- **"Yes — review and fix"**: wait for responses, fix actionable feedback, commit, push, re-trigger (max 3 iterations).
-- **"Just trigger"**: wait for responses and report. No fixes applied.
-- **If reviews were not triggered in 8a:** skip this substep.
-
-Append both the CI loop and review loop reports to the Step 9 summary.
-
-**After 8c completes → proceed to Step 9.** The summary is the ONLY place to report final status and next steps.
-
-## Step 9: Summary
-
-Present the final report:
+Present a report:
 
 ```
-## PR #{number} Review Feedback Addressed
+## PR #{number} — Review Comments
 
 ### Resolved ({count}/{total})
 - {path}:{line} — {category}: {brief description}
@@ -414,28 +310,6 @@ Present the final report:
 
 ### Commits
 - {hash} — {message}
-
-### Files Modified
-- {list}
-
-### CI Validation
-{if CI loop ran, include the report from references/ci-validation-loop.md Phase 5}
-{if CI loop skipped, omit this section}
-
-### Automated Review
-{if review loop ran, include the report from references/automated-review-loop.md Phase 8}
-{if review loop skipped, omit this section}
-
-### Next Steps
-- {if all resolved and CI green}: Ready for re-review
-- {if unresolved remain}: {count} threads need follow-up
-- {if CI failures remain}: {count} CI failures need investigation
-```
-
-**Offer to request re-review** if all threads are resolved. Determine reviewers from the `--reviewer` argument (if provided) or by deduplicating `comments[0].author` from addressed threads:
-
-```bash
-gh pr edit {number} --add-reviewer {reviewer1},{reviewer2}
 ```
 
 ## Error Handling
@@ -444,7 +318,7 @@ gh pr edit {number} --add-reviewer {reviewer1},{reviewer2}
 |-------|--------|
 | `gh` not authenticated | Inform user to run `gh auth login`. Stop. |
 | PR not found | Verify the PR number and repo. Report error. Stop. |
-| No unresolved threads | Inform user all feedback is addressed. Skip to Step 8 — CI validation and automated reviews still run. |
+| No unresolved threads | Inform user all feedback is addressed. Stop. |
 | `get-pr-comments.sh` fails | Fall back to REST: `gh api repos/{owner}/{repo}/pulls/{number}/comments`. Lose thread resolution data but can still categorize and fix. |
 | Large output (>25KB) | Script auto-writes to `/tmp/pr-comments-{owner}-{repo}-{pr}.json`. Use the Read tool on that path. |
 | Thread resolution fails | Report the error. The reply was still posted. Continue with remaining threads. |
@@ -453,9 +327,3 @@ gh pr edit {number} --add-reviewer {reviewer1},{reviewer2}
 | Push fails | Report the error. Do NOT force-push. Let user decide. |
 | Merge conflict after edits | Report conflicting files. Let user resolve manually. |
 | Line numbers outdated | If comment is marked `outdated`, inform user the code has changed since the review. Read the file and attempt to find the relevant code by context. |
-| CI check timeout | If `gh pr checks --watch` hangs beyond 20 min, fall back to polling. Report timeout to user. |
-| CI fix loop exceeds 3 iterations | Stop. Report remaining failures with log excerpts. Let user investigate. |
-| Same CI failure recurs after fix | Mark as unfixable. Do NOT retry the same fix. Report to user. |
-| DDCI logs unavailable | Skip log analysis. Report the Mosaic URL for manual investigation. |
-| Codex not configured | If no review appears after 15-min timeout, skip that reviewer. Continue with others. |
-| Automated review loop exceeds 3 iterations | Stop. Report remaining review comments. Let user investigate. |

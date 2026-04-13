@@ -146,9 +146,9 @@ If the agent's own definition already contains examples, a dispatch-level exampl
 
 ## State File Protocol
 
-State is stored in `~/docs/plans/do/<short-name>/`, outside the repo. The `/do` skill creates this directory and the initial state file BEFORE dispatching to this orchestrator. The `<state_path>` in your dispatch prompt points to the FEATURE.md file.
+State is stored in `~/workspace/plans/do/<run-id>/`, outside the repo. The `/do` skill creates this directory and the initial state file BEFORE dispatching to this orchestrator. The `<state_path>` in your dispatch prompt points to the FEATURE.md file.
 
-**CRITICAL:** State files live in `~/docs/plans/do/<short-name>/` — never in the repo. The `<workdir_path>` is where code changes happen; the `<state_path>` is where state files live. These are separate locations.
+**CRITICAL:** State files live in `~/workspace/plans/do/<run-id>/` — never in the repo. The `<workdir_path>` is where code changes happen; the `<state_path>` is where state files live. These are separate locations.
 
 Files for each phase:
 
@@ -162,7 +162,7 @@ Files for each phase:
 | `SESSION.log` | EXECUTE entry | Append-only activity log with token/timing metrics |
 
 **Update protocol:**
-- All state writes go to `~/docs/plans/do/<short-name>/` — the directory containing the FEATURE.md from your dispatch prompt
+- All state writes go to `~/workspace/plans/do/<run-id>/` — the directory containing the FEATURE.md from your dispatch prompt
 - On phase entry: log phase entry in Progress section
 - After each subagent returns: write outputs to the appropriate phase file
 - After each commit: record commit SHA in FEATURE.md Progress section
@@ -183,7 +183,7 @@ After each subagent returns, verify the artifact contains expected sections befo
 
 Validation protocol: For each required section, check that the heading exists in the artifact text. This is a structural check (does the section exist?), not a content quality check (is it good?). Missing sections indicate the subagent prompt may need adjustment.
 
-**State files live outside the repo** (`~/docs/plans/do/`). They are never in the git working tree and never need to be excluded from commits.
+**Plan and state files live in `~/workspace/plans/` (outside the repo) and are never committed.**
 
 ## Phase Execution
 
@@ -346,7 +346,7 @@ No separate consistency-checker dispatch is needed.
 The outer loop dispatches one orchestrator per milestone. Each milestone orchestrator receives
 its task bundles in `<task_bundles>` and executes only those tasks.
 
-**Working directory is already set up.** `<workdir_path>` is for code changes. State files live in `~/docs/plans/do/<short-name>/` (from `<state_path>`).
+**Working directory is already set up.** `<workdir_path>` is for code changes. State files live in `~/workspace/plans/do/<run-id>/` (from `<state_path>`).
 
 Verify the workdir is ready:
 - Confirm correct branch (`git branch --show-current` from `<workdir_path>`)
@@ -620,8 +620,7 @@ Summary:
 - Update Progress in FEATURE.md after each task
 - Record discoveries in Surprises and Discoveries
 - Record decisions in Decisions Made
-- All state file writes to `~/docs/plans/do/<short-name>/`
-- State files live outside the repo — no gitignore needed
+- All state file writes go to `~/workspace/plans/` (outside the repo, never committed)
 
 **Exit criteria:** All tasks in this milestone complete, no known failing checks
 
@@ -693,10 +692,10 @@ Summary:
 
 | Choice | Action |
 |--------|--------|
-| **Create PR** | `Skill(skill="pr", args="<concise feature title>")`. Report PR URL. |
-| **Merge to base** | `git checkout <base>`, `git merge <branch>`, clean up worktree. |
-| **Keep branch** | Report branch name and worktree path. |
-| **Discard** | Require typed confirmation "discard". Then `git worktree remove`, `git branch -D`. |
+| **Create PR** | `Skill(skill="pr", args="<concise feature title>")`. Report PR URL to user. |
+| **Merge to base** | `git checkout <base>`, `git merge <branch>`, clean up worktree if applicable. |
+| **Keep branch** | Report branch name and worktree path (if applicable). |
+| **Discard** | Require typed confirmation "discard". Then clean up worktree if applicable, `git branch -D <branch>`. |
 
 5. Update state with outcome (PR URL, merge commit, or discard note)
 6. Append to SESSION.log: `[<timestamp>] SESSION_COMPLETE | total_tokens: <N>k | total_duration: <N>s | commits: <N> | milestones: <completed>/<total>`

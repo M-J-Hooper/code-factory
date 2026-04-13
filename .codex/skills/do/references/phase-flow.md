@@ -108,10 +108,10 @@ DEVIATION_MAJOR: pause execution, recommend re-planning
 ## DONE Finalization
 
 ```
-Tests pass -> /atcommit (remaining) -> git push -> /pr (create PR) -> /pr-fix (validate + fix)
+Tests pass -> /atcommit (remaining) -> git push -> /pr (create PR) -> /pr-ready (validate + fix)
                                                                            |
                                                                            v
-                                                                  New feedback? --yes--> /pr-fix (max 2 loops)
+                                                                  New feedback? --yes--> /pr-ready (max 2 loops)
                                                                            |
                                                                            no
                                                                            |
@@ -157,7 +157,7 @@ CONVENTIONS.md front-loads these decisions once.
 3. Read explorer's Key Types/Functions for naming patterns
 4. Synthesize into CONVENTIONS.md using the schema from state-file-schema.md
 5. Every convention MUST cite a specific `file:line` as evidence
-6. Write to `~/docs/plans/do/<short-name>/CONVENTIONS.md`
+6. Write to `~/workspace/plans/do/<run-id>/CONVENTIONS.md`
 
 **Immutability rule**: CONVENTIONS.md is not updated during EXECUTE.
 If a convention proves wrong,
@@ -202,7 +202,7 @@ No separate consistency-checker dispatch is needed.
 
 ## EXECUTE Phase
 **Working directory is already set up.** Branch and worktree (if applicable) were created in Step 4 before any phase work began.
-The orchestrator works from `<workdir_path>` and writes all state to `~/docs/plans/do/<short-name>/`.
+The orchestrator works from `<workdir_path>` and writes all state to `~/workspace/plans/do/<run-id>/`.
 
 **Session Activity Log:**
 
@@ -526,13 +526,13 @@ Skip if the feature is purely internal (no user-facing changes).
 - **Autonomous**: Create PR automatically as draft via `/pr` skill
 - Record the PR URL in FEATURE.md frontmatter
 
-### 6. Validate and Fix PR (`/pr-fix`)
-- Run `/pr-fix` to check for review feedback from automated reviewers (Greptile, Codex, etc.)
-- `/pr-fix` handles: fetching review threads, categorizing feedback, applying fixes, replying to threads, committing, pushing, and monitoring CI
-- **Interactive**: `/pr-fix` will ask the user how to handle disagreements and whether to watch CI
-- **Autonomous**: `/pr-fix` runs with "Fix all" and "Yes — watch and fix" defaults
-- If `/pr-fix` produces additional commits, they are automatically pushed
-- Loop `/pr-fix` up to 2 times if new automated review feedback arrives after fixes
+### 6. Validate and Fix PR (`/pr-ready`)
+- Run `/pr-ready` to check for review feedback from automated reviewers (Greptile, Codex, etc.)
+- `/pr-ready` handles: fetching review threads, categorizing feedback, applying fixes, replying to threads, committing, pushing, and monitoring CI
+- **Interactive**: `/pr-ready` will ask the user how to handle disagreements and whether to watch CI
+- **Autonomous**: `/pr-ready` runs with "Fix all" and "Yes — watch and fix" defaults
+- If `/pr-ready` produces additional commits, they are automatically pushed
+- Loop `/pr-ready` up to 2 times if new automated review feedback arrives after fixes
 
 ### 7. Report and Archive
 - Report final outcome to user: PR URL, commit count, CI status, review thread status

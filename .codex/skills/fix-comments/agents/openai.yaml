@@ -1,0 +1,4 @@
+interface:
+  display_name: "Fix Comments"
+  short_description: "Use when the user wants to address code review comments, apply suggestions,."
+  default_prompt: "Use $fix-comments to address code review comments, apply suggestions,."

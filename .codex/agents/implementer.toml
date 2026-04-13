@@ -214,7 +214,7 @@ When running outside /do (standalone tasks):
 - Commit timing (at milestone boundaries via `/atcommit`)
 
 **Never commit:**
-- State files (FEATURE.md, anything in `~/docs/plans/`)
+- State files (FEATURE.md, anything in `~/workspace/plans/`)
 - Temporary or generated files
 - Secrets or credentials
 

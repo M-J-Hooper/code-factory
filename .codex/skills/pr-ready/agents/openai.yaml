@@ -1,0 +1,4 @@
+interface:
+  display_name: "Pr Ready"
+  short_description: "Use when the user wants to get a PR to a ready state by fixing CI failures,."
+  default_prompt: "Use $pr-ready to get a PR to a ready state by fixing CI failures,."

@@ -1,14 +1,6 @@
 ---
-name: pr-ready
-description: >
-  Use when the user wants to get a PR to a ready state by fixing CI failures,
-  addressing review feedback, resolving review threads, or responding to code review suggestions.
-  Supports --auto for bot/CI automation and --auto-human for fully autonomous mode.
-  Triggers: "pr ready", "fix ci", "fix checks", "get pr green",
-  "fix pr feedback", "address review feedback", "handle pr feedback".
-argument-hint: "[PR number, URL, or comment URL, optional --reviewer <name>, optional --auto, optional --auto-human]"
-user-invocable: true
-allowed-tools: Bash(git:*), Bash(gh:*), Bash(get_ddci_logs.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/pr-ready/scripts/*), Read, Write, Edit, Grep, Glob, AskUserQuestion, Task
+name: "pr-ready"
+description: "Use when the user wants to get a PR to a ready state by fixing CI failures, addressing review feedback, resolving review threads, or responding to code review suggestions. Supports --auto for bot/CI automation and --auto-human for fully autonomous mode. Triggers: \"pr ready\", \"fix ci\", \"fix checks\", \"get pr green\", \"fix pr feedback\", \"address review feedback\", \"handle pr feedback\"."
 ---
 
 # PR Ready

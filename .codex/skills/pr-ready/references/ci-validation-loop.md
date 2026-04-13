@@ -1,6 +1,6 @@
 # CI Validation Loop
 
-Reference for the `pr-fix` skill. Implements an automated check-fix-recheck cycle after pushing PR feedback fixes.
+Reference for the `pr-ready` skill. Implements an automated check-fix-recheck cycle after pushing PR feedback fixes.
 
 ## Overview
 
@@ -8,10 +8,10 @@ After pushing fixes, monitor CI status. If checks fail, analyze failures, apply 
 
 ## Phase 1: Wait for CI
 
-After the push from Step 7, wait for CI to start and complete using the background polling script. This runs in the background so **zero tokens are consumed while waiting**.
+After pushing (from `/fix-comments` or a previous CI fix iteration), wait for CI to start and complete using the background polling script. This runs in the background so **zero tokens are consumed while waiting**.
 
 ```bash
-${CLAUDE_PLUGIN_ROOT}/skills/pr-fix/scripts/poll-ci.sh {number}
+${CLAUDE_PLUGIN_ROOT}/skills/pr-ready/scripts/poll-ci.sh {number}
 ```
 
 Run with `run_in_background: true`. The script automatically filters out approval-gated checks (merge gate, peer review, manual approval, codeowner) and polls every 30 seconds for up to 20 minutes.
@@ -125,7 +125,7 @@ After re-running, return to Phase 1 to wait for the new run. Count this as an it
 
 ### Classify: PR-related vs Pre-existing
 
-Before fixing, compare the failure against the changed-files list captured in Step 1 of the main skill.
+Before fixing, compare the failure against the changed-files list captured at the start of Step 4 in the main skill.
 
 **PR-related** (fix on this branch):
 - Failing test file is in the changed-files list
@@ -217,7 +217,7 @@ Track across iterations:
 
 ## Phase 5: CI Loop Report
 
-Return this report to the calling step (Step 9 in SKILL.md):
+Return this report to the calling step (Step 5 in SKILL.md):
 
 ```
 ### CI Validation

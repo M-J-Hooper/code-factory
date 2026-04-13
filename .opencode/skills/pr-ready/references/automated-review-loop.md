@@ -1,6 +1,6 @@
 # Automated Review Loop
 
-Reference for the `pr-fix` skill. Triggers automated code reviews (Codex), processes feedback, and loops until clean.
+Reference for the `pr-ready` skill. Triggers automated code reviews (Codex), processes feedback, and loops until clean.
 
 ## Overview
 
@@ -26,7 +26,7 @@ COMMENT_COUNT=$(gh api "repos/{owner}/{repo}/pulls/{number}/comments" --paginate
 REVIEW_COUNT=$(gh api "repos/{owner}/{repo}/pulls/{number}/reviews" --paginate 2>/dev/null | jq -s 'add | [.[] | select(.state != "COMMENTED")] | length')
 
 # Run background poller — pass a bot pattern regex matching your automated reviewers
-${CLAUDE_PLUGIN_ROOT}/skills/pr-fix/scripts/poll-reviews.sh {number} {owner}/{repo} "$COMMENT_COUNT" "$REVIEW_COUNT" "{bot-pattern}"
+${CLAUDE_PLUGIN_ROOT}/skills/pr-ready/scripts/poll-reviews.sh {number} {owner}/{repo} "$COMMENT_COUNT" "$REVIEW_COUNT" "{bot-pattern}"
 ```
 
 Run with `run_in_background: true`. The `{bot-pattern}` parameter is a regex matching bot reviewer login names (e.g., `"codex|mybot|app"`). Default: `"bot|app|\[bot\]"`.

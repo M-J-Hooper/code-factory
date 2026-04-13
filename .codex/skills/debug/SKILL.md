@@ -13,7 +13,7 @@ Announce: "I'm using the /debug skill to systematically investigate this issue b
 |----------------|-------------|
 | Implement a new feature or change | `/do` — full lifecycle with REFINE → EXECUTE phases |
 | Fix a specific bug with known root cause | `/debug` — you're here |
-| Address PR review comments | `/pr-fix` |
+| Address PR review comments | `/pr-ready` |
 
 ## The Iron Law
 
@@ -62,13 +62,13 @@ If you catch yourself thinking any of these, STOP and return to Phase 1:
 
 Determine from `$ARGUMENTS` and conversation whether to start a new session or resume:
 
-**If `$ARGUMENTS` references a `~/docs/plans/debug/` state file:** Resume mode (Step 1b).
+**If `$ARGUMENTS` references a `~/workspace/plans/debug/` state file:** Resume mode (Step 1b).
 **Otherwise:** New session.
 
 ### New Session
 
 ```bash
-STATE_ROOT=~/docs/plans/debug
+STATE_ROOT=~/workspace/plans/debug
 mkdir -p "$STATE_ROOT"
 ```
 
