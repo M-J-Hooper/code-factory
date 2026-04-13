@@ -287,7 +287,7 @@
   "mcp": {
     "atlassian": {
       "type": "remote",
-      "url": "https://mcp.atlassian.com/v1/sse"
+      "url": "https://mcp.atlassian.com/v1/mcp"
     },
     "chrome-devtools": {
       "type": "local",
@@ -296,6 +296,10 @@
     "datadog-mcp": {
       "type": "remote",
       "url": "https://mcp.datadoghq.com/api/unstable/mcp-server/mcp"
+    },
+    "google-workspace": {
+      "type": "local",
+      "command": ["npx", "mcp-remote", "https://google-workspace-mcp-server-834963730936.us-central1.run.app/mcp"]
     },
     "slack": {
       "type": "remote",
