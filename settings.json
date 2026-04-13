@@ -146,7 +146,8 @@
   "model": "opus[1m]",
   "enabledMcpjsonServers": [
     "atlassian",
-    "datadog"
+    "datadog-llmo-mcp",
+    "datadog-mcp-core"
   ],
   "hooks": {
     "PreToolUse": [
