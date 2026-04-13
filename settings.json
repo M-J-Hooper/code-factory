@@ -145,9 +145,7 @@
   },
   "model": "opus[1m]",
   "enabledMcpjsonServers": [
-    "atlassian",
-    "datadog-llmo-mcp",
-    "datadog-mcp-core"
+    "atlassian"
   ],
   "hooks": {
     "PreToolUse": [
@@ -215,7 +213,8 @@
     "writing@datadog-claude-plugins": true,
     "learning-skills@mrlee-plugins": true,
     "permissions-setup@mrlee-plugins": true,
-    "codex@openai-codex": true
+    "codex@openai-codex": true,
+    "appgate@datadog-claude-plugins": true
   },
   "extraKnownMarketplaces": {
     "claude-plugins-official": {

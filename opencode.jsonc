@@ -293,9 +293,9 @@
       "type": "local",
       "command": ["npx", "-y", "chrome-devtools-mcp@latest", "--isolated=true"]
     },
-    "datadog": {
-      "type": "local",
-      "command": ["datadog_mcp_cli"]
+    "datadog-mcp": {
+      "type": "remote",
+      "url": "https://mcp.datadoghq.com/api/unstable/mcp-server/mcp"
     },
     "slack": {
       "type": "remote",

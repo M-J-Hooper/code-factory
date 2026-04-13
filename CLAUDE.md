@@ -64,3 +64,5 @@ Available skills from the code-factory plugin marketplace. Use `/skill-name` or 
 | `/reflect` | Capture session learnings and update knowledge files. |
 | `/workspace` | Bootstrap or update Claude Code configuration on a new machine. |
 | `/skill-workbench` | Create, audit, or improve skills in the code-factory marketplace. |
+
+@RTK.md

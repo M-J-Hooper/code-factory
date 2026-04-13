@@ -173,6 +173,15 @@ for name in data.get('mcpServers', {}):
     print(name)
 ")
 
+# Remove user-scoped servers that are no longer in mcp.json
+existing_servers=$(claude mcp list 2>/dev/null | grep -oE '^\S+:' | tr -d ':' || true)
+for existing in $existing_servers; do
+    if ! echo "$mcp_server_names" | grep -qxF "$existing"; then
+        claude mcp remove -s user "$existing" 2>/dev/null || true
+        echo "  CLEAN  $existing (removed stale server)"
+    fi
+done
+
 for name in $mcp_server_names; do
     config=$(python3 -c "
 import json
@@ -180,7 +189,7 @@ data = json.load(open('$SCRIPT_DIR/mcp.json'))
 print(json.dumps(data['mcpServers']['$name']))
 ")
     # Remove existing (ignore errors if not present)
-    claude mcp remove "$name" 2>/dev/null || true
+    claude mcp remove -s user "$name" 2>/dev/null || true
     # Add with user scope
     if claude mcp add-json -s user "$name" "$config" 2>&1; then
         echo "  OK  $name"

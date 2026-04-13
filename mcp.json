@@ -8,13 +8,9 @@
       "command": "npx",
       "args": ["-y", "chrome-devtools-mcp@latest", "--isolated=true"]
     },
-    "datadog-llmo-mcp": {
+    "datadog-mcp": {
       "type": "http",
-      "url": "https://mcp.datadoghq.com/api/unstable/mcp-server/mcp?toolsets=llmobs"
-    },
-    "datadog-mcp-core": {
-      "type": "http",
-      "url": "https://mcp.datadoghq.com/api/unstable/mcp-server/mcp?toolsets=core,software-delivery,error-tracking"
+      "url": "https://mcp.datadoghq.com/api/unstable/mcp-server/mcp"
     },
     "slack": {
       "type": "http",
